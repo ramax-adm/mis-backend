@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  postgres:
+    image: bitnami/postgresql
+    ports:
+      - 6000:6000
+    environment:
+      - POSTGRESQL_USERNAME=docker
+      - POSTGRESQL_PASSWORD=docker
+      - POSTGRESQL_DATABASE=render-nest-pg
+      - POSTGRESQL_PORT_NUMBER=6000
