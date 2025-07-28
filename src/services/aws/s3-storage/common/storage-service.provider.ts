@@ -8,10 +8,10 @@ export const StorageServiceProvider: Provider = {
   useFactory: (envService: EnvService) => {
     return new S3StorageService(
       {
-        region: envService.get('AWS_REGION') ?? '',
+        region: envService.get('AWS_S3_REGION') ?? '',
         credentials: {
-          accessKeyId: envService.get('AWS_S3_ACCESS_KEY_ID') ?? '',
-          secretAccessKey: envService.get('AWS_S3_SECRET_ACCESS_KEY') ?? '',
+          accessKeyId: envService.get('AWS_ACCESS_KEY_ID') ?? '',
+          secretAccessKey: envService.get('AWS_SECRET_ACCESS_KEY') ?? '',
         },
       },
       envService,
