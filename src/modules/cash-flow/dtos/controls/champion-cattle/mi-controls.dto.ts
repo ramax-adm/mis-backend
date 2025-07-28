@@ -1,0 +1,18 @@
+import { NumberUtils } from '@/modules/utils/services/number.utils';
+import { Expose, Transform, Type } from 'class-transformer';
+
+export class MiControlsChampionCattleDto {
+  @Expose()
+  @Type(() => Number)
+  precoFreteMi: number;
+
+  @Expose()
+  @Type(() => Number)
+  @Transform(({ value }) => NumberUtils.nb4(value / 100))
+  pImpostosMi: number;
+
+  @Expose()
+  @Type(() => Number)
+  @Transform(({ value }) => NumberUtils.nb4(value / 100))
+  pComissoesMi: number;
+}

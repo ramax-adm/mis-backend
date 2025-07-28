@@ -24,6 +24,10 @@ export class EnvSchema {
   @IsNotEmpty()
   BE_SECRET: string;
 
+  @IsString()
+  @IsNotEmpty()
+  BE_API_KEY: string;
+
   @IsNumber()
   @Transform(({ value }) => value || 3000)
   BE_PORT: number;
@@ -67,7 +71,11 @@ export class EnvSchema {
 
   @IsString()
   @IsNotEmpty()
-  AWS_REGION: string;
+  AWS_S3_REGION: string;
+
+  @IsString()
+  @IsNotEmpty()
+  AWS_SES_REGION: string;
 
   @IsString()
   @IsNotEmpty()
@@ -75,11 +83,11 @@ export class EnvSchema {
 
   @IsString()
   @IsNotEmpty()
-  AWS_S3_ACCESS_KEY_ID: string;
+  AWS_ACCESS_KEY_ID: string;
 
   @IsString()
   @IsNotEmpty()
-  AWS_S3_SECRET_ACCESS_KEY: string;
+  AWS_SECRET_ACCESS_KEY: string;
 
   @IsString()
   @IsNotEmpty()
