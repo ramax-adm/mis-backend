@@ -1,30 +1,30 @@
-import { JwtAuthGuard } from '@/services/auth/guards/jwt-auth.guard';
-import { GetAnalyticalStockByCompanyResponseDto } from '@/services/stock/dto/get-analytical-stock-by-company-response.dto';
-import { GetAnalyticalToExpiresByCompanyResponseDto } from '@/services/stock/dto/get-analytical-to-expires-by-company-response.dto';
-import { GetStockByCompanyResponseDto } from '@/services/stock/dto/get-stock-by-company-response.dto';
-import { GetStockLastUpdatedAtResponseDto } from '@/services/stock/dto/get-stock-last-updated-at-response.dto';
-import { GetToExpiresByCompanyResponseDto } from '@/services/stock/dto/get-to-expires-by-company-response.dto';
-import { StockReportService } from '@/services/stock/stock-report.service';
-import { StockService } from '@/services/stock/stock.service';
-import { DateUtils } from '@/services/utils/date.utils';
+import { Roles } from '@/core/decorators/user-roles.decorator';
+import { UserRole } from '@/core/enums/user-role.enum';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
+import { ExportStockReportDto } from '@/modules/stock/old/dto/export-stock-report.dto';
+import { GetAnalyticalStockByCompanyResponseDto } from '@/modules/stock/old/dto/get-analytical-stock-by-company-response.dto';
+import { GetAnalyticalToExpiresByCompanyResponseDto } from '@/modules/stock/old/dto/get-analytical-to-expires-by-company-response.dto';
+import { GetStockByCompanyResponseDto } from '@/modules/stock/old/dto/get-stock-by-company-response.dto';
+import { GetStockLastUpdatedAtResponseDto } from '@/modules/stock/old/dto/get-stock-last-updated-at-response.dto';
+import { GetToExpiresByCompanyResponseDto } from '@/modules/stock/old/dto/get-to-expires-by-company-response.dto';
+import { StockReportService } from '@/modules/stock/old/stock-report.service';
+import { StockService } from '@/modules/stock/old/stock.service';
+import { DateUtils } from '@/modules/utils/services/date.utils';
 import {
-  BadRequestException,
-  Body,
   Controller,
+  UseGuards,
   Get,
   HttpCode,
   HttpStatus,
+  Query,
   Param,
   Post,
-  Query,
+  Body,
   Res,
-  UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ExportStockReportDto } from '../services/stock/dto/export-stock-report.dto';
-import { RolesGuard } from '@/services/auth/guards/user-roles.guard';
-import { Roles } from '@/common/decorators/user-roles.decorator';
-import { UserRole } from '@/common/enums/user-role.enum';
 
 @Controller('stock')
 export class StockController {

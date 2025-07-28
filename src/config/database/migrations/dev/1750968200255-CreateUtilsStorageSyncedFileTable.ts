@@ -7,7 +7,7 @@ export class CreateUtilsStorageSyncedFileTable1750968200255
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "dev"."utils_storage_synced_file" 
+      `CREATE TABLE "dev"."utils_storage_synced_files" 
       ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
       "storage_type" character varying NOT NULL, 
       "entity" character varying NOT NULL, 
@@ -18,6 +18,6 @@ export class CreateUtilsStorageSyncedFileTable1750968200255
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE "dev"."utils_storage_synced_file"`);
+    await queryRunner.query(`DROP TABLE "dev"."utils_storage_synced_files"`);
   }
 }

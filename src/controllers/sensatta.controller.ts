@@ -1,9 +1,3 @@
-import { PRODUCT_CLASSIFICATION_TYPES } from '@/common/constants/sensatta/product-classification-types';
-import { Company } from '@/common/entities/sensatta/company.entity';
-import { ProductLine } from '@/common/entities/sensatta/product-line.entity';
-import { Product } from '@/common/entities/sensatta/product.entity';
-import { EnvService } from '@/config/env/env.service';
-import { JwtAuthGuard } from '@/services/auth/guards/jwt-auth.guard';
 import { HttpService } from '@nestjs/axios';
 import {
   Controller,
@@ -15,6 +9,12 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { INCOMING_BATCHES_PRODUCT_LINES_QUERY } from './constants/incoming-batches-product-lines';
+import { EnvService } from '@/config/env/env.service';
+import { PRODUCT_CLASSIFICATION_TYPES } from '@/core/constants/sensatta/product-classification-types';
+import { Company } from '@/core/entities/sensatta/company.entity';
+import { ProductLine } from '@/core/entities/sensatta/product-line.entity';
+import { Product } from '@/core/entities/sensatta/product.entity';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 @Controller('sensatta')
 export class SensattaController {

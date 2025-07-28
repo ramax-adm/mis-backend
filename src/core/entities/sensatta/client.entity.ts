@@ -19,6 +19,15 @@ export class Client {
   @Column({ name: 'fantasy_name' })
   fantasyName: string;
 
+  @Column({ name: 'sales_representative_code' })
+  salesRepresentativeCode: string;
+
+  @Column({ name: 'sales_representative_name' })
+  salesRepresentativeName: string;
+
+  @Column({ name: 'sales_representative_fantasy_name' })
+  salesRepresentativeFantasyName: string;
+
   @Column({ name: 'state_subscrition' })
   stateSubscription: string;
 
