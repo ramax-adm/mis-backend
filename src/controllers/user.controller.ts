@@ -1,3 +1,14 @@
+import { CurrentUser } from '@/core/decorators/current-user.decorator';
+import { Roles } from '@/core/decorators/user-roles.decorator';
+import { UserRole } from '@/core/enums/user-role.enum';
+import { User } from '@/core/user';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
+import { ChangePasswordDto } from '@/modules/user/dto/change-password.dto';
+import { CreateUserDto } from '@/modules/user/dto/create-user.dto';
+import { PasswordTokenDto } from '@/modules/user/dto/password-token.dto';
+import { UpdateUserDto } from '@/modules/user/dto/update-user.dto';
+import { UserService } from '@/modules/user/user.service';
 import {
   Controller,
   Get,
@@ -10,19 +21,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { UserRole } from '@/common/enums/user-role.enum';
-import { JwtAuthGuard } from '@/services/auth/guards/jwt-auth.guard';
-import { ChangePasswordDto } from '@/services/user/dto/change-password.dto';
-import { CreateUserDto } from '@/services/user/dto/create-user.dto';
-import { PasswordTokenDto } from '@/services/user/dto/password-token.dto';
-import { UpdateUserDto } from '@/services/user/dto/update-user.dto';
-import { UserService } from '@/services/user/user.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { User } from '@/services/user/entities/user.entity';
-import { Roles } from '@/common/decorators/user-roles.decorator';
-import { RolesGuard } from '@/services/auth/guards/user-roles.guard';
-
 @ApiBearerAuth('jwt-token')
 @ApiTags('User')
 @Controller('user')
@@ -65,10 +64,7 @@ export class UserController {
   @Roles(UserRole.Admin)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 

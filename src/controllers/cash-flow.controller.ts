@@ -1,3 +1,17 @@
+import { CurrentUser } from '@/core/decorators/current-user.decorator';
+import { Roles } from '@/core/decorators/user-roles.decorator';
+import { UserRole } from '@/core/enums/user-role.enum';
+import { User } from '@/core/user';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
+import { CashFlowReportService } from '@/modules/cash-flow/cash-flow-report.service';
+import { CashFlowSimulationService } from '@/modules/cash-flow/cash-flow-simulation.service';
+import { TIPOS_ARREND } from '@/modules/cash-flow/constants/tipo-arrend';
+import { CashFlowSimulateResponseDto } from '@/modules/cash-flow/dtos/cash-flow-simulate-response.dto';
+import { CommonDto } from '@/modules/cash-flow/dtos/common/common.dto';
+import { FindAllSimulationsResponseDto } from '@/modules/cash-flow/dtos/find-all-simulations-response.dto';
+import { DateUtils } from '@/modules/utils/services/date.utils';
+import { NumberUtils } from '@/modules/utils/services/number.utils';
 import {
   Body,
   Controller,
@@ -11,21 +25,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { CommonDto } from '@/services/cash-flow/dtos/common/common.dto';
-import { JwtAuthGuard } from '@/services/auth/guards/jwt-auth.guard';
-import { TIPOS_ARREND } from '@/services/cash-flow/constants/tipo-arrend';
-import { CashFlowSimulateResponseDto } from '@/services/cash-flow/dtos/cash-flow-simulate-response.dto';
-import { CashFlowSimulationService } from '@/services/cash-flow/cash-flow-simulation.service';
-import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { User } from '@/services/user/entities/user.entity';
-import { DateUtils } from '@/services/utils/date.utils';
-import { FindAllSimulationsResponseDto } from '@/services/cash-flow/dtos/find-all-simulations-response.dto';
-import { NumberUtils } from '@/services/utils/number.utils';
-import { CashFlowReportService } from '@/services/cash-flow/cash-flow-report.service';
 import { Response } from 'express';
-import { Roles } from '@/common/decorators/user-roles.decorator';
-import { UserRole } from '@/common/enums/user-role.enum';
-import { RolesGuard } from '@/services/auth/guards/user-roles.guard';
 
 @Controller('cash-flow')
 export class CashFlowController {
