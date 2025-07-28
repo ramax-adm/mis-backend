@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { EnvService } from './config/env/env.service';
 import { ValidationPipe } from '@nestjs/common';
-import { LogInterceptor } from './common/interceptors/log-interceptor';
+import { LogInterceptor } from './core/interceptors/log-interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,8 +22,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LogInterceptor());
 
   const envService = app.get(EnvService);
-  envService.get('BE_PORT');
-
   const PORT = envService.get('BE_PORT');
   await app.listen(PORT);
 }

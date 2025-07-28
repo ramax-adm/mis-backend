@@ -1,0 +1,22 @@
+export type GetFreightsItem = {
+  slaughterDate: Date;
+  freightClosingDate?: Date;
+  purchaseCattleOrderId: string;
+  companyCode: string;
+  companyName: string;
+  freightCompanyCode: string;
+  freightCompanyName: string;
+  supplierCode: string;
+  supplierName: string;
+  cattleAdvisorCode: string;
+  cattleAdvisorName: string;
+  feedlotId: string;
+  feedlotName: string;
+  feedlotKmDistance: string;
+  negotiatedKmDistance: string;
+  cattleQuantity: number;
+  referenceFreightTablePrice: number;
+  negotiatedFreightPrice: number;
+  freightTransportPlate: string;
+  freightTransportType: string;
+};
