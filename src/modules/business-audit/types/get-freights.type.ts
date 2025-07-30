@@ -1,4 +1,4 @@
-export type GetFreightsItem = {
+export type GetCattlePurchaseFreightsItem = {
   slaughterDate: Date;
   freightClosingDate?: Date;
   purchaseCattleOrderId: string;
