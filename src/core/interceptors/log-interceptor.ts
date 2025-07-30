@@ -10,7 +10,9 @@ import { Observable, tap } from 'rxjs';
 export class LogInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    console.log(`\nExecutando ${request.method} - ${request.url}`);
+
+    console.log('\n==== Auth ====');
+    console.log(`Executando ${request.method} - ${request.url}`);
 
     const user = request?.user;
     let msg = '';
@@ -20,6 +22,7 @@ export class LogInterceptor implements NestInterceptor {
       msg = `Usuario: ${request?.user?.id} - ${request?.user?.role} - ${request?.user?.name}`;
     }
     console.log(msg);
+    console.log('====================');
 
     const now = Date.now();
     return next
