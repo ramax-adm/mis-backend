@@ -1,25 +1,36 @@
-import { GetFreightsItem } from '../../types/get-freights.type';
+import { GetCattlePurchaseFreightsItem } from '../../types/get-freights.type';
 
 type GetBusinessAuditResumeDataAggregated = Record<
   string,
   {
     quantity: number;
+    productQuantity: number;
     weightInKg: number;
     totalPrice: number;
   }
 >;
 export class GetBusinessAuditResumeDataResponseDto {
+  invoicesWithSamePrice: {
+    date: Date;
+    nfNumber: string;
+    companyCode: string;
+    companyName: string;
+    clientCode: string;
+    clientName: string;
+    totalPrice: number;
+  }[];
   manuallyEnteredInvoicesByCompany: GetBusinessAuditResumeDataAggregated;
   manuallyEnteredInvoicesByClient: GetBusinessAuditResumeDataAggregated;
   manuallyEnteredInvoicesTotals: {
     quantity: number;
+    productQuantity: number;
     weightInKg: number;
     totalPrice: number;
   };
   openCattlePurchaseFreightsTotals: {
     quantity: number;
   };
-  openCattlePurchaseFreights: GetFreightsItem[];
+  openCattlePurchaseFreights: GetCattlePurchaseFreightsItem[];
   cattlePurchaseFreightsDuplicated: {
     date: Date;
     companyCode: string;

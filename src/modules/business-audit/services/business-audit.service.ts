@@ -1,96 +1,76 @@
-import { Injectable } from '@nestjs/common';
+import * as dateFns from 'date-fns';
 import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { GetBusinessAuditResumeDataResponseDto } from '../dtos/response/get-business-resume-data-response.dto';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { StringUtils } from '@/modules/utils/services/string.utils';
-import { GetFreightsItem } from '../types/get-freights.type';
+import { GetCattlePurchaseFreightsItem } from '../types/get-freights.type';
 import { DateUtils } from '@/modules/utils/services/date.utils';
-import * as dateFns from 'date-fns';
+import { GetInvoicesItem } from '../types/get-invoices.type';
+import { GetStockIncomingBatchesItem } from '../types/get-stock-incoming-batches.type';
 
 @Injectable()
 export class BusinessAuditService {
   constructor(private readonly datasource: DataSource) {}
 
+  // METODO PRINCIPAL
   async getData({ startDate, endDate }: { startDate?: Date; endDate?: Date }) {
     // faturamento
-    const manuallyEnteredInvoices = await this.getManualInvoices({
-      startDate,
-      endDate,
-    });
+    const [invoices, manuallyEnteredInvoices] = await Promise.all([
+      this.getInvoices({
+        startDate,
+        endDate,
+      }),
+      this.getManualInvoices({
+        startDate,
+        endDate,
+      }),
+    ]);
 
-    const manuallyEnteredInvoicesByCompanyMap = new Map<
-      string,
+    const invoicesWithSamePrice = this.getInvoicesWithSamePrice(invoices);
+
+    const manuallyEnteredInvoicesByCompanyMap =
+      this.getManuallyEnteredInvoicesByKey(
+        'companyName',
+        manuallyEnteredInvoices,
+      );
+    const manuallyEnteredInvoicesByClientMap =
+      this.getManuallyEnteredInvoicesByKey(
+        'clientName',
+        manuallyEnteredInvoices,
+      );
+
+    const manuallyEnteredInvoicesTotals = manuallyEnteredInvoices.reduce(
+      (acc, item) => ({
+        quantity: 0,
+        productQuantity: 0,
+        weightInKg: acc.weightInKg + item.weightInKg,
+        totalPrice: acc.totalPrice + item.totalPrice,
+      }),
       {
-        quantity: number;
-        weightInKg: number;
-        totalPrice: number;
-      }
-    >();
-    const manuallyEnteredInvoicesByClientMap = new Map<
-      string,
-      {
-        quantity: number;
-        weightInKg: number;
-        totalPrice: number;
-      }
-    >();
-    const manuallyEnteredInvoicesTotals = {
-      quantity: 0,
-      weightInKg: 0,
-      totalPrice: 0,
-    };
+        quantity: 0,
+        productQuantity: 0,
+        weightInKg: 0,
+        totalPrice: 0,
+      },
+    );
 
-    for (const invoice of manuallyEnteredInvoices) {
-      const { companyCode, companyName, clientName } = invoice;
+    const manuallyInvoicesByNfNumberSet = new Set();
+    manuallyEnteredInvoices.forEach((i) =>
+      manuallyInvoicesByNfNumberSet.add(i.nfNumber),
+    );
+    manuallyEnteredInvoicesTotals.quantity = manuallyInvoicesByNfNumberSet.size;
+    manuallyEnteredInvoicesTotals.productQuantity =
+      manuallyEnteredInvoices.length;
 
-      const payload = {
-        quantity: 1,
-        weightInKg: invoice.weightInKg,
-        totalPrice: invoice.totalPrice,
-      };
-
-      // totals
-      manuallyEnteredInvoicesTotals.quantity += payload.quantity;
-      manuallyEnteredInvoicesTotals.weightInKg += payload.weightInKg;
-      manuallyEnteredInvoicesTotals.totalPrice += payload.totalPrice;
-
-      // by company
-      if (!manuallyEnteredInvoicesByCompanyMap.has(companyCode)) {
-        manuallyEnteredInvoicesByCompanyMap.set(companyCode, {
-          quantity: 0,
-          totalPrice: 0,
-          weightInKg: 0,
-        });
-      }
-      const previousInvoicesByCompanyMap =
-        manuallyEnteredInvoicesByCompanyMap.get(companyCode)!;
-      previousInvoicesByCompanyMap.quantity += payload.quantity;
-      previousInvoicesByCompanyMap.weightInKg += payload.weightInKg;
-      previousInvoicesByCompanyMap.totalPrice += payload.totalPrice;
-
-      // by client
-      if (!manuallyEnteredInvoicesByClientMap.has(clientName)) {
-        manuallyEnteredInvoicesByClientMap.set(clientName, {
-          quantity: 0,
-          totalPrice: 0,
-          weightInKg: 0,
-        });
-      }
-      const previousInvoicesByClientMap =
-        manuallyEnteredInvoicesByClientMap.get(clientName)!;
-      previousInvoicesByClientMap.quantity += payload.quantity;
-      previousInvoicesByClientMap.weightInKg += payload.weightInKg;
-      previousInvoicesByClientMap.totalPrice += payload.totalPrice;
-    }
-
+    // Fretes Compra
     const cattlePurchaseFreights = await this.getFreights({
       startDate,
       endDate,
     });
-    const openCattlePurchaseFreights = cattlePurchaseFreights
-      .filter((i) => i.freightClosingDate === null)
-      .filter((i) => !StringUtils.ILike(i.freightTransportType, '%SEM FRETE%'));
-
+    const openCattlePurchaseFreights = this.getOpenCattlePurchaseFreights(
+      cattlePurchaseFreights,
+    );
     const openCattlePurchaseFreightsTotals = {
       quantity: openCattlePurchaseFreights.length,
     };
@@ -209,6 +189,7 @@ export class BusinessAuditService {
 
     // Totais
     return new GetBusinessAuditResumeDataResponseDto({
+      invoicesWithSamePrice,
       manuallyEnteredInvoicesByCompany: Object.fromEntries(
         manuallyEnteredInvoicesByCompanyMap,
       ),
@@ -229,20 +210,79 @@ export class BusinessAuditService {
     });
   }
 
-  // auxiliar methods
-
-  // get open freights
-
-  // outros metodos aqui
-
-  async getManualInvoices({
+  // FETCH DE DADOS
+  private async getInvoices({
     startDate,
     endDate,
   }: {
     startDate?: Date;
     endDate?: Date;
-  }) {
-    const query = this.datasource
+  }): Promise<GetInvoicesItem[]> {
+    const qb = this.datasource
+      .createQueryBuilder()
+      .select([
+        'si."date"',
+        'si.nf_type',
+        'si.company_code',
+        'sc.name AS company_name',
+        'si.cfop_code',
+        'si.cfop_description',
+        'si.nf_number',
+        'si.request_id',
+        'si.client_code',
+        'si.client_name',
+        'si.product_code',
+        'si.product_name',
+        'si.box_amount',
+        'si.weight_in_kg',
+        'si.unit_price',
+        'si.total_price',
+      ])
+      .from('sensatta_invoices', 'si')
+      .leftJoin(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = si.company_code',
+      );
+
+    if (startDate) {
+      qb.andWhere('si.date >= :startDate', { startDate });
+    }
+
+    if (endDate) {
+      qb.andWhere('si.date <= :endDate', { endDate });
+    }
+
+    const results = await qb.getRawMany();
+
+    return results.map((i) => ({
+      date: i.date,
+      nfType: i.nf_type,
+      companyCode: i.company_code,
+      companyName: i.company_name,
+      cfopCode: i.cfop_code,
+      cfopDescription: i.cfop_description,
+      nfNumber: i.nf_number,
+      requestId: i.request_id,
+      clientCode: i.client_code,
+      clientName: i.client_name,
+      productCode: i.product_code,
+      productName: i.product_name,
+      boxAmount: i.box_amount,
+      weightInKg: i.weight_in_kg,
+      unitPrice: i.unit_price,
+      totalPrice: i.total_price,
+    }));
+  }
+
+  private async getManualInvoices({
+    startDate,
+    endDate,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<GetInvoicesItem[]> {
+    const qb = this.datasource
       .createQueryBuilder()
       .select([
         'si."date"',
@@ -271,14 +311,14 @@ export class BusinessAuditService {
       .where('si.nf_type = :nfType', { nfType: 'AVULSA' });
 
     if (startDate) {
-      query.andWhere('si.date >= :startDate', { startDate });
+      qb.andWhere('si.date >= :startDate', { startDate });
     }
 
     if (endDate) {
-      query.andWhere('si.date <= :endDate', { endDate });
+      qb.andWhere('si.date <= :endDate', { endDate });
     }
 
-    const results = await query.getRawMany();
+    const results = await qb.getRawMany();
 
     return results.map((i) => ({
       date: i.date,
@@ -300,14 +340,14 @@ export class BusinessAuditService {
     }));
   }
 
-  async getFreights({
+  private async getFreights({
     startDate,
     endDate,
   }: {
     startDate?: Date;
     endDate?: Date;
-  }) {
-    const query = this.datasource
+  }): Promise<GetCattlePurchaseFreightsItem[]> {
+    const qb = this.datasource
       .createQueryBuilder()
       .select([
         'scpf."slaughter_date"',
@@ -340,14 +380,14 @@ export class BusinessAuditService {
       );
 
     if (startDate) {
-      query.andWhere('scpf."slaughter_date" >= :startDate', { startDate });
+      qb.andWhere('scpf."slaughter_date" >= :startDate', { startDate });
     }
 
     if (endDate) {
-      query.andWhere('scpf."slaughter_date" <= :endDate', { endDate });
+      qb.andWhere('scpf."slaughter_date" <= :endDate', { endDate });
     }
 
-    const results = await query.getRawMany();
+    const results = await qb.getRawMany();
 
     return results.map((i) => ({
       slaughterDate: i.slaughter_date,
@@ -373,8 +413,10 @@ export class BusinessAuditService {
     }));
   }
 
-  async getStockIncomingBatches() {
-    const query = this.datasource
+  private async getStockIncomingBatches(): Promise<
+    GetStockIncomingBatchesItem[]
+  > {
+    const qb = this.datasource
       .createQueryBuilder()
       .select([
         'sc.sensatta_code AS "companyCode"',
@@ -407,7 +449,7 @@ export class BusinessAuditService {
       )
       .where('sw.is_considered_on_stock = true');
 
-    const results = await query.getRawMany();
+    const results = await qb.getRawMany();
 
     return results.map((i) => ({
       companyCode: i.companyCode,
@@ -419,8 +461,137 @@ export class BusinessAuditService {
     }));
   }
 
-  getDuplicatedFreightsByDateAndPlate(freights: GetFreightsItem[]) {
-    const grouped = new Map<string, GetFreightsItem[]>();
+  // METODOS AUXILIARES
+  private getManuallyEnteredInvoicesByKey(
+    key: keyof GetInvoicesItem,
+    invoices: GetInvoicesItem[],
+  ): Map<
+    string,
+    {
+      quantity: number;
+      productQuantity: number;
+      weightInKg: number;
+      totalPrice: number;
+    }
+  > {
+    const data: Record<
+      string,
+      {
+        quantity: number;
+        productQuantity: number;
+        weightInKg: number;
+        totalPrice: number;
+      }
+    > = {};
+
+    const map = new Map<string, Set<string>>();
+
+    for (const invoice of invoices) {
+      const entityKey = invoice[key] as string;
+      const nfNumber = invoice.nfNumber;
+
+      if (!data[entityKey]) {
+        data[entityKey] = {
+          quantity: 0,
+          productQuantity: 0,
+          weightInKg: 0,
+          totalPrice: 0,
+        };
+      }
+
+      data[entityKey].productQuantity += 1;
+      data[entityKey].weightInKg += invoice.weightInKg;
+      data[entityKey].totalPrice += invoice.totalPrice;
+
+      if (!map.has(entityKey)) {
+        map.set(entityKey, new Set());
+      }
+      map.get(entityKey)!.add(nfNumber);
+    }
+
+    // Atualiza as quantidades únicas de NFs
+    for (const [entityKey, nfSet] of map.entries()) {
+      data[entityKey].quantity = nfSet.size;
+    }
+
+    // Converte para Map antes de retornar
+    const result = new Map<string, (typeof data)[string]>();
+    for (const [key, value] of Object.entries(data)) {
+      result.set(key, value);
+    }
+
+    return result;
+  }
+
+  // todo:
+  private getInvoicesWithWeightInconsistences(invoices: GetInvoicesItem[]) {
+    return invoices.filter((i) => i.weightInKg);
+  }
+
+  // todo:
+  private getInvoicesWithSamePrice(invoices: GetInvoicesItem[]) {
+    // tenho que receber as nfs agrupadas por n°
+    const groupedInvoicesMap = new Map<string, GetInvoicesItem>();
+    for (const invoice of invoices) {
+      const key = invoice.nfNumber;
+      if (!groupedInvoicesMap.has(key)) {
+        groupedInvoicesMap.set(key, {
+          ...invoice,
+          boxAmount: 0,
+          weightInKg: 0,
+          totalPrice: 0,
+        });
+      }
+      const group = groupedInvoicesMap.get(key)!;
+      group.boxAmount += invoice.boxAmount;
+      group.weightInKg = NumberUtils.nb2(group.weightInKg + invoice.weightInKg);
+      group.totalPrice = NumberUtils.nb2(group.totalPrice + invoice.totalPrice);
+    }
+
+    const groupedInvoices = Array.from(groupedInvoicesMap.values());
+
+    // faço o agrupamento das nfs com o valor e data iguais
+    const groupedInvoicesByDateAndPriceMap = new Map<
+      string,
+      GetInvoicesItem[]
+    >();
+    for (const invoice of groupedInvoices) {
+      const dateKey = invoice.date.toISOString().split('T')[0];
+      const priceKey = invoice.totalPrice;
+
+      const key = `${dateKey}|${priceKey}`;
+
+      if (!groupedInvoicesByDateAndPriceMap.has(key)) {
+        groupedInvoicesByDateAndPriceMap.set(key, []);
+      }
+
+      groupedInvoicesByDateAndPriceMap.get(key)!.push(invoice);
+    }
+
+    // depois de ver as nfs agrupadas, vejo quais datas tem mais de 1 registro
+    const duplicatedInvoices: GetInvoicesItem[] = [];
+
+    for (const group of groupedInvoicesByDateAndPriceMap.values()) {
+      if (group.length > 1) {
+        duplicatedInvoices.push(...group);
+      }
+    }
+
+    return duplicatedInvoices.map((i) => ({
+      date: i.date,
+      nfNumber: i.nfNumber,
+      companyCode: i.companyCode,
+      companyName: i.companyName,
+      clientCode: i.clientCode,
+      clientName: i.clientName,
+      totalPrice: i.totalPrice,
+    }));
+  }
+
+  private getDuplicatedFreightsByDateAndPlate(
+    freights: GetCattlePurchaseFreightsItem[],
+  ) {
+    const grouped = new Map<string, GetCattlePurchaseFreightsItem[]>();
 
     for (const freight of freights) {
       // Garantimos que tenha data e placa válida
@@ -439,7 +610,7 @@ export class BusinessAuditService {
       grouped.get(key)!.push(freight);
     }
 
-    const duplicatedFreights: GetFreightsItem[] = [];
+    const duplicatedFreights: GetCattlePurchaseFreightsItem[] = [];
 
     for (const group of grouped.values()) {
       if (group.length > 1) {
@@ -454,5 +625,13 @@ export class BusinessAuditService {
       freightTransportPlate: i.freightTransportPlate,
       cattleQuantity: i.cattleQuantity,
     }));
+  }
+
+  private getOpenCattlePurchaseFreights(
+    freights: GetCattlePurchaseFreightsItem[],
+  ) {
+    return freights
+      .filter((i) => i.freightClosingDate === null)
+      .filter((i) => !StringUtils.ILike(i.freightTransportType, '%SEM FRETE%'));
   }
 }
