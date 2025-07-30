@@ -28,6 +28,13 @@ export class BusinessAuditService {
     ]);
 
     const invoicesWithSamePrice = this.getInvoicesWithSamePrice(invoices);
+    const invoicesWithSamePriceTotals = invoicesWithSamePrice.reduce(
+      (acc, item) => ({
+        quantity: acc.quantity + 1,
+        totalPrice: acc.totalPrice + item.totalPrice,
+      }),
+      { quantity: 0, totalPrice: 0 },
+    );
 
     const manuallyEnteredInvoicesByCompanyMap =
       this.getManuallyEnteredInvoicesByKey(
@@ -190,6 +197,8 @@ export class BusinessAuditService {
     // Totais
     return new GetBusinessAuditResumeDataResponseDto({
       invoicesWithSamePrice,
+      invoicesWithSamePriceTotals,
+
       manuallyEnteredInvoicesByCompany: Object.fromEntries(
         manuallyEnteredInvoicesByCompanyMap,
       ),

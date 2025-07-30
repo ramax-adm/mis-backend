@@ -19,6 +19,10 @@ export class GetBusinessAuditResumeDataResponseDto {
     clientName: string;
     totalPrice: number;
   }[];
+  invoicesWithSamePriceTotals: {
+    quantity: number;
+    totalPrice: number;
+  };
   manuallyEnteredInvoicesByCompany: GetBusinessAuditResumeDataAggregated;
   manuallyEnteredInvoicesByClient: GetBusinessAuditResumeDataAggregated;
   manuallyEnteredInvoicesTotals: {
