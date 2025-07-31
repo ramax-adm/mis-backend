@@ -15,9 +15,6 @@ import { UserController } from './controllers/users/user.controller';
 import { ExcelReaderService } from './core/services/excel-reader.service';
 import { CashFlowReportService } from './modules/cash-flow/cash-flow-report.service';
 import { SESEmailModule } from './modules/aws/ses-email/ses-email.module';
-import { StockService } from './modules/stock/old/stock.service';
-import { StockUtilsService } from './modules/stock/old/stock-utils.service';
-import { StockReportService } from './modules/stock/old/stock-report.service';
 import { CashFlowChampionCattleService } from './modules/cash-flow/cash-flow-champion-cattle.service';
 import { SharedSensattaController } from './controllers/shared/shared-sensatta.controller';
 import { UploadController } from './controllers/utils/upload.controller';
@@ -32,17 +29,14 @@ import { UserSensattaCompanyService } from './modules/user/user-sensatta-company
 import { UserAppWebpageService } from './modules/user/user-app-webpage.service';
 import { ApplicationController } from './controllers/application.controller';
 import { UtilsController } from './controllers/utils/utils.controller';
-import { StockNewService } from './modules/stock/new/stock.service';
 import { HumanResourcesHoursController } from './controllers/human-resources/human-resources-hours.controller';
-import { StockController } from './controllers/stock/stock.controller';
-import { StockBalanceController } from './controllers/stock/stock-balance.controller';
-import { StockNewReportService } from './modules/stock/new/stock-report.service';
 import { SensattaController } from './modules/sensatta/controllers/sensatta.controller';
 import { ParametersModule } from './modules/parameters/parameters.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { EnvModule } from './config/env/env.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
 import { BusinessAuditModule } from './modules/business-audit/business-audit.module';
+import { StockModule } from './modules/stock/stock.module';
 
 @Module({
   imports: [
@@ -60,6 +54,7 @@ import { BusinessAuditModule } from './modules/business-audit/business-audit.mod
     BusinessAuditModule,
     PurchasesModule,
     SalesModule,
+    StockModule,
     ParametersModule,
   ],
   controllers: [
@@ -68,8 +63,6 @@ import { BusinessAuditModule } from './modules/business-audit/business-audit.mod
     CashFlowController,
     HumanResourcesHoursController,
 
-    StockController,
-    StockBalanceController,
     UserController,
 
     // sensatta
@@ -94,13 +87,6 @@ import { BusinessAuditModule } from './modules/business-audit/business-audit.mod
 
     HumanResourcesHoursReportService,
     HumanResourcesHoursService,
-
-    // stock
-    StockService,
-    StockNewService,
-    StockNewReportService,
-    StockReportService,
-    StockUtilsService,
 
     UserService,
     UserSensattaCompanyService,

@@ -61,7 +61,6 @@ export class StockController {
             DateUtils.toDate(a.dueDate).getTime() -
             DateUtils.toDate(b.dueDate).getTime(),
         )
-        .filter((item) => item.daysToExpires >= 0)
         .map((item) => GetToExpiresByCompanyResponseDto.create(item).toJSON());
 
       return {
@@ -92,7 +91,6 @@ export class StockController {
           DateUtils.toDate(a.dueDate).getTime() -
           DateUtils.toDate(b.dueDate).getTime(),
       )
-      .filter((item) => item.daysToExpires >= 0)
       .map((item) =>
         GetAnalyticalToExpiresByCompanyResponseDto.create(item).toJSON(),
       );
@@ -154,7 +152,6 @@ export class StockController {
           DateUtils.toDate(a.dueDate).getTime() -
           DateUtils.toDate(b.dueDate).getTime(),
       )
-      .filter((item) => item.daysToExpires >= 0)
       .map((item) => GetToExpiresByCompanyResponseDto.create(item).toJSON());
   }
 
