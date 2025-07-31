@@ -51,9 +51,8 @@ export class StockBalanceService {
         'sb.product_line_code = spl.sensatta_code',
       )
       .where('sb.company_code = :companyCode', { companyCode })
-      .andWhere('spl.is_considered_on_stock = true')
-      //.andWhere('sb.quantity <> 0')
-      .orderBy('sb.product_line_code', 'ASC');
+      .andWhere('spl.is_considered_on_stock = true');
+    //.andWhere('sb.quantity <> 0')
 
     if (market !== MarketEnum.BOTH) {
       qb.andWhere('spl.market::TEXT LIKE :market', { market: `%${market}%` });
@@ -68,20 +67,22 @@ export class StockBalanceService {
 
     const results = await qb.getRawMany<GetStockBalanceItem>();
 
-    return results.map((item) => ({
-      productLineCode: item.product_line_code,
-      productLineName: item.product_line_name,
-      productLine: `${item.product_line_code} - ${item.product_line_name}`,
-      productCode: item.product_code,
-      productName: item.product_name,
-      product: `${item.product_code} - ${item.product_name}`,
-      weightInKg: item.weight_in_kg,
-      quantity: item.quantity,
-      reservedWeightInKg: item.reserved_weight_in_kg,
-      reservedQuantity: item.reserved_quantity,
-      availableWeightInKg: item.available_weight_in_kg,
-      availableQuantity: item.available_quantity,
-    }));
+    return results
+      .sort((a, b) => Number(a.product_line_code) - Number(b.product_line_code))
+      .map((item) => ({
+        productLineCode: item.product_line_code,
+        productLineName: item.product_line_name,
+        productLine: `${item.product_line_code} - ${item.product_line_name}`,
+        productCode: item.product_code,
+        productName: item.product_name,
+        product: `${item.product_code} - ${item.product_name}`,
+        weightInKg: item.weight_in_kg,
+        quantity: item.quantity,
+        reservedWeightInKg: item.reserved_weight_in_kg,
+        reservedQuantity: item.reserved_quantity,
+        availableWeightInKg: item.available_weight_in_kg,
+        availableQuantity: item.available_quantity,
+      }));
   }
 
   async getDataWithPartialFilters({

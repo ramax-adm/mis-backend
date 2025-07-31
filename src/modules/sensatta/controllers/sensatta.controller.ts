@@ -131,14 +131,16 @@ export class SensattaController {
       created_at: data[0].created_at,
     });
 
-    return data.map((i) => ({
-      sensattaId: i.sensatta_id,
-      sensattaCode: i.sensatta_code,
-      name: i.name,
-      acronym: i.acronym,
-      isConsideredOnStock: i.is_considered_on_stock,
-      createdAt: i.created_at,
-    }));
+    return data
+      .sort((a, b) => Number(a.sensatta_code) - Number(b.sensatta_code))
+      .map((i) => ({
+        sensattaId: i.sensatta_id,
+        sensattaCode: i.sensatta_code,
+        name: i.name,
+        acronym: i.acronym,
+        isConsideredOnStock: i.is_considered_on_stock,
+        createdAt: i.created_at,
+      }));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
