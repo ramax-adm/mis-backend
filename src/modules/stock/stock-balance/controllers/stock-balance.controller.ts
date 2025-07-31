@@ -1,13 +1,13 @@
 import { Roles } from '@/core/decorators/user-roles.decorator';
-import { StockBalance } from '@/core/entities/sensatta/stock-balance.entity';
+import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 import { UserRole } from '@/core/enums/user-role.enum';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
-import { ExportStockBalanceReportDto } from '@/modules/stock/new/dto/export-stock-new-report.dto';
-import { GetStockNewLastUpdatedAtResponseDto } from '@/modules/stock/new/dto/get-stock-new-last-updated-at-response.dto';
-import { StockNewReportService } from '@/modules/stock/new/stock-report.service';
-import { StockNewService } from '@/modules/stock/new/stock.service';
+import { ExportStockBalanceReportDto } from '@/modules/stock/stock-balance/dtos/export-stock-new-report.dto';
+import { GetStockNewLastUpdatedAtResponseDto } from '@/modules/stock/stock-balance/dtos/get-stock-new-last-updated-at-response.dto';
+import { StockBalanceReportService } from '@/modules/stock/stock-balance/services/stock-balance-report.service';
+import { StockBalanceService } from '@/modules/stock/stock-balance/services/stock-balance.service';
 import {
   BadRequestException,
   Body,
@@ -25,8 +25,8 @@ import { Response } from 'express';
 @Controller('stock-balance')
 export class StockBalanceController {
   constructor(
-    private readonly stockNewService: StockNewService,
-    private readonly stockNewReportService: StockNewReportService,
+    private readonly stockBalanceService: StockBalanceService,
+    private readonly stockBalanceReportService: StockBalanceReportService,
   ) {}
 
   @Roles(...[UserRole.Commercial, UserRole.Directory, UserRole.Industry])
@@ -34,7 +34,7 @@ export class StockBalanceController {
   @Get('/last-update')
   @HttpCode(200)
   async getStockLastUpdatedAt() {
-    const response = await this.stockNewService.getStockLastUpdatedAt();
+    const response = await this.stockBalanceService.getStockLastUpdatedAt();
 
     return GetStockNewLastUpdatedAtResponseDto.create(response).toJSON();
   }
@@ -46,7 +46,7 @@ export class StockBalanceController {
     @Query('productLineCode') productLineCode?: string,
     @Query('market') market: MarketEnum = MarketEnum.BOTH,
   ) {
-    return await this.stockNewService.getAnalyticalData({
+    return await this.stockBalanceService.getAnalyticalData({
       companyCode,
       productLineCode,
       market,
@@ -64,11 +64,14 @@ export class StockBalanceController {
     if (!key) {
       throw new BadRequestException('Provide a grouping key');
     }
-    const data = await this.stockNewService.getAggregatedAnalyticalData(key, {
-      companyCode,
-      productLineCode,
-      market,
-    });
+    const data = await this.stockBalanceService.getAggregatedAnalyticalData(
+      key,
+      {
+        companyCode,
+        productLineCode,
+        market,
+      },
+    );
 
     return data;
   }
@@ -80,7 +83,7 @@ export class StockBalanceController {
     @Body() dto: ExportStockBalanceReportDto,
     @Res() res: Response,
   ) {
-    const result = await this.stockNewReportService.exportAnalytical(dto);
+    const result = await this.stockBalanceReportService.exportAnalytical(dto);
 
     const now = new Date();
     const year = now.getFullYear();
