@@ -21,7 +21,7 @@ import { UserSensattaCompany } from '@/modules/user/entities/user-sensatta-compa
 import { ExternalHumanResourcesHours } from '@/core/entities/external/external-human-resources-hours.entity';
 import { AppWebpage } from '@/core/entities/application/app-webpage.entity';
 import { UserAppWebpage } from '@/modules/user/entities/user-app-webpage.entity';
-import { StockBalance } from '@/core/entities/sensatta/stock-balance.entity';
+import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';
 
 @Module({
   imports: [

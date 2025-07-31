@@ -1,17 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { StockNewService } from './stock.service';
+import { StockBalanceService } from './stock-balance.service';
 import {
   ExcelReaderService,
   NumFormats,
 } from '@/core/services/excel-reader.service';
-import { ExcelUtils } from '@/modules/utils/services/excel.utils';
-import { ExportStockBalanceReportDto } from './dto/export-stock-new-report.dto';
+import { ExportStockBalanceReportDto } from '../dtos/export-stock-new-report.dto';
 import { DateUtils } from '@/modules/utils/services/date.utils';
 
 @Injectable()
-export class StockNewReportService {
+export class StockBalanceReportService {
   constructor(
-    private readonly stockBalanceService: StockNewService,
+    private readonly stockBalanceService: StockBalanceService,
     private readonly excelReader: ExcelReaderService,
   ) {}
 
