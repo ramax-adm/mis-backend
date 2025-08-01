@@ -75,6 +75,9 @@ export class GetBusinessAuditResumeDataResponseDto {
   toExpiresStockTotals: {
     totalWeightInKg: number;
     daysToExpires: number;
+    totalExpiredStockWeightInKg: number; // estoque vencido
+    totalFifoExpiresStockWeightInKg: number; // estoque de 0-15 dias, vira fifo
+    totalAlertExpiresStockWeightInKg: number; // estoque de 15 a 30 dias
   };
 
   constructor(data: GetBusinessAuditResumeDataResponseDto) {
