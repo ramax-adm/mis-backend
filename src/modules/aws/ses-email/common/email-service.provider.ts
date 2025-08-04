@@ -2,8 +2,9 @@ import { Provider } from '@nestjs/common';
 import { SESEmailService } from '../ses-email.service';
 import { EnvService } from '@/config/env/env.service';
 
+export const EMAIL_SERVICE_PROVIDER = 'EMAIL_SERVICE';
 export const SESEmailServiceProvider: Provider = {
-  provide: 'EMAIL_SERVICE',
+  provide: EMAIL_SERVICE_PROVIDER,
   inject: [EnvService],
   useFactory: (envService: EnvService) => {
     const sesConfig = {

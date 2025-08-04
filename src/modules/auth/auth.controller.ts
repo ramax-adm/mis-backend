@@ -3,7 +3,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UpdateResult } from 'typeorm';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { LoginUserDto } from '../user/dto/login-user.dto';
+import { LoginUserDto } from '../user/dtos/login-user.dto';
 
 @ApiTags('Auth')
 @Controller({ version: '1' })

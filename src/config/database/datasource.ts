@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+// for run migrations only
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DB_HOST,

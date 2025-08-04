@@ -2,8 +2,9 @@ import { Provider } from '@nestjs/common';
 import { S3StorageService } from '../s3-storage.service';
 import { EnvService } from '@/config/env/env.service';
 
+export const STORAGE_SERVICE_PROVIDER = 'STORAGE_SERVICE';
 export const StorageServiceProvider: Provider = {
-  provide: 'STORAGE_SERVICE',
+  provide: STORAGE_SERVICE_PROVIDER,
   inject: [EnvService],
   useFactory: (envService: EnvService) => {
     return new S3StorageService(
