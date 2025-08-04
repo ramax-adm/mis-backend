@@ -2,14 +2,14 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Between, DataSource, FindOptionsWhere } from 'typeorm';
 import { UtilsStorageSyncedFile } from './entities/storage-synced-file.entity';
 import { EnvService } from '@/config/env/env.service';
-import { S3StorageService } from '../aws';
+import { S3StorageService, STORAGE_SERVICE_PROVIDER } from '../aws';
 import * as dateFns from 'date-fns';
-import { GetSyncedDataResponseDto } from './dto/get-synced-data-response.dto';
+import { GetSyncedDataResponseDto } from './dtos/get-synced-data-response.dto';
 
 @Injectable()
 export class UtilsService {
   constructor(
-    @Inject('STORAGE_SERVICE')
+    @Inject(STORAGE_SERVICE_PROVIDER)
     private readonly storageService: S3StorageService,
     private readonly envService: EnvService,
     private readonly datasource: DataSource,

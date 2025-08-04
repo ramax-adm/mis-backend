@@ -7,7 +7,6 @@ import { EnvSchema } from './env.schema';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: EnvSchema.validate }),
   ],
-  controllers: [],
   providers: [EnvService],
   exports: [EnvService],
 })
