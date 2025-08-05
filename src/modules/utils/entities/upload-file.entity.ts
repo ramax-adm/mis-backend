@@ -4,7 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UploadFileInputs } from '../dto/upload-file-inputs.dto';
+import { UploadFileInputs } from '../dtos/upload-file-inputs.dto';
 import { UploadTypeEnum } from '../enums/upload-type.enum';
 
 @Entity({ name: 'utils_upload_files' })

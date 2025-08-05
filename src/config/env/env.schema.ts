@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsEnum,
   IsUrl,
+  IsOptional,
 } from 'class-validator';
 import { plainToClass, Transform } from 'class-transformer';
 
@@ -29,8 +30,9 @@ export class EnvSchema {
   BE_API_KEY: string;
 
   @IsNumber()
+  @IsOptional()
   @Transform(({ value }) => value || 3000)
-  BE_PORT: number;
+  BE_PORT?: number;
 
   @IsString()
   @IsUrl()

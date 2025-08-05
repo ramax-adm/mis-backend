@@ -1,5 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { UploadFileInput } from '../dto/upload-file-inputs.dto';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import { UploadFileInput } from '../dtos/upload-file-inputs.dto';
 import { UploadTypeEnum } from '../enums/upload-type.enum';
 import { Repository } from 'typeorm';
 import { UploadFile } from '../entities/upload-file.entity';
@@ -18,6 +23,7 @@ export class UploadService {
     private readonly uploadFileRepository: Repository<UploadFile>,
     @InjectRepository(UploadedFile)
     private readonly uploadedFileRepository: Repository<UploadedFile>,
+    @Inject(forwardRef(() => UploadFileService))
     private readonly uploadFileService: UploadFileService,
   ) {}
 

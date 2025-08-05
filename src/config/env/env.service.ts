@@ -8,7 +8,8 @@ export class EnvService implements OnModuleInit {
 
   onModuleInit() {
     // TODO:
-    console.log('Loaded environment variables:');
+    // const envSchema = EnvSchema.validate(process.env);
+    // console.log('Loaded environment variables:');
   }
 
   get<T extends keyof EnvSchema>(key: T) {

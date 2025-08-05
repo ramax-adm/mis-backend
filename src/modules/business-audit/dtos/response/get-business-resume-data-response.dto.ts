@@ -1,25 +1,40 @@
-import { GetFreightsItem } from '../../types/get-freights.type';
+import { GetCattlePurchaseFreightsItem } from '../../types/get-freights.type';
 
 type GetBusinessAuditResumeDataAggregated = Record<
   string,
   {
     quantity: number;
+    productQuantity: number;
     weightInKg: number;
     totalPrice: number;
   }
 >;
 export class GetBusinessAuditResumeDataResponseDto {
+  invoicesWithSamePrice: {
+    date: Date;
+    nfNumber: string;
+    companyCode: string;
+    companyName: string;
+    clientCode: string;
+    clientName: string;
+    totalPrice: number;
+  }[];
+  invoicesWithSamePriceTotals: {
+    quantity: number;
+    totalPrice: number;
+  };
   manuallyEnteredInvoicesByCompany: GetBusinessAuditResumeDataAggregated;
   manuallyEnteredInvoicesByClient: GetBusinessAuditResumeDataAggregated;
   manuallyEnteredInvoicesTotals: {
     quantity: number;
+    productQuantity: number;
     weightInKg: number;
     totalPrice: number;
   };
   openCattlePurchaseFreightsTotals: {
     quantity: number;
   };
-  openCattlePurchaseFreights: GetFreightsItem[];
+  openCattlePurchaseFreights: GetCattlePurchaseFreightsItem[];
   cattlePurchaseFreightsDuplicated: {
     date: Date;
     companyCode: string;
@@ -60,6 +75,9 @@ export class GetBusinessAuditResumeDataResponseDto {
   toExpiresStockTotals: {
     totalWeightInKg: number;
     daysToExpires: number;
+    totalExpiredStockWeightInKg: number; // estoque vencido
+    totalFifoExpiresStockWeightInKg: number; // estoque de 0-15 dias, vira fifo
+    totalAlertExpiresStockWeightInKg: number; // estoque de 15 a 30 dias
   };
 
   constructor(data: GetBusinessAuditResumeDataResponseDto) {
