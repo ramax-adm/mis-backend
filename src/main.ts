@@ -26,15 +26,15 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LogInterceptor());
 
   const envService = app.get(EnvService);
+  const HOST = 'http://localhost'; // TODO
   const PORT = envService.get('BE_PORT');
   await app.listen(PORT);
 
   console.log();
   const logger = new Logger('API Bootstrap');
-  logger.verbose(`API available on: http://localhost:${PORT}/api`);
-  logger.verbose(
-    `API health available on: http://localhost:${PORT}/api/health`,
-  );
+  logger.verbose(`API available on: ${HOST}:${PORT}/api`);
+  logger.verbose(`API health available on: ${HOST}:${PORT}/api/health`);
+
   // TODO: docs
 }
 bootstrap();
