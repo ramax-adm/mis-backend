@@ -16,8 +16,16 @@ steps:
       sshEndpoint: 'mis-backend-ssh' # sua conexão SSH criada
       runOptions: 'commands'
       commands: |
-        cd /home/Adm-Ramax25/mis-backend
-        git pull origin main
+          cd /home/Adm-Ramax25
+
+          if [ ! -d "mis-backend/.git" ]; then
+            echo "Clonando repositório pela primeira vez..."
+            git clone https://Ramax-Group@dev.azure.com/Ramax-Group/MIS/_git/MIS-BACKEND
+          else
+            echo "Repositório já clonado, atualizando..."
+            cd mis-backend
+            git pull origin main
+          fi
 
   - task: SSH@0
     displayName: 'Criar arquivo .env na VM'
