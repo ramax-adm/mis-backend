@@ -1,9 +1,9 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common';
-import { IEmailService } from './common';
+import { EMAIL_SERVICE_PROVIDER, IEmailService } from './common';
 @Controller('aws/ses')
 export class SESEmailController {
   constructor(
-    @Inject('EMAIL_SERVICE')
+    @Inject(EMAIL_SERVICE_PROVIDER)
     private readonly sesEmailService: IEmailService,
   ) {}
 

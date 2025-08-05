@@ -22,8 +22,7 @@ import { CurrentUser } from '@/core/decorators/current-user.decorator';
 import { User } from '@/core/user';
 import { UserRole } from '@/core/enums/user-role.enum';
 import { MARKETS } from '@/modules/sensatta/constants/get-markets';
-import { FREIGHT_COMPANIES_QUERY } from '@/controllers/_constants/freight-companies';
-import { INCOMING_BATCHES_PRODUCT_LINES_QUERY } from '@/controllers/_constants/incoming-batches-product-lines';
+import { FREIGHT_COMPANIES_QUERY } from '@/modules/freights/constants/freight-companies';
 
 @Controller('sensatta')
 export class SensattaController {

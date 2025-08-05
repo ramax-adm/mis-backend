@@ -150,6 +150,10 @@ export class BusinessAuditService {
     const toExpiresStockTotals = {
       totalWeightInKg: 0,
       daysToExpires: 0, // média final, calculada ao final
+
+      totalExpiredStockWeightInKg: 0, // estoque vencido
+      totalFifoExpiresStockWeightInKg: 0, // estoque de 0-15 dias, vira fifo
+      totalAlertExpiresStockWeightInKg: 0, // estoque de 15 a 30 dias
     };
 
     let daysToExpiresSum = 0;
@@ -187,10 +191,28 @@ export class BusinessAuditService {
       }
 
       toExpiresStockMap.set(key, data);
+    }
 
-      // Totais acumulados
+    // calculo dos totais
+    for (const batch of stockIncomingBatches) {
+      const currentDaysToExpires = dateFns.differenceInDays(
+        batch.dueDate,
+        new Date(),
+      );
+      if (currentDaysToExpires > 30) {
+        continue;
+      }
+
       toExpiresStockTotals.totalWeightInKg += batch.weightInKg;
-      daysToExpiresSum += currentDaysToExpires;
+      if (currentDaysToExpires < 0) {
+        toExpiresStockTotals.totalExpiredStockWeightInKg += batch.weightInKg;
+      } else if (currentDaysToExpires >= 0 && currentDaysToExpires <= 15) {
+        toExpiresStockTotals.totalFifoExpiresStockWeightInKg +=
+          batch.weightInKg;
+      } else {
+        toExpiresStockTotals.totalAlertExpiresStockWeightInKg +=
+          batch.weightInKg;
+      }
     }
 
     if (toExpiresStockTotals.totalWeightInKg > 0) {
