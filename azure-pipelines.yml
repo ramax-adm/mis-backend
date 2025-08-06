@@ -1,0 +1,80 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: MIS-BACKEND-ENVs # importa o grupo com variáveis
+
+steps:
+  - checkout: self
+
+  - task: SSH@0
+    displayName: 'Atualizar código na VM'
+    inputs:
+      sshEndpoint: 'mis-backend-ssh' # sua conexão SSH criada
+      runOptions: 'commands'
+      commands: |
+          cd /home/Adm-Ramax25
+
+          if [ ! -d "mis-backend/.git" ]; then
+            echo "Clonando repositório pela primeira vez..."
+            git clone https://Ramax-Group@dev.azure.com/Ramax-Group/MIS/_git/MIS-BACKEND
+          else
+            echo "Repositório já clonado, atualizando..."
+            cd mis-backend
+            git pull origin main
+          fi
+
+  - task: SSH@0
+    displayName: 'Criar arquivo .env na VM'
+    inputs:
+      sshEndpoint: 'mis-backend-ssh'
+      runOptions: 'commands'
+      commands: |
+        cat <<EOF > /home/Adm-Ramax25/mis-backend/.env
+        # BACKEND
+        BE_ENVIRONMENT='$(BE_ENVIRONMENT)'
+        BE_HOST='$(BE_HOST)'
+        BE_PORT='$(BE_PORT)'
+        BE_API_TEST_URL='$(BE_API_TEST_URL)'
+        BE_SECRET='$(BE_SECRET)'
+        BE_API_KEY='$(BE_API_KEY)'
+
+        # RAMAX LOCAL SERVER
+        SERVER_API_URL='$(SERVER_API_URL)'
+
+        # DATABASE
+        DB_HOST='$(DB_HOST)'
+        DB_USERNAME='$(DB_USERNAME)'
+        DB_PASSWORD='$(DB_PASSWORD)'
+        DB_NAME='$(DB_NAME)'
+        DB_PORT='$(DB_PORT)'
+        DB_LOGGING='$(DB_LOGGING)'
+        DB_SCHEMA='$(DB_SCHEMA)'
+        DB_SSL='$(DB_SSL)'
+
+        # AWS IAM
+        AWS_ACCESS_KEY_ID='$(AWS_ACCESS_KEY_ID)'
+        AWS_SECRET_ACCESS_KEY='$(AWS_SECRET_ACCESS_KEY)'
+
+        # AWS S3
+        AWS_S3_REGION='$(AWS_S3_REGION)'
+        AWS_S3_BUCKET='$(AWS_S3_BUCKET)'
+
+        # AWS SES
+        AWS_SES_REGION='$(AWS_SES_REGION)'
+        AWS_SES_EMAIL='$(AWS_SES_EMAIL)'
+        AWS_SES_ACCESS_KEY_ID='$(AWS_SES_ACCESS_KEY_ID)'
+        AWS_SES_SECRET_ACCESS_KEY='$(AWS_SES_SECRET_ACCESS_KEY)'
+        EOF
+
+  - task: SSH@0
+    displayName: 'Rodar deploy Docker na VM'
+    inputs:
+      sshEndpoint: 'mis-backend-ssh'
+      runOptions: 'commands'
+      commands: |
+        cd /home/Adm-Ramax25/mis-backend
+        ./azure-pipelines-deploy.sh

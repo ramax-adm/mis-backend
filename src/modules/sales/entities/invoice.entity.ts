@@ -13,6 +13,9 @@ export class Invoice {
   @Column({ type: 'date', nullable: true })
   date?: Date;
 
+  @Column({ name: 'nf_situation', nullable: true })
+  nfSituation?: string;
+
   @Column({ name: 'nf_type', nullable: true })
   nfType?: string;
 

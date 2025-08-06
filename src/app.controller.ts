@@ -1,6 +1,5 @@
 import { Controller, Get, HttpCode } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { HttpService } from '@nestjs/axios';
 import { Holiday } from '@/modules/utils/entities/holiday.entity';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
@@ -33,7 +32,6 @@ export class AppController {
     const qb = this.datasource.createQueryBuilder();
 
     const dbCount = await qb
-      .createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from(Holiday, 'holiday')
       .getRawOne()

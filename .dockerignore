@@ -1,0 +1,10 @@
+dist
+node_modules
+
+.dockerignore
+.env
+.env.production
+.git
+.gitignore
+
+README.md

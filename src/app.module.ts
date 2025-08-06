@@ -5,7 +5,6 @@ import { HttpModule } from '@nestjs/axios';
 import { DatabaseModule } from './config/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SharedSensattaController } from './shared/shared-sensatta.controller';
-import { ApplicationController } from './modules/utils/controllers/application.controller';
 import { SensattaController } from './modules/sensatta/controllers/sensatta.controller';
 import { ParametersModule } from './modules/parameters/parameters.module';
 import { SalesModule } from './modules/sales/sales.module';
