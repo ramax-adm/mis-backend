@@ -32,6 +32,7 @@ export class SensattaController {
     private readonly httpService: HttpService,
   ) {}
 
+  // ESSE CARA AQUI RETORNA TODAS AS EMPRESAS QUE UM USER TEM ACESSO
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('company')
   @HttpCode(HttpStatus.OK)
@@ -62,6 +63,7 @@ export class SensattaController {
     });
   }
 
+  // TODO: MOVER PARA DENTRO DE FRETES
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('freight-companies')
   @HttpCode(HttpStatus.OK)
@@ -142,6 +144,7 @@ export class SensattaController {
       }));
   }
 
+  // TODO: MOVER PARA DENTRO DO ESTOQUE
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('product')
   @HttpCode(HttpStatus.OK)
@@ -153,6 +156,7 @@ export class SensattaController {
     });
   }
 
+  // TODO: MOVER PARA DENTRO DO ESTOQUE
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('product/classification-types')
   @HttpCode(HttpStatus.OK)
@@ -160,6 +164,7 @@ export class SensattaController {
     return PRODUCT_CLASSIFICATION_TYPES;
   }
 
+  /*********************** SYNC CONTROLLERS ****************************/
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/stock/sync')
   @HttpCode(HttpStatus.CREATED)

@@ -8,6 +8,10 @@ import { GetCattlePurchaseFreightsItem } from '../types/get-freights.type';
 import { DateUtils } from '@/modules/utils/services/date.utils';
 import { GetInvoicesItem } from '../types/get-invoices.type';
 import { GetStockIncomingBatchesItem } from '../types/get-stock-incoming-batches.type';
+import { InvoicesNfTypesEnum, InvoicesSituationsEnum } from '@/modules/sales';
+
+const CFOPS = ['5101', '6101', '5105', '6105', '5118', '6118', '7101'];
+const NF_SITUATIONS = [InvoicesSituationsEnum.AUTORIZADA];
 
 @Injectable()
 export class BusinessAuditService {
@@ -274,7 +278,12 @@ export class BusinessAuditService {
         'sensatta_companies',
         'sc',
         'sc.sensatta_code = si.company_code',
-      );
+      )
+      .where('1=1')
+      .andWhere('si.nf_situation IN (:...NF_SITUATIONS)', {
+        NF_SITUATIONS,
+      })
+      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS });
 
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
@@ -339,7 +348,12 @@ export class BusinessAuditService {
         'sc',
         'sc.sensatta_code = si.company_code',
       )
-      .where('si.nf_type = :nfType', { nfType: 'AVULSA' });
+      .where('1=1')
+      .andWhere('si.nf_type = :nfType', { nfType: InvoicesNfTypesEnum.AVULSA })
+      .andWhere('si.nf_situation IN (:...NF_SITUATIONS)', {
+        NF_SITUATIONS,
+      })
+      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS });
 
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
@@ -499,6 +513,8 @@ export class BusinessAuditService {
   ): Map<
     string,
     {
+      companyCode: string;
+      companyName: string;
       quantity: number;
       productQuantity: number;
       weightInKg: number;
@@ -508,6 +524,8 @@ export class BusinessAuditService {
     const data: Record<
       string,
       {
+        companyCode: string;
+        companyName: string;
         quantity: number;
         productQuantity: number;
         weightInKg: number;
@@ -523,6 +541,8 @@ export class BusinessAuditService {
 
       if (!data[entityKey]) {
         data[entityKey] = {
+          companyCode: invoice.companyCode,
+          companyName: invoice.companyName,
           quantity: 0,
           productQuantity: 0,
           weightInKg: 0,
