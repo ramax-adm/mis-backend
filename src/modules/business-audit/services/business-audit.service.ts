@@ -513,6 +513,8 @@ export class BusinessAuditService {
   ): Map<
     string,
     {
+      companyCode: string;
+      companyName: string;
       quantity: number;
       productQuantity: number;
       weightInKg: number;
@@ -522,6 +524,8 @@ export class BusinessAuditService {
     const data: Record<
       string,
       {
+        companyCode: string;
+        companyName: string;
         quantity: number;
         productQuantity: number;
         weightInKg: number;
@@ -537,6 +541,8 @@ export class BusinessAuditService {
 
       if (!data[entityKey]) {
         data[entityKey] = {
+          companyCode: invoice.companyCode,
+          companyName: invoice.companyName,
           quantity: 0,
           productQuantity: 0,
           weightInKg: 0,

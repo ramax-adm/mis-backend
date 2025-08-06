@@ -3,6 +3,8 @@ import { GetCattlePurchaseFreightsItem } from '../../types/get-freights.type';
 type GetBusinessAuditResumeDataAggregated = Record<
   string,
   {
+    companyCode: string;
+    companyName: string;
     quantity: number;
     productQuantity: number;
     weightInKg: number;

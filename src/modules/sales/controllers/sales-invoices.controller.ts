@@ -3,6 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -12,14 +13,40 @@ import { SalesInvoicesService } from '../services/sales-invoices.service';
 import { DataSource } from 'typeorm';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
+import { DateUtils } from '@/modules/utils/services/date.utils';
+import { HttpService } from '@nestjs/axios';
+import { EnvService } from '@/config/env/env.service';
+import { DEFAULT_AXIOS_TIMEOUT } from '@/core/constants/default-axios-timeout';
 
 @Controller('sales/invoice')
 export class SalesInvoicesController {
   constructor(
     private readonly dataSource: DataSource,
-
+    private readonly httpService: HttpService,
+    private readonly envService: EnvService,
     private readonly salesInvoicesService: SalesInvoicesService,
   ) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('/last-update')
+  @HttpCode(HttpStatus.OK)
+  async getLastUpdatedAt() {
+    const qb = this.dataSource
+      .createQueryBuilder()
+      .select(['si.created_at'])
+      .from('sensatta_invoices', 'si')
+      .where('1=1')
+      .limit(1);
+
+    const result = await qb.getRawOne<{
+      created_at: Date;
+    }>();
+
+    return {
+      parsedUpdatedAt: DateUtils.format(result.created_at, 'datetime'),
+      updatedAt: result.created_at,
+    };
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/filters/cfops')
@@ -168,5 +195,24 @@ export class SalesInvoicesController {
       nfSituation,
       nfType,
     });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('/sync')
+  @HttpCode(HttpStatus.CREATED)
+  async syncInvoiceWithServer() {
+    const { post } = this.httpService.axiosRef;
+    const reqUrl = this.envService
+      .get('SERVER_API_URL')
+      .concat('/sensatta/sync/invoice');
+    const reqData = {};
+    const reqConfig = { timeout: 200 * 1000 };
+    console.log({ reqUrl });
+
+    try {
+      await post(reqUrl, reqData, reqConfig);
+    } catch (error) {
+      throw error;
+    }
   }
 }
