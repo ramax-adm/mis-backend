@@ -25,29 +25,29 @@ export class SalesInvoicesService {
     startDate,
     endDate,
     clientCode,
-    cfopCode,
+    cfopCodes,
     nfType,
     nfNumber,
-    nfSituation,
+    nfSituations,
   }: {
     companyCode: string;
     startDate: Date;
     endDate: Date;
     clientCode: string;
-    cfopCode: string;
+    cfopCodes: string[];
     nfType: InvoicesNfTypesEnum;
     nfNumber: string;
-    nfSituation: InvoicesSituationsEnum;
+    nfSituations: InvoicesSituationsEnum[];
   }) {
     const data = await this.getInvoices({
       companyCode,
       startDate,
       endDate,
       clientCode,
-      cfopCode,
+      cfopCodes,
       nfType,
       nfNumber,
-      nfSituation,
+      nfSituations,
     });
 
     // nf quantity
@@ -81,19 +81,19 @@ export class SalesInvoicesService {
     startDate,
     endDate,
     clientCode,
-    cfopCode,
+    cfopCodes,
     nfType,
     nfNumber,
-    nfSituation,
+    nfSituations,
   }: {
     companyCode: string;
     startDate?: Date;
     endDate?: Date;
     clientCode?: string;
-    cfopCode?: string;
+    cfopCodes?: string[];
     nfType?: InvoicesNfTypesEnum;
     nfNumber?: string;
-    nfSituation?: InvoicesSituationsEnum;
+    nfSituations?: InvoicesSituationsEnum[];
   }): Promise<GetInvoicesItem[]> {
     const qb = this.datasource
       .createQueryBuilder()
@@ -117,16 +117,16 @@ export class SalesInvoicesService {
       });
     }
 
-    if (cfopCode) {
-      qb.andWhere('si.cfop_code = :cfopCode', { cfopCode });
+    if (cfopCodes) {
+      qb.andWhere('si.cfop_code IN (:...cfopCodes)', { cfopCodes });
     }
 
     if (clientCode) {
       qb.andWhere('si.client_code = :clientCode', { clientCode });
     }
 
-    if (nfSituation) {
-      qb.andWhere('si.nf_situation = :nfSituation', { nfSituation });
+    if (nfSituations) {
+      qb.andWhere('si.nf_situation IN (:...nfSituations)', { nfSituations });
     }
 
     if (startDate) {

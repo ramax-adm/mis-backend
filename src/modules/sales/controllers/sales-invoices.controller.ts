@@ -1,10 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { InvoicesNfTypesEnum } from '../enums/invoices-nf-types.enum';
@@ -17,6 +19,9 @@ import { DateUtils } from '@/modules/utils/services/date.utils';
 import { HttpService } from '@nestjs/axios';
 import { EnvService } from '@/config/env/env.service';
 import { DEFAULT_AXIOS_TIMEOUT } from '@/core/constants/default-axios-timeout';
+import { ExportSalesInvoicesReportDto } from '../dtos/request/export-human-resources-hours-report.dto';
+import { Response } from 'express';
+import { SalesInvoicesReportService } from '../services/sales-invoices-report.service';
 
 @Controller('sales/invoice')
 export class SalesInvoicesController {
@@ -25,6 +30,7 @@ export class SalesInvoicesController {
     private readonly httpService: HttpService,
     private readonly envService: EnvService,
     private readonly salesInvoicesService: SalesInvoicesService,
+    private readonly salesInvoicesReportService: SalesInvoicesReportService,
   ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -180,19 +186,19 @@ export class SalesInvoicesController {
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date,
     @Query('clientCode') clientCode?: string,
-    @Query('cfopCode') cfopCode?: string,
+    @Query('cfopCodes') cfopCodes?: string,
     @Query('nfType') nfType?: InvoicesNfTypesEnum,
     @Query('nfNumber') nfNumber?: string,
-    @Query('nfSituation') nfSituation?: InvoicesSituationsEnum,
+    @Query('nfSituations') nfSituations?: string,
   ) {
     return await this.salesInvoicesService.getAnalyticalData({
       companyCode,
       clientCode,
       startDate,
       endDate,
-      cfopCode,
+      cfopCodes: cfopCodes?.split(','),
       nfNumber,
-      nfSituation,
+      nfSituations: nfSituations?.split(',') as InvoicesSituationsEnum[],
       nfType,
     });
   }
@@ -214,5 +220,31 @@ export class SalesInvoicesController {
     } catch (error) {
       throw error;
     }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('/export-xlsx')
+  @HttpCode(HttpStatus.OK)
+  async exportXLSX(
+    @Body() dto: ExportSalesInvoicesReportDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.salesInvoicesReportService.exportAnalytical(dto);
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const formattedDate = `${year}-${month}-${day}`;
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.header(
+      'Content-Disposition',
+      `attachment; filename=${formattedDate}-sales-invoices.xlsx`,
+    );
+    res.type(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.send(result);
   }
 }
