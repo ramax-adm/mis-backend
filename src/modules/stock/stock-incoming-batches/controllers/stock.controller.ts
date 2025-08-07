@@ -25,10 +25,13 @@ import { GetStockLastUpdatedAtResponseDto } from '../dto/get-stock-last-updated-
 import { GetToExpiresByCompanyResponseDto } from '../dto/get-to-expires-by-company-response.dto';
 import { StockReportService } from '../stock-report.service';
 import { StockService } from '../stock.service';
+import { DataSource } from 'typeorm';
+import { Company } from '@/core/entities/sensatta/company.entity';
 
 @Controller('stock')
 export class StockController {
   constructor(
+    private readonly datasource: DataSource,
     private readonly stockService: StockService,
     private readonly stockReportService: StockReportService,
   ) {}
@@ -201,15 +204,21 @@ export class StockController {
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
 
-    const formattedDate = `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
+    const company = await this.datasource
+      .getRepository(Company)
+      .createQueryBuilder('sc')
+      .select('sc.name')
+      .where('sc.sensatta_code = :companyCode', {
+        companyCode: dto.filters?.companyCode,
+      })
+      .getOne();
+
+    const formattedDate = `${year}-${month}-${day}`;
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
     res.header(
       'Content-Disposition',
-      `attachment; filename=${formattedDate}-stock-${exportType}.xlsx`,
+      `attachment; filename=${formattedDate}-${company?.name ?? ''}-stock-${exportType}.xlsx`,
     );
     res.type(
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

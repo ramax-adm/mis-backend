@@ -9,9 +9,8 @@ import { DateUtils } from '@/modules/utils/services/date.utils';
 import { GetInvoicesItem } from '../types/get-invoices.type';
 import { GetStockIncomingBatchesItem } from '../types/get-stock-incoming-batches.type';
 import { InvoicesNfTypesEnum, InvoicesSituationsEnum } from '@/modules/sales';
-
-const CFOPS = ['5101', '6101', '5105', '6105', '5118', '6118', '7101'];
-const NF_SITUATIONS = [InvoicesSituationsEnum.AUTORIZADA];
+import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
+import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
 
 @Injectable()
 export class BusinessAuditService {
@@ -281,9 +280,9 @@ export class BusinessAuditService {
       )
       .where('1=1')
       .andWhere('si.nf_situation IN (:...NF_SITUATIONS)', {
-        NF_SITUATIONS,
+        NF_SITUATIONS: CONSIDERED_NF_SITUATIONS,
       })
-      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS });
+      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS: CONSIDERED_CFOPS });
 
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
@@ -351,9 +350,9 @@ export class BusinessAuditService {
       .where('1=1')
       .andWhere('si.nf_type = :nfType', { nfType: InvoicesNfTypesEnum.AVULSA })
       .andWhere('si.nf_situation IN (:...NF_SITUATIONS)', {
-        NF_SITUATIONS,
+        NF_SITUATIONS: CONSIDERED_NF_SITUATIONS,
       })
-      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS });
+      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS: CONSIDERED_CFOPS });
 
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
