@@ -8,7 +8,7 @@ import { GetCattlePurchaseFreightsItem } from '../types/get-freights.type';
 import { DateUtils } from '@/modules/utils/services/date.utils';
 import { GetInvoicesItem } from '../types/get-invoices.type';
 import { GetStockIncomingBatchesItem } from '../types/get-stock-incoming-batches.type';
-import { InvoicesNfTypesEnum, InvoicesSituationsEnum } from '@/modules/sales';
+import { InvoicesNfTypesEnum } from '@/modules/sales';
 import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
 import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
 

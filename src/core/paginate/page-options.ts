@@ -43,3 +43,8 @@ export class PageOptions {
     return (this.page - 1) * this.limit;
   }
 }
+
+export type PageOptionsParams = {
+  page: number;
+  limit?: number;
+};
