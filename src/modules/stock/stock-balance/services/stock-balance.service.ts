@@ -69,6 +69,7 @@ export class StockBalanceService {
 
     return results
       .sort((a, b) => Number(a.product_line_code) - Number(b.product_line_code))
+      .filter((i) => i.quantity || i.reserved_quantity || i.available_quantity)
       .map((item) => ({
         productLineCode: item.product_line_code,
         productLineName: item.product_line_name,
