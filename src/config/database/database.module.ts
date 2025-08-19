@@ -17,6 +17,8 @@ import { CattlePurchaseFreight } from '@/core/entities/sensatta/cattle-purchase-
 import { ExternalHumanResourcesHours } from '@/core/entities/external/external-human-resources-hours.entity';
 import { AppWebpage } from '@/core/entities/application/app-webpage.entity';
 import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';
+import { TypeormLogger } from '../../core/loggers/typeorm.logger';
+import { AdvancedConsoleLogger } from 'typeorm';
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balan
         entities: [join(__dirname, '..', '..', '**', '*.entity.{ts,js}')],
         migrations: [join(__dirname, './migrations/**/*.{ts,js}')],
         logging: envService.get('DB_LOGGING'),
+        logger: new TypeormLogger(new AdvancedConsoleLogger('all')), // aqui ele mede o tempo
       }),
     }),
     TypeOrmModule.forFeature([
