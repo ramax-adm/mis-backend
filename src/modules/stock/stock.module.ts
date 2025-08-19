@@ -12,6 +12,8 @@ import { ExternalIncomingBatch } from '@/core/entities/external/external-incomin
 import { IncomingBatches } from '@/core/entities/sensatta/incoming-batch.entity';
 import { ReferencePrice } from '@/core/entities/sensatta/reference-price.entity';
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
+import { StockIncomingBatchesService } from './stock-incoming-batches-new/services/stock-incoming-batches.service';
+import { StockIncomingBatchesController } from './stock-incoming-batches-new/controllers/stock-incoming-batches.controller';
 
 @Module({
   imports: [
@@ -25,11 +27,16 @@ import { ExcelReaderService } from '@/core/services/excel-reader.service';
   providers: [
     ExcelReaderService,
     StockService,
+    StockIncomingBatchesService,
     StockBalanceService,
     StockBalanceReportService,
     StockReportService,
     StockUtilsService,
   ],
-  controllers: [StockController, StockBalanceController],
+  controllers: [
+    StockController,
+    StockIncomingBatchesController,
+    StockBalanceController,
+  ],
 })
 export class StockModule {}
