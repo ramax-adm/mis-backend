@@ -1,13 +1,6 @@
-import { Roles } from '@/core/decorators/user-roles.decorator';
-import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
-import { UserRole } from '@/core/enums/user-role.enum';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
-import { ExportStockBalanceReportDto } from '@/modules/stock/stock-balance/dtos/export-stock-new-report.dto';
-import { GetStockNewLastUpdatedAtResponseDto } from '@/modules/stock/stock-balance/dtos/get-stock-new-last-updated-at-response.dto';
-import { StockBalanceReportService } from '@/modules/stock/stock-balance/services/stock-balance-report.service';
-import { StockBalanceService } from '@/modules/stock/stock-balance/services/stock-balance.service';
 import {
   BadRequestException,
   Body,
@@ -65,14 +58,42 @@ export class StockIncomingBatchesController {
     return data;
   }
 
-  // @Get('filters/product-lines')
-  // @HttpCode(HttpStatus.OK)
-  // async getProductLines(
-  // ) {
-  //    const qb = this.datasource
-  //     .getRepository(IncomingBatches)
-  //     .createQueryBuilder('sib');
+  @Get('filters/product-lines')
+  @HttpCode(HttpStatus.OK)
+  async getProductLines(@Query('market') market?: MarketEnum) {
+    const qb = this.datasource
+      .createQueryBuilder()
+      .select([
+        'spl.sensatta_code AS product_line_code',
+        'spl.acronym AS acronym',
+        'spl.name AS product_line_name',
+      ])
+      .from('sensatta_incoming_batches', 'sib')
+      .leftJoin(
+        'sensatta_product_lines',
+        'spl',
+        'spl.sensatta_code = sib.product_line_code',
+      )
+      .distinct(true)
+      .where('1=1')
+      .andWhere('spl.is_considered_on_stock = true');
 
-  //   return data;
-  // }
+    if (market) {
+      qb.andWhere('spl.market =:market', { market });
+    }
+
+    const data = await qb.getRawMany<{
+      product_line_code: string;
+      acronym: string;
+      product_line_name: string;
+    }>();
+
+    return data
+      .sort((a, b) => Number(a.product_line_code) - Number(b.product_line_code))
+      .map((i) => ({
+        key: `${i.product_line_code}-${i.acronym}`,
+        value: `${i.product_line_code}-${i.acronym}`,
+        label: `${i.product_line_code} - ${i.product_line_name}`,
+      }));
+  }
 }

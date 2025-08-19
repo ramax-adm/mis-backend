@@ -6,6 +6,7 @@ import {
 } from '../types/get-incoming-batches.type';
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 import * as dateFns from 'date-fns';
+import { PageOptionsParams } from '@/core/paginate';
 
 @Injectable()
 export class StockIncomingBatchesService {
@@ -39,9 +40,10 @@ export class StockIncomingBatchesService {
       .leftJoin(
         'sensatta_companies',
         'sc',
-        'sib.company_code = sc.sensatta_code',
+        'sw.company_code = sc.sensatta_code',
       )
-      .where('sc.is_considered_on_stock = :trueVal', { trueVal: true })
+      .where('1=1')
+      .andWhere('sc.is_considered_on_stock = :trueVal', { trueVal: true })
       .andWhere('sw.is_considered_on_stock = :trueVal', { trueVal: true })
       .select([
         'sc.sensatta_code AS company_code',
@@ -74,52 +76,32 @@ export class StockIncomingBatchesService {
     }
 
     if (productLineCodes) {
-      qb.andWhere('spl.market IN (:...productLineCodes)', { productLineCodes });
+      qb.andWhere('sib.product_line_code IN (:...productLineCodes)', {
+        productLineCodes,
+      });
     }
 
     const results = await qb.getRawMany<GetIncomingBatchesItemRaw>();
 
-    return results.map((i) => ({
-      companyCode: i.company_code,
-      companyName: i.company_name,
-      productCode: i.product_code,
-      productName: i.product_name,
-      productLineCode: i.product_line_code,
-      productLineName: i.product_line_name,
-      market: i.market,
-      productionDate: i.production_date,
-      slaughterDate: i.slaughter_date,
-      dueDate: i.due_date,
-      boxAmount: i.box_amount,
-      quantity: i.quantity,
-      weightInKg: i.weight_in_kg,
-    }));
+    return results
+      .map((i) => ({
+        companyCode: i.company_code,
+        companyName: i.company_name.split('-')[0],
+        productCode: i.product_code,
+        productName: i.product_name,
+        productLineCode: i.product_line_code,
+        productLineName: i.product_line_name,
+        market: i.market,
+        productionDate: i.production_date,
+        slaughterDate: i.slaughter_date,
+        dueDate: i.due_date,
+        boxAmount: i.box_amount,
+        quantity: i.quantity,
+        weightInKg: i.weight_in_kg,
+      }))
+      .sort((a, b) => Number(a.companyCode) - Number(b.companyCode));
   }
 
-  /**
-   * Estoque novo
-   *
-   * totals: {
-   *    weight_in_kg,
-   *    by_expire_range:{},
-   *    by_company:{}
-   * },
-   *
-   * data: {
-   *   "PRODUTO": {
-   *      market,
-   *      product_line_code,
-   *      product_line_name,
-   *      product_code,
-   *      product_name,
-   *      totals:{
-   *          weight_in_kg,
-   *          by_expire_range:{},
-   *          by_company:{}
-   *      },
-   *   }
-   * }
-   */
   async getResumedData({
     market,
     productLineCodes,
@@ -149,16 +131,24 @@ export class StockIncomingBatchesService {
       }
     >();
 
+    // Define as faixas de expiração na ordem desejada
+    const expireRangeKeys = ['0 A 15 dias', '16 A 30 dias', '+30 Dias'];
+
     // DATA Values
     for (const batch of incomingBatches) {
       const key = `${batch.productCode} - ${batch.productName}`;
-
       const currentDaysToExpires = dateFns.differenceInDays(
         batch.dueDate,
         new Date(),
       );
 
       if (!map.has(key)) {
+        // Inicializa os Maps internos com chaves na ordem
+        const byExpireRange = new Map<string, number>(
+          expireRangeKeys.map((k) => [k, 0]),
+        );
+        const byCompany = new Map<string, number>();
+
         map.set(key, {
           market: batch.market,
           productLineCode: batch.productLineCode,
@@ -168,50 +158,50 @@ export class StockIncomingBatchesService {
           totals: {
             weightInKg: 0,
             expiredWeightInKg: 0,
-            byExpireRange: new Map(),
-            byCompany: new Map(),
+            byExpireRange,
+            byCompany,
           },
         });
       }
 
       const previousMap = map.get(key)!;
 
-      // soma peso total
+      // Soma peso total
       previousMap.totals.weightInKg += batch.weightInKg;
 
-      // soma peso expirado
-      if (currentDaysToExpires < 0) {
-        previousMap.totals.expiredWeightInKg += batch.weightInKg;
-      }
-
-      // por empresa
+      // Por empresa
       const companyKey = `${batch.companyCode} - ${batch.companyName}`;
       previousMap.totals.byCompany.set(
         companyKey,
         (previousMap.totals.byCompany.get(companyKey) ?? 0) + batch.weightInKg,
       );
 
-      // por faixa de expiração
-      const toExpiresUntil15DaysKey = '0 A 15 dias';
-      const toExpiresBetween15And30DaysKey = '15 A 30 dias';
-
-      if (currentDaysToExpires <= 15) {
+      // Por faixa de expiração
+      // Soma peso expirado
+      if (currentDaysToExpires < 0) {
+        previousMap.totals.expiredWeightInKg += batch.weightInKg;
+      } else if (currentDaysToExpires <= 15) {
         previousMap.totals.byExpireRange.set(
-          toExpiresUntil15DaysKey,
-          (previousMap.totals.byExpireRange.get(toExpiresUntil15DaysKey) ?? 0) +
+          expireRangeKeys[0],
+          (previousMap.totals.byExpireRange.get(expireRangeKeys[0]) ?? 0) +
             batch.weightInKg,
         );
       } else if (currentDaysToExpires <= 30) {
         previousMap.totals.byExpireRange.set(
-          toExpiresBetween15And30DaysKey,
-          (previousMap.totals.byExpireRange.get(
-            toExpiresBetween15And30DaysKey,
-          ) ?? 0) + batch.weightInKg,
+          expireRangeKeys[1],
+          (previousMap.totals.byExpireRange.get(expireRangeKeys[1]) ?? 0) +
+            batch.weightInKg,
+        );
+      } else if (currentDaysToExpires > 30) {
+        previousMap.totals.byExpireRange.set(
+          expireRangeKeys[2],
+          (previousMap.totals.byExpireRange.get(expireRangeKeys[2]) ?? 0) +
+            batch.weightInKg,
         );
       }
     }
 
-    // conversão dos Maps internos para objetos simples
+    // Conversão dos Maps internos para objetos simples
     const mapEntries = Array.from(map.entries());
     const data = Object.fromEntries(
       mapEntries.map(([key, value]) => [
@@ -237,15 +227,16 @@ export class StockIncomingBatchesService {
   }
 
   private getResumeTotals(batches: GetIncomingBatchesItem[]) {
+    const expireRangeKeys = ['0 A 15 dias', '16 A 30 dias', '+30 Dias'];
+
     const totals = {
       weightInKg: 0,
       expiredWeightInKg: 0,
-      byExpireRange: new Map<string, number>(),
+      byExpireRange: new Map<string, number>(
+        expireRangeKeys.map((k) => [k, 0]),
+      ),
       byCompany: new Map<string, number>(),
     };
-
-    const toExpiresUntil15DaysKey = '0 A 15 dias';
-    const toExpiresBetween15And30DaysKey = '15 A 30 dias';
 
     for (const batch of batches) {
       const currentDaysToExpires = dateFns.differenceInDays(
@@ -256,11 +247,6 @@ export class StockIncomingBatchesService {
       // soma peso total
       totals.weightInKg += batch.weightInKg;
 
-      // soma peso expirado
-      if (currentDaysToExpires < 0) {
-        totals.expiredWeightInKg += batch.weightInKg;
-      }
-
       // soma por empresa
       const companyKey = `${batch.companyCode} - ${batch.companyName}`;
       totals.byCompany.set(
@@ -269,16 +255,25 @@ export class StockIncomingBatchesService {
       );
 
       // soma por faixa de expiração
-      if (currentDaysToExpires <= 15) {
+      // soma peso expirado
+      if (currentDaysToExpires < 0) {
+        totals.expiredWeightInKg += batch.weightInKg;
+      } else if (currentDaysToExpires <= 15) {
         totals.byExpireRange.set(
-          toExpiresUntil15DaysKey,
-          (totals.byExpireRange.get(toExpiresUntil15DaysKey) ?? 0) +
+          expireRangeKeys[0],
+          (totals.byExpireRange.get(expireRangeKeys[0]) ?? 0) +
             batch.weightInKg,
         );
       } else if (currentDaysToExpires <= 30) {
         totals.byExpireRange.set(
-          toExpiresBetween15And30DaysKey,
-          (totals.byExpireRange.get(toExpiresBetween15And30DaysKey) ?? 0) +
+          expireRangeKeys[1],
+          (totals.byExpireRange.get(expireRangeKeys[1]) ?? 0) +
+            batch.weightInKg,
+        );
+      } else if (currentDaysToExpires > 30) {
+        totals.byExpireRange.set(
+          expireRangeKeys[2],
+          (totals.byExpireRange.get(expireRangeKeys[2]) ?? 0) +
             batch.weightInKg,
         );
       }
@@ -287,7 +282,9 @@ export class StockIncomingBatchesService {
     return {
       weightInKg: totals.weightInKg,
       expiredWeightInKg: totals.expiredWeightInKg,
-      byExpireRange: Object.fromEntries(totals.byExpireRange),
+      byExpireRange: Object.fromEntries(
+        expireRangeKeys.map((key) => [key, totals.byExpireRange.get(key) ?? 0]),
+      ),
       byCompany: Object.fromEntries(totals.byCompany),
     };
   }
