@@ -14,6 +14,7 @@ import { ReferencePrice } from '@/core/entities/sensatta/reference-price.entity'
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
 import { StockIncomingBatchesService } from './stock-incoming-batches-new/services/stock-incoming-batches.service';
 import { StockIncomingBatchesController } from './stock-incoming-batches-new/controllers/stock-incoming-batches.controller';
+import { StockIncomingBatchesReportService } from './stock-incoming-batches-new/services/stock-incoming-batches-report.service';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { StockIncomingBatchesController } from './stock-incoming-batches-new/con
     ExcelReaderService,
     StockService,
     StockIncomingBatchesService,
+    StockIncomingBatchesReportService,
     StockBalanceService,
     StockBalanceReportService,
     StockReportService,

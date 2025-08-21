@@ -36,7 +36,6 @@ export class StockController {
     private readonly stockReportService: StockReportService,
   ) {}
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/last-update')
   @HttpCode(200)
@@ -46,7 +45,6 @@ export class StockController {
     return GetStockLastUpdatedAtResponseDto.create(response).toJSON();
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -74,7 +72,6 @@ export class StockController {
     });
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/analytical')
   @HttpCode(HttpStatus.OK)
@@ -105,7 +102,6 @@ export class StockController {
     };
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':companyCode')
   @HttpCode(HttpStatus.OK)
@@ -120,7 +116,6 @@ export class StockController {
       .map((item) => GetStockByCompanyResponseDto.create(item).toJSON());
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':companyCode/analytical')
   @HttpCode(HttpStatus.OK)
@@ -137,7 +132,6 @@ export class StockController {
       );
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':companyCode/to-expires')
   @HttpCode(HttpStatus.OK)
@@ -158,7 +152,6 @@ export class StockController {
       .map((item) => GetToExpiresByCompanyResponseDto.create(item).toJSON());
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':companyCode/analytical/to-expires')
   @HttpCode(HttpStatus.OK)
@@ -177,7 +170,6 @@ export class StockController {
       );
   }
 
-  @Roles(...[UserRole.Commercial, UserRole.Directory])
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('export-xlsx')
   @HttpCode(HttpStatus.OK)

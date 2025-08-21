@@ -6,7 +6,6 @@ import {
 } from '../types/get-incoming-batches.type';
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 import * as dateFns from 'date-fns';
-import { PageOptionsParams } from '@/core/paginate';
 
 @Injectable()
 export class StockIncomingBatchesService {
@@ -69,7 +68,9 @@ export class StockIncomingBatchesService {
       .addGroupBy('spl.market')
       .addGroupBy('sib.production_date')
       .addGroupBy('sib.slaughter_date')
-      .addGroupBy('sib.due_date');
+      .addGroupBy('sib.due_date')
+      .orderBy('spl.sensatta_code::int', 'ASC')
+      .addOrderBy('sp.sensatta_code::int', 'ASC');
 
     if (market) {
       qb.andWhere('spl.market =:market', { market });
@@ -83,23 +84,21 @@ export class StockIncomingBatchesService {
 
     const results = await qb.getRawMany<GetIncomingBatchesItemRaw>();
 
-    return results
-      .map((i) => ({
-        companyCode: i.company_code,
-        companyName: i.company_name.split('-')[0],
-        productCode: i.product_code,
-        productName: i.product_name,
-        productLineCode: i.product_line_code,
-        productLineName: i.product_line_name,
-        market: i.market,
-        productionDate: i.production_date,
-        slaughterDate: i.slaughter_date,
-        dueDate: i.due_date,
-        boxAmount: i.box_amount,
-        quantity: i.quantity,
-        weightInKg: i.weight_in_kg,
-      }))
-      .sort((a, b) => Number(a.companyCode) - Number(b.companyCode));
+    return results.map((i) => ({
+      companyCode: i.company_code,
+      companyName: i.company_name.split('-')[0],
+      productCode: i.product_code,
+      productName: i.product_name,
+      productLineCode: i.product_line_code,
+      productLineName: i.product_line_name,
+      market: i.market,
+      productionDate: i.production_date,
+      slaughterDate: i.slaughter_date,
+      dueDate: i.due_date,
+      boxAmount: i.box_amount,
+      quantity: i.quantity,
+      weightInKg: i.weight_in_kg,
+    }));
   }
 
   async getResumedData({
@@ -114,6 +113,19 @@ export class StockIncomingBatchesService {
       productLineCodes,
     });
 
+    // DATA Values
+    const data = this.getResumeData(incomingBatches);
+
+    // TOTAL Values
+    const totals = this.getResumeTotals(incomingBatches);
+
+    return {
+      totals,
+      data,
+    };
+  }
+
+  private getResumeData(batches: GetIncomingBatchesItem[]) {
     const map = new Map<
       string,
       {
@@ -131,11 +143,11 @@ export class StockIncomingBatchesService {
       }
     >();
 
-    // Define as faixas de expiração na ordem desejada
-    const expireRangeKeys = ['0 A 15 dias', '16 A 30 dias', '+30 Dias'];
+    const companyKeys = this.getCompanyKeys(batches);
+    const expireRangeKeys = this.getExpireKeys(batches);
 
     // DATA Values
-    for (const batch of incomingBatches) {
+    for (const batch of batches) {
       const key = `${batch.productCode} - ${batch.productName}`;
       const currentDaysToExpires = dateFns.differenceInDays(
         batch.dueDate,
@@ -145,9 +157,11 @@ export class StockIncomingBatchesService {
       if (!map.has(key)) {
         // Inicializa os Maps internos com chaves na ordem
         const byExpireRange = new Map<string, number>(
-          expireRangeKeys.map((k) => [k, 0]),
+          expireRangeKeys.map((k) => [k.key, 0]),
         );
-        const byCompany = new Map<string, number>();
+        const byCompany = new Map<string, number>(
+          companyKeys.map((k) => [k, 0]),
+        );
 
         map.set(key, {
           market: batch.market,
@@ -178,32 +192,33 @@ export class StockIncomingBatchesService {
 
       // Por faixa de expiração
       // Soma peso expirado
+
       if (currentDaysToExpires < 0) {
         previousMap.totals.expiredWeightInKg += batch.weightInKg;
-      } else if (currentDaysToExpires <= 15) {
-        previousMap.totals.byExpireRange.set(
-          expireRangeKeys[0],
-          (previousMap.totals.byExpireRange.get(expireRangeKeys[0]) ?? 0) +
-            batch.weightInKg,
-        );
-      } else if (currentDaysToExpires <= 30) {
-        previousMap.totals.byExpireRange.set(
-          expireRangeKeys[1],
-          (previousMap.totals.byExpireRange.get(expireRangeKeys[1]) ?? 0) +
-            batch.weightInKg,
-        );
-      } else if (currentDaysToExpires > 30) {
-        previousMap.totals.byExpireRange.set(
-          expireRangeKeys[2],
-          (previousMap.totals.byExpireRange.get(expireRangeKeys[2]) ?? 0) +
-            batch.weightInKg,
-        );
+      } else {
+        // encontra a faixa que corresponde ao número de dias
+        const matchedRange = expireRangeKeys.find((range) => {
+          const minOk = currentDaysToExpires >= range.minQuantityOfDays;
+          const maxOk =
+            range.maxQuantityOfDays === undefined ||
+            currentDaysToExpires <= range.maxQuantityOfDays;
+
+          return minOk && maxOk;
+        });
+
+        if (matchedRange) {
+          previousMap.totals.byExpireRange.set(
+            matchedRange.key,
+            (previousMap.totals.byExpireRange.get(matchedRange.key) ?? 0) +
+              batch.weightInKg,
+          );
+        }
       }
     }
 
     // Conversão dos Maps internos para objetos simples
     const mapEntries = Array.from(map.entries());
-    const data = Object.fromEntries(
+    return Object.fromEntries(
       mapEntries.map(([key, value]) => [
         key,
         {
@@ -216,26 +231,19 @@ export class StockIncomingBatchesService {
         },
       ]),
     );
-
-    // TOTAL Values
-    const totals = this.getResumeTotals(incomingBatches);
-
-    return {
-      totals,
-      data,
-    };
   }
 
   private getResumeTotals(batches: GetIncomingBatchesItem[]) {
-    const expireRangeKeys = ['0 A 15 dias', '16 A 30 dias', '+30 Dias'];
+    const companyKeys = this.getCompanyKeys(batches);
+    const expireRangeKeys = this.getExpireKeys(batches);
 
     const totals = {
       weightInKg: 0,
       expiredWeightInKg: 0,
       byExpireRange: new Map<string, number>(
-        expireRangeKeys.map((k) => [k, 0]),
+        expireRangeKeys.map((k) => [k.key, 0]),
       ),
-      byCompany: new Map<string, number>(),
+      byCompany: new Map<string, number>(companyKeys.map((k) => [k, 0])),
     };
 
     for (const batch of batches) {
@@ -258,24 +266,24 @@ export class StockIncomingBatchesService {
       // soma peso expirado
       if (currentDaysToExpires < 0) {
         totals.expiredWeightInKg += batch.weightInKg;
-      } else if (currentDaysToExpires <= 15) {
-        totals.byExpireRange.set(
-          expireRangeKeys[0],
-          (totals.byExpireRange.get(expireRangeKeys[0]) ?? 0) +
-            batch.weightInKg,
-        );
-      } else if (currentDaysToExpires <= 30) {
-        totals.byExpireRange.set(
-          expireRangeKeys[1],
-          (totals.byExpireRange.get(expireRangeKeys[1]) ?? 0) +
-            batch.weightInKg,
-        );
-      } else if (currentDaysToExpires > 30) {
-        totals.byExpireRange.set(
-          expireRangeKeys[2],
-          (totals.byExpireRange.get(expireRangeKeys[2]) ?? 0) +
-            batch.weightInKg,
-        );
+      } else {
+        // encontra a faixa que corresponde ao número de dias
+        const matchedRange = expireRangeKeys.find((range) => {
+          const minOk = currentDaysToExpires >= range.minQuantityOfDays;
+          const maxOk =
+            range.maxQuantityOfDays === undefined ||
+            currentDaysToExpires <= range.maxQuantityOfDays;
+
+          return minOk && maxOk;
+        });
+
+        if (matchedRange) {
+          totals.byExpireRange.set(
+            matchedRange.key,
+            (totals.byExpireRange.get(matchedRange.key) ?? 0) +
+              batch.weightInKg,
+          );
+        }
       }
     }
 
@@ -283,9 +291,47 @@ export class StockIncomingBatchesService {
       weightInKg: totals.weightInKg,
       expiredWeightInKg: totals.expiredWeightInKg,
       byExpireRange: Object.fromEntries(
-        expireRangeKeys.map((key) => [key, totals.byExpireRange.get(key) ?? 0]),
+        expireRangeKeys.map(({ key }) => [
+          key,
+          totals.byExpireRange.get(key) ?? 0,
+        ]),
       ),
       byCompany: Object.fromEntries(totals.byCompany),
     };
+  }
+
+  // aux methods
+  private getCompanyKeys(batches: GetIncomingBatchesItem[]) {
+    const companyKeysSet = new Set<string>();
+    batches.forEach((i) =>
+      companyKeysSet.add(`${i.companyCode} - ${i.companyName}`),
+    );
+
+    return Array.from(companyKeysSet).sort((a, b) => {
+      const companyCodeA = a.split(' - ')[0];
+      const companyCodeB = b.split(' - ')[0];
+
+      return Number(companyCodeA) - Number(companyCodeB);
+    });
+  }
+
+  private getExpireKeys(batches: GetIncomingBatchesItem[]) {
+    const expireRanges = [
+      {
+        key: '0 A 15 dias',
+        minQuantityOfDays: 0,
+        maxQuantityOfDays: 15,
+      },
+      {
+        key: '16 A 30 dias',
+        minQuantityOfDays: 16,
+        maxQuantityOfDays: 30,
+      },
+      {
+        key: '+30 dias',
+        minQuantityOfDays: 31,
+      },
+    ];
+    return expireRanges;
   }
 }
