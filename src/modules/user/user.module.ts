@@ -8,13 +8,14 @@ import { UserService } from './services/user.service';
 import { UserSensattaCompanyService } from './services/user-sensatta-company.service';
 import { UserAppWebpageService } from './services/user-app-webpage.service';
 import { AwsModule } from '../aws/aws.module';
+import { UserSensattaCompanyController } from './controllers/user-company.controller';
 
 @Module({
   imports: [
     AwsModule,
     TypeOrmModule.forFeature([User, UserSensattaCompany, UserAppWebpage]),
   ],
-  controllers: [UserController],
+  controllers: [UserController, UserSensattaCompanyController],
   providers: [UserService, UserSensattaCompanyService, UserAppWebpageService],
 })
 export class UserModule {}
