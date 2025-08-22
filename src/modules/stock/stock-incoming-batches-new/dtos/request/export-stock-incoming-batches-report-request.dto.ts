@@ -6,6 +6,7 @@ export class ExportStockIncomingBatchesReportRequestDto {
   exportType: 'resumed' | 'analytical';
 
   filters: {
+    companyCode?: string;
     market?: MarketEnum;
     productLineCodes?: string[];
   };
