@@ -31,17 +31,11 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly userAppWebpageService: UserAppWebpageService,
-    private readonly userCompanyService: UserSensattaCompanyService,
   ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
-  }
-
-  @Post('add-user-company')
-  addUserCompany(@Body() dto: { userId: string; companyCode: string }) {
-    return this.userCompanyService.create(dto);
   }
 
   @Post('add-user-app-webpage')
@@ -52,11 +46,6 @@ export class UserController {
   @Delete('user-app-webpage/:id')
   removeUserAppWebpage(@Param('id') id: string) {
     return this.userAppWebpageService.remove({ id });
-  }
-
-  @Delete('user-company/:id')
-  removeUserCompany(@Param('id') id: string) {
-    return this.userCompanyService.remove({ id });
   }
 
   @Post('forgot-password')

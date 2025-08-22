@@ -63,6 +63,23 @@ export class StockIncomingBatchesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('analytical')
+  @HttpCode(HttpStatus.OK)
+  async getAnalyticalData(
+    @Query('companyCode') companyCode: string,
+    @Query('productLineCodes') productLineCodes?: string,
+    @Query('market') market?: MarketEnum,
+  ) {
+    const data = await this.stockIncomingBatchesService.getAnalyticalData({
+      companyCode,
+      market,
+      productLineCodes: productLineCodes?.split(','),
+    });
+
+    return data;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('filters/product-lines')
   @HttpCode(HttpStatus.OK)
   async getProductLines(@Query('market') market?: MarketEnum) {
@@ -114,6 +131,8 @@ export class StockIncomingBatchesController {
     let result;
     switch (exportType) {
       case 'analytical': {
+        result =
+          await this.stockIncomingBatchesReportService.exportAnalytical(dto);
         break;
       }
 
