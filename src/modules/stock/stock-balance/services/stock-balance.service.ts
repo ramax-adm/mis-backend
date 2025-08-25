@@ -4,7 +4,10 @@ import { DataSource } from 'typeorm';
 import { GetStockNewLastUpdatedAtResponseDto } from '../dtos/get-stock-new-last-updated-at-response.dto';
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 import { STOCK_BALANCE_QUERY_PARTIAL_FILTERS } from '../constants/stock-balance-query-partial-filters';
-import { GetStockBalanceItem } from '../types/get-stock-balance.type';
+import {
+  GetStockBalanceItem,
+  GetStockBalanceRawItem,
+} from '../types/get-stock-balance.type';
 
 @Injectable()
 export class StockBalanceService {
@@ -29,12 +32,15 @@ export class StockBalanceService {
     companyCode: string;
     market: MarketEnum;
     productLineCode?: string;
-  }) {
+  }): Promise<GetStockBalanceItem[]> {
     const qb = this.dataSource
       .createQueryBuilder()
       .select([
+        'sc.sensatta_code AS company_code',
+        'sc.name AS company_name',
         'sb.product_line_code AS product_line_code',
         'sb.product_line_name AS product_line_name',
+        'spl.market',
         'sb.product_code AS product_code',
         'sb.product_name AS product_name',
         'sb.weight_in_kg AS weight_in_kg',
@@ -43,6 +49,7 @@ export class StockBalanceService {
         'sb.reserved_quantity AS reserved_quantity',
         'sb.available_weight_in_kg AS available_weight_in_kg',
         'sb.available_quantity AS available_quantity',
+        'sb.created_at AS created_at',
       ])
       .from('sensatta_stock_balance', 'sb')
       .leftJoin(
@@ -50,9 +57,13 @@ export class StockBalanceService {
         'spl',
         'sb.product_line_code = spl.sensatta_code',
       )
+      .leftJoin(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = sb.company_code',
+      )
       .where('sb.company_code = :companyCode', { companyCode })
       .andWhere('spl.is_considered_on_stock = true');
-    //.andWhere('sb.quantity <> 0')
 
     if (market !== MarketEnum.BOTH) {
       qb.andWhere('spl.market::TEXT LIKE :market', { market: `%${market}%` });
@@ -65,15 +76,18 @@ export class StockBalanceService {
       });
     }
 
-    const results = await qb.getRawMany<GetStockBalanceItem>();
+    const results = await qb.getRawMany<GetStockBalanceRawItem>();
 
     return results
       .sort((a, b) => Number(a.product_line_code) - Number(b.product_line_code))
       .filter((i) => i.quantity || i.reserved_quantity || i.available_quantity)
       .map((item) => ({
+        companyCode: item.company_code,
+        companyName: item.company_name,
         productLineCode: item.product_line_code,
         productLineName: item.product_line_name,
         productLine: `${item.product_line_code} - ${item.product_line_name}`,
+        market: item.market,
         productCode: item.product_code,
         productName: item.product_name,
         product: `${item.product_code} - ${item.product_name}`,
@@ -83,58 +97,8 @@ export class StockBalanceService {
         reservedQuantity: item.reserved_quantity,
         availableWeightInKg: item.available_weight_in_kg,
         availableQuantity: item.available_quantity,
+        createdAt: item.created_at,
       }));
-  }
-
-  async getDataWithPartialFilters({
-    companyCode,
-    productLineCode,
-  }: {
-    companyCode?: string;
-    productLineCode?: string;
-  }) {
-    const data = await this.dataSource.query<
-      {
-        company_code: string;
-        company_name: string;
-        product_line_code: string;
-        product_line_name: string;
-        market: string;
-        product_code: string;
-        product_name: string;
-        weight_in_kg: number;
-        quantity: number;
-        reserved_weight_in_kg: number;
-        reserved_quantity: number;
-        available_weight_in_kg: number;
-        available_quantity: number;
-        created_at: Date;
-      }[]
-    >(STOCK_BALANCE_QUERY_PARTIAL_FILTERS, [companyCode, productLineCode]);
-
-    const marketMap = {
-      [MarketEnum.ME]: 'ME',
-      [MarketEnum.MI]: 'MI',
-    };
-
-    return data.map((item) => ({
-      companyCode: item.company_code,
-      companyName: item.company_name,
-      productLineCode: item.product_line_code,
-      productLineName: item.product_line_name,
-      productLine: `${item.product_line_code} - ${item.product_line_name}`,
-      market: marketMap[item.market] ?? 'N/D',
-      productCode: item.product_code,
-      productName: item.product_name,
-      product: `${item.product_code} - ${item.product_name}`,
-      weightInKg: item.weight_in_kg,
-      quantity: item.quantity,
-      reservedWeightInKg: item.reserved_weight_in_kg,
-      reservedQuantity: item.reserved_quantity,
-      availableWeightInKg: item.available_weight_in_kg,
-      availableQuantity: item.available_quantity,
-      createdAt: item.created_at,
-    }));
   }
 
   async getAnalyticalData({
