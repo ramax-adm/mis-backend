@@ -8,7 +8,7 @@ import {
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { UpdateUserDto } from '../dtos/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, In, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import * as crypto from 'crypto';
 import { hashSync } from 'bcryptjs';
@@ -36,7 +36,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictException('A user with this email already exists');
+      throw new ConflictException('Esse email já esta atribuido a um usuario.');
     }
 
     Object.assign(createUserDto, {
@@ -59,8 +59,12 @@ export class UserService {
     });
   }
 
-  async findAll(roles: string[] = []) {
-    const where = roles.length > 0 ? { role: In(roles) } : {};
+  async findAll(username?: string) {
+    const where: FindOptionsWhere<User> = {};
+
+    if (username) {
+      where.name = ILike(`%${username}%`);
+    }
     return this.userRepository.find({
       where,
       relations: {
