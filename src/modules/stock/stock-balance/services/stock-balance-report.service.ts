@@ -6,6 +6,7 @@ import {
 } from '@/core/services/excel-reader.service';
 import { ExportStockBalanceReportDto } from '../dtos/export-stock-new-report.dto';
 import { DateUtils } from '@/modules/utils/services/date.utils';
+import { GetStockBalanceItem } from '../types/get-stock-balance.type';
 
 @Injectable()
 export class StockBalanceReportService {
@@ -36,24 +37,7 @@ export class StockBalanceReportService {
   }
 
   getAnalyticalValues(
-    dto: {
-      companyCode: string;
-      companyName: string;
-      productLineCode: string;
-      productLineName: string;
-      productLine: string;
-      market: string;
-      productCode: string;
-      productName: string;
-      product: string;
-      weightInKg: number;
-      quantity: number;
-      reservedWeightInKg: number;
-      reservedQuantity: number;
-      availableWeightInKg: number;
-      availableQuantity: number;
-      createdAt: Date;
-    }[],
+    dto: GetStockBalanceItem[],
   ): [string, any, NumFormats | undefined][] {
     const values = [];
 
@@ -77,20 +61,19 @@ export class StockBalanceReportService {
       );
     });
 
-    values.push(['N2', DateUtils.format(dto[0].createdAt, 'date')]);
+    values.push(['N2', DateUtils.format(dto[0]?.createdAt, 'date')]);
 
     return values;
   }
 
   async exportAnalytical(dto: ExportStockBalanceReportDto) {
-    const {
-      filters: { companyCode, market, productLineCode },
-    } = dto;
+    const { companyCode, market, productLineCode } = dto.filters;
 
     this.excelReader.create();
 
-    const data = await this.stockBalanceService.getDataWithPartialFilters({
+    const data = await this.stockBalanceService.getData({
       companyCode,
+      market,
       productLineCode,
     });
 
