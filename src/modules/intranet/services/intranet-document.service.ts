@@ -15,6 +15,9 @@ import { User } from '@/modules/user/entities/user.entity';
 import { FindIntranetDocumentsRawItem } from '../types/find-intranet-documents.type';
 import { StorageTypesEnum } from '@/modules/utils/enums/storage-types.enum';
 import { EnvService } from '@/config/env/env.service';
+import { IntranetDocumentTypeEnum } from '../enums/intranet-document-type.enum';
+import { IntranetDocumentCategoryEnum } from '../enums/intranet-document-category.enum';
+import { UpdateIntranetDocumentRequestDto } from '../dtos/request/update-intranet-document-request.dto';
 
 const BUCKET_KEY = 'intranet-documents';
 
@@ -63,27 +66,41 @@ export class IntranetDocumentService {
 
     try {
       // buscar se existe o intranet document
-      const document = await queryRunner.manager.find(IntranetDocument, {
+      const document = await queryRunner.manager.findOne(IntranetDocument, {
         where: { id: dto.documentId },
+        relations: {
+          versions: true,
+        },
       });
 
       if (!document) {
         throw new NotFoundException('O Documento não pode ser encontrado');
       }
 
-      let extension: string | undefined,
-        storageKey: string | undefined,
-        storageType: StorageTypesEnum | undefined = undefined;
+      const documentLastReviewed = document.versions.sort(
+        (a, b) => b.reviewNumber - a.reviewNumber,
+      )[0]?.reviewNumber;
+      const lastReviewNumber = documentLastReviewed ?? 0;
+      const isReviewNumberAllowed =
+        dto.reviewNumber && lastReviewNumber >= dto.reviewNumber;
 
-      const isDocumentType = dto.type === 'document';
-      if (isDocumentType) {
+      if (isReviewNumberAllowed) {
+        throw new BadRequestException(
+          'O N° de revisão deve ser maior que o anterior',
+        );
+      }
+
+      let extension: string | undefined = undefined;
+
+      const isDocumentCategory =
+        dto.category === IntranetDocumentCategoryEnum.DOCUMENT;
+      if (isDocumentCategory) {
+        dto.storageKey = this.getS3Key(file.originalname);
         extension = this.getFileExtension(file.originalname);
-        storageType = this.getS3StorageType();
-        storageKey = this.getS3Key(file.originalname);
         // salvar o file no storage
         await this.storageService.upload({
           Bucket: this.envService.get('AWS_S3_BUCKET'),
-          Key: storageKey,
+          Key: dto.storageKey,
           Body: file.buffer,
         });
       }
@@ -92,8 +109,7 @@ export class IntranetDocumentService {
       const data = await queryRunner.manager.save(IntranetDocumentVersion, {
         ...dto,
         extension,
-        storageKey,
-        storageType,
+        storageType: this.getStorageType(dto.category),
         createdById: userId,
       });
       await queryRunner.commitTransaction();
@@ -140,7 +156,13 @@ export class IntranetDocumentService {
     });
   }
 
-  async findByUser(userId: string) {
+  async getUserDocumentsData({
+    type,
+    userId,
+  }: {
+    type?: IntranetDocumentTypeEnum;
+    userId: string;
+  }) {
     const user = await this.datasource.manager.find(User, {
       where: {
         id: userId,
@@ -165,9 +187,11 @@ export class IntranetDocumentService {
       `id.created_at AS created_at`,
       `id.created_by AS created_by_id`,
       `u.name AS created_by`,
+      `idv.id AS version_id`,
       `idv.key AS key`,
       `idv.review_number AS review_number`,
       `idv.version AS version`,
+      `idv.category AS category`,
       `idv.storage_type AS storage_type`,
       `idv.storage_key AS storage_key`,
       `idv.created_by AS version_created_by_id`,
@@ -179,11 +203,14 @@ export class IntranetDocumentService {
         'intranet_documents_versions',
         'idv',
         `id.id = idv.document_id
-     AND idv.review_number = (
-        SELECT MAX(idv2.review_number)
-        FROM "dev".intranet_documents_versions idv2
-        WHERE idv2.document_id = id.id
-     )`,
+         AND (
+              idv.category = 'video'
+              or idv."review_number" = (
+                  select MAX(idv2.review_number)
+                  from "dev".intranet_documents_versions idv2
+                  where idv2.document_id = id.id
+              )
+         )`,
       )
       .leftJoin('users', 'u', 'id.created_by = u.id')
       .leftJoin('users', 'u2', 'idv.created_by = u2.id')
@@ -194,13 +221,19 @@ export class IntranetDocumentService {
         { userId },
       );
 
+    if (type) {
+      qb.andWhere('id.type = :type', { type });
+    }
+
     const data = await qb.getRawMany<FindIntranetDocumentsRawItem>();
 
     const response = data.map((i) => ({
       id: i.id,
+      versionId: i.version_id,
       key: i.key,
       name: i.name,
       description: i.description,
+      category: i.category,
       status: i.status,
       type: i.type,
       reviewNumber: i.review_number,
@@ -214,15 +247,53 @@ export class IntranetDocumentService {
       versionCreatedBy: i.version_created_by,
     }));
 
+    for await (const item of response) {
+      if (item.category === IntranetDocumentCategoryEnum.VIDEO) {
+        continue;
+      }
+
+      const tenMinutesInSeconds = 60 * 10;
+      const signedUrl = await this.storageService.getSignedUrl(
+        {
+          Bucket: this.envService.get('AWS_S3_BUCKET'),
+          Key: item.storageKey,
+          ResponseContentDisposition: `inline; filename="${item.name}"`,
+        },
+        tenMinutesInSeconds,
+      );
+
+      Object.assign(item, { signedUrl });
+    }
+
     return response;
+  }
+
+  async updateDocument(id: string, dto: UpdateIntranetDocumentRequestDto) {
+    const document = await this.datasource.manager.findOne(IntranetDocument, {
+      where: { id },
+    });
+
+    if (!document) {
+      throw new NotFoundException(
+        'Não foi possivel encontrar o documento pelo ID',
+      );
+    }
+
+    const dataToUpdate = Object.assign(document, dto);
+
+    return await this.datasource.manager.save(dataToUpdate);
   }
 
   private getFileExtension(filename: string) {
     return FileUtils.fileExtension(filename);
   }
 
-  private getS3StorageType() {
-    return StorageTypesEnum.S3;
+  private getStorageType(category: IntranetDocumentCategoryEnum) {
+    const map = {
+      [IntranetDocumentCategoryEnum.DOCUMENT]: StorageTypesEnum.S3,
+      [IntranetDocumentCategoryEnum.VIDEO]: StorageTypesEnum.YOUTUBE,
+    };
+    return map[category];
   }
 
   private getS3Key(filename: string) {

@@ -5,7 +5,9 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,6 +20,8 @@ import { User } from '@/modules/user/entities/user.entity';
 import { CreateIntranetDocumentRequestDto } from '../dtos/request/create-intranet-document-request.dto';
 import { CreateIntranetDocumentVersionRequestDto } from '../dtos/request/create-intranet-document-version-request.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { IntranetDocumentTypeEnum } from '../enums/intranet-document-type.enum';
+import { UpdateIntranetDocumentRequestDto } from '../dtos/request/update-intranet-document-request.dto';
 
 @Controller('intranet/document')
 export class IntranetDocumentController {
@@ -60,10 +64,16 @@ export class IntranetDocumentController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('by-user')
+  @Get('get-user-documents')
   @HttpCode(HttpStatus.OK)
-  findByUser(@CurrentUser() user: User) {
-    return this.intranetDocumentService.findByUser(user.id);
+  getUserDocumentsData(
+    @CurrentUser() user: User,
+    @Query('type') type?: IntranetDocumentTypeEnum,
+  ) {
+    return this.intranetDocumentService.getUserDocumentsData({
+      type,
+      userId: user.id,
+    });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -78,5 +88,15 @@ export class IntranetDocumentController {
   @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: string) {
     return this.intranetDocumentService.findOne(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  updateDocument(
+    @Param('id') id: string,
+    @Body() dto: UpdateIntranetDocumentRequestDto,
+  ) {
+    return this.intranetDocumentService.updateDocument(id, dto);
   }
 }

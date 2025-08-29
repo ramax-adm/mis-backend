@@ -1,7 +1,7 @@
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { DocumentType } from '../../entities/intranet-document-version.entity';
 import { StorageTypesEnum } from '@/modules/utils/enums/storage-types.enum';
-import { IntranetDocumentFileTypeEnum } from '../../enums/intranet-document-file-type.enum';
+import { IntranetDocumentCategoryEnum } from '../../enums/intranet-document-category.enum';
 import { Transform } from 'class-transformer';
 
 export class CreateIntranetDocumentVersionRequestDto {
@@ -14,12 +14,17 @@ export class CreateIntranetDocumentVersionRequestDto {
   @IsString()
   version: string;
 
-  @Transform(({ value }) => Number(value))
-  reviewNumber: number;
+  @Transform(({ value }) => (value ? Number(value) : undefined))
+  reviewNumber?: number;
 
   @IsString()
-  majorChanges: string;
+  @IsOptional()
+  majorChanges?: string;
 
-  @IsEnum(IntranetDocumentFileTypeEnum)
-  type: IntranetDocumentFileTypeEnum;
+  @IsEnum(IntranetDocumentCategoryEnum)
+  category: IntranetDocumentCategoryEnum;
+
+  @IsString()
+  @IsOptional()
+  storageKey?: string;
 }

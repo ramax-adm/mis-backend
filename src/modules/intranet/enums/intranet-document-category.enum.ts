@@ -1,4 +1,4 @@
-export enum IntranetDocumentFileTypeEnum {
+export enum IntranetDocumentCategoryEnum {
   DOCUMENT = 'document',
   VIDEO = 'video',
 }

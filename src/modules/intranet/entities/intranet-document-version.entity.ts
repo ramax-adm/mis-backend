@@ -11,6 +11,7 @@ import { IntranetDocument } from './intranet-document.entity';
 import { User } from '@/modules/user/entities/user.entity';
 import { UserIntranetDocumentAcceptance } from '@/modules/user/entities/user-intranet-documents-acceptance.entity';
 import { StorageTypesEnum } from '@/modules/utils/enums/storage-types.enum';
+import { IntranetDocumentCategoryEnum } from '../enums/intranet-document-category.enum';
 
 export type DocumentType = 'document' | 'video';
 
@@ -34,11 +35,14 @@ export class IntranetDocumentVersion {
   @Column({ type: 'varchar', length: 50 })
   version: string;
 
-  @Column({ name: 'review_number', type: 'int' })
-  reviewNumber: number;
+  @Column({ name: 'review_number', type: 'int', nullable: true })
+  reviewNumber?: number;
 
-  @Column({ name: 'major_changes' })
-  majorChanges: string;
+  @Column()
+  category: IntranetDocumentCategoryEnum;
+
+  @Column({ name: 'major_changes', nullable: true })
+  majorChanges?: string;
 
   @Column({ type: 'varchar', length: 10, nullable: true })
   extension?: string;

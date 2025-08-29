@@ -32,6 +32,12 @@ export class UserIntranetDocumentAcceptance {
   @JoinColumn({ name: 'document_version_id' })
   documentVersion: IntranetDocumentVersion;
 
+  @Column({ name: 'ip_address' })
+  ipAddress: string;
+
+  @Column({ name: 'acceptance_time_in_seconds', type: 'int' })
+  acceptanceTimeInSeconds: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

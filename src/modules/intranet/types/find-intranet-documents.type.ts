@@ -1,7 +1,11 @@
+import { IntranetDocumentCategoryEnum } from '../enums/intranet-document-category.enum';
+
 export type FindIntranetDocumentsRawItem = {
   id: string;
+  version_id: string;
   name: string;
   description: string;
+  category: IntranetDocumentCategoryEnum;
   type: string;
   created_at: string;
   created_by_id: string;
@@ -18,8 +22,10 @@ export type FindIntranetDocumentsRawItem = {
 
 export type FindIntranetDocumentsItem = {
   id: string;
+  versionId: string;
   name: string;
   description: string;
+  category: IntranetDocumentCategoryEnum;
   type: string;
   createdAt: string;
   createdById: string;

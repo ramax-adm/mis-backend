@@ -24,7 +24,12 @@ export class UserIntranetDocumentAcceptanceController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   addUserIntranetDocumentAcceptance(
-    @Body() dto: { documentVersionId: string },
+    @Body()
+    dto: {
+      documentVersionId: string;
+      ipAddress: string;
+      acceptanceTimeInSeconds: number;
+    },
     @CurrentUser() user: User,
   ) {
     return this.userIntranetDocumentAcceptanceService.create({

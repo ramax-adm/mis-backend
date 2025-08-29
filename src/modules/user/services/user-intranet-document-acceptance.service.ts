@@ -16,9 +16,13 @@ export class UserIntranetDocumentAcceptanceService {
   async create({
     userId,
     documentVersionId,
+    acceptanceTimeInSeconds,
+    ipAddress,
   }: {
     userId: string;
     documentVersionId: string;
+    ipAddress: string;
+    acceptanceTimeInSeconds: number;
   }) {
     const existingUser = await this.userRepository.findOneBy({
       id: userId,
@@ -27,9 +31,12 @@ export class UserIntranetDocumentAcceptanceService {
     if (!existingUser) {
       throw new ConflictException('A user with this id not exists');
     }
+
     return this.userIntranetDocumentAcceptanceRepository.save({
       documentVersionId,
       userId,
+      acceptanceTimeInSeconds,
+      ipAddress,
     });
   }
 
