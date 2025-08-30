@@ -18,6 +18,7 @@ import { EnvService } from '@/config/env/env.service';
 import { IntranetDocumentTypeEnum } from '../enums/intranet-document-type.enum';
 import { IntranetDocumentCategoryEnum } from '../enums/intranet-document-category.enum';
 import { UpdateIntranetDocumentRequestDto } from '../dtos/request/update-intranet-document-request.dto';
+import { UserIntranetDocumentAcceptance } from '@/modules/user/entities/user-intranet-documents-acceptance.entity';
 
 const BUCKET_KEY = 'intranet-documents';
 
@@ -156,6 +157,7 @@ export class IntranetDocumentService {
     });
   }
 
+  // GETTERS personalizados
   async getUserDocumentsData({
     type,
     userId,
@@ -252,6 +254,10 @@ export class IntranetDocumentService {
         continue;
       }
 
+      if (!item.storageKey) {
+        continue;
+      }
+
       const tenMinutesInSeconds = 60 * 10;
       const signedUrl = await this.storageService.getSignedUrl(
         {
@@ -266,6 +272,66 @@ export class IntranetDocumentService {
     }
 
     return response;
+  }
+
+  async getAcceptedDocuments() {
+    const data = await this.datasource.manager.find(
+      UserIntranetDocumentAcceptance,
+      {
+        relations: {
+          user: true,
+          documentVersion: { document: true },
+        },
+      },
+    );
+
+    return data;
+  }
+
+  async getPendingAcceptanceDocuments() {
+    const [userDocumentAcceptances, users] = await Promise.all([
+      this.datasource.manager.find(User),
+      this.datasource.manager.find(UserIntranetDocumentAcceptance),
+    ]);
+
+    const qb = this.datasource
+      .getRepository(IntranetDocument)
+      .createQueryBuilder('id')
+      .leftJoinAndSelect(
+        'id.versions',
+        'idv',
+        `idv.category = :category 
+     OR idv.review_number = (
+       SELECT MAX(idv2.review_number)
+       FROM intranet_documents_versions idv2
+       WHERE idv2.document_id = id.id
+     )`,
+        { category: 'video' },
+      )
+      .select(['id', 'idv']);
+
+    const documents = await qb.getMany();
+
+    const response: {
+      userId: string;
+      userName: string;
+      pendenciesQuantity: number;
+      pendingDocumentVersions: IntranetDocumentVersion[];
+    }[] = [];
+
+    // TODO: WIP
+    // for(const user of users){
+    //   for (const document of documents){
+    //     const userAcceptDocument = document.
+    //   }
+    // }
+    /**
+     * userid
+     * username
+     * qtd pendencias
+     * pendencias documentVersions
+     *
+     */
   }
 
   async updateDocument(id: string, dto: UpdateIntranetDocumentRequestDto) {

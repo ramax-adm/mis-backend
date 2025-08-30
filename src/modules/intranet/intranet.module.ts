@@ -7,6 +7,8 @@ import { IntranetDocumentController } from './controllers/intranet-document.cont
 import { AwsModule } from '../aws/aws.module';
 import { IntranetDocumentService } from './services/intranet-document.service';
 import { EnvModule } from '@/config/env/env.module';
+import { ExcelReaderService } from '@/core/services/excel-reader.service';
+import { IntranetDocumentReportService } from './services/intranet-document-report.service';
 
 @Module({
   imports: [
@@ -18,7 +20,11 @@ import { EnvModule } from '@/config/env/env.module';
       UserIntranetDocumentAcceptance,
     ]),
   ],
-  providers: [IntranetDocumentService],
+  providers: [
+    IntranetDocumentService,
+    IntranetDocumentReportService,
+    ExcelReaderService,
+  ],
   controllers: [IntranetDocumentController],
 })
 export class IntranetModule {}

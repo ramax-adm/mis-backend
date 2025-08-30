@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -22,10 +23,15 @@ import { CreateIntranetDocumentVersionRequestDto } from '../dtos/request/create-
 import { FileInterceptor } from '@nestjs/platform-express';
 import { IntranetDocumentTypeEnum } from '../enums/intranet-document-type.enum';
 import { UpdateIntranetDocumentRequestDto } from '../dtos/request/update-intranet-document-request.dto';
+import { IntranetDocumentReportService } from '../services/intranet-document-report.service';
+import { Response } from 'express';
 
 @Controller('intranet/document')
 export class IntranetDocumentController {
-  constructor(private intranetDocumentService: IntranetDocumentService) {}
+  constructor(
+    private intranetDocumentService: IntranetDocumentService,
+    private intranetDocumentReportService: IntranetDocumentReportService,
+  ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
@@ -77,6 +83,13 @@ export class IntranetDocumentController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('get-accepted-documents')
+  @HttpCode(HttpStatus.OK)
+  getAcceptedDocuments(@CurrentUser() user: User) {
+    return this.intranetDocumentService.getAcceptedDocuments();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   find() {
@@ -98,5 +111,32 @@ export class IntranetDocumentController {
     @Body() dto: UpdateIntranetDocumentRequestDto,
   ) {
     return this.intranetDocumentService.updateDocument(id, dto);
+  }
+
+  // TEMPORARIO
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('/export-xlsx')
+  @HttpCode(HttpStatus.OK)
+  async exportXLSX(@Res() res: Response, @CurrentUser() user: User) {
+    const result = await this.intranetDocumentReportService.export(user.id);
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const formattedDate = `${year}-${month}-${day}`;
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.header(
+      'Content-Disposition',
+      `attachment; filename=${formattedDate}-intranet.xlsx`,
+    );
+    res.type(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+
+    console.log('sending');
+
+    res.send(result);
   }
 }
