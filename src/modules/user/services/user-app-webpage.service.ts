@@ -25,12 +25,12 @@ export class UserAppWebpageService {
   }
 
   async remove({ id }: { id: string }) {
-    const existingUserCompany = await this.userAppWebpageRepository.findOneBy({
+    const existingAppWebpage = await this.userAppWebpageRepository.findOneBy({
       id,
     });
 
-    if (!existingUserCompany) {
-      throw new ConflictException('A user company with this id not exists');
+    if (!existingAppWebpage) {
+      throw new ConflictException('A user webpage with this id not exists');
     }
     return this.userAppWebpageRepository.delete({ id });
   }

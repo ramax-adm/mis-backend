@@ -18,6 +18,7 @@ import { AwsModule } from './modules/aws/aws.module';
 import { UtilsModule } from './modules/utils/utils.module';
 import { FreightsModule } from './modules/freights/freights.module';
 import { HumanResourcesModule } from './modules/human-resources/human-resources.module';
+import { IntranetModule } from './modules/intranet/intranet.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { HumanResourcesModule } from './modules/human-resources/human-resources.
     CashFlowModule,
     FreightsModule,
     HumanResourcesModule,
+    IntranetModule,
     ParametersModule,
     PurchasesModule,
     SalesModule,
