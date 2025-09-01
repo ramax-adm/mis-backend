@@ -19,6 +19,10 @@ import { IntranetDocumentTypeEnum } from '../enums/intranet-document-type.enum';
 import { IntranetDocumentCategoryEnum } from '../enums/intranet-document-category.enum';
 import { UpdateIntranetDocumentRequestDto } from '../dtos/request/update-intranet-document-request.dto';
 import { UserIntranetDocumentAcceptance } from '@/modules/user/entities/user-intranet-documents-acceptance.entity';
+import { GetPendingAcceptanceDocumentsResponseDto } from '../dtos/response/get-pending-acceptance-documents-response.dto';
+import { GetUserDocumentsDataResponseDto } from '../dtos/response/get-user-documents-data-response.dto';
+import { UserRole } from '@/core/enums/user-role.enum';
+import { USER_DEPARTMENTS } from '@/modules/user/constants/user-departments';
 
 const BUCKET_KEY = 'intranet-documents';
 
@@ -126,7 +130,7 @@ export class IntranetDocumentService {
     }
   }
 
-  // listagem de documentos + status do usuario
+  // listagens e busca
   async find() {
     return await this.datasource.manager.find(IntranetDocument);
   }
@@ -229,25 +233,28 @@ export class IntranetDocumentService {
 
     const data = await qb.getRawMany<FindIntranetDocumentsRawItem>();
 
-    const response = data.map((i) => ({
-      id: i.id,
-      versionId: i.version_id,
-      key: i.key,
-      name: i.name,
-      description: i.description,
-      category: i.category,
-      status: i.status,
-      type: i.type,
-      reviewNumber: i.review_number,
-      version: i.version,
-      storageType: i.storage_type,
-      storageKey: i.storage_key,
-      createdAt: i.created_at,
-      createdById: i.created_by_id,
-      createdBy: i.created_by,
-      versionCreatedById: i.version_created_by_id,
-      versionCreatedBy: i.version_created_by,
-    }));
+    const response = data.map(
+      (i) =>
+        new GetUserDocumentsDataResponseDto({
+          id: i.id,
+          versionId: i.version_id,
+          key: i.key,
+          name: i.name,
+          description: i.description,
+          category: i.category,
+          status: i.status,
+          type: i.type,
+          reviewNumber: i.review_number,
+          version: i.version,
+          storageType: i.storage_type,
+          storageKey: i.storage_key,
+          createdAt: i.created_at,
+          createdById: i.created_by_id,
+          createdBy: i.created_by,
+          versionCreatedById: i.version_created_by_id,
+          versionCreatedBy: i.version_created_by,
+        }),
+    );
 
     for await (const item of response) {
       if (item.category === IntranetDocumentCategoryEnum.VIDEO) {
@@ -289,49 +296,55 @@ export class IntranetDocumentService {
   }
 
   async getPendingAcceptanceDocuments() {
-    const [userDocumentAcceptances, users] = await Promise.all([
-      this.datasource.manager.find(User),
-      this.datasource.manager.find(UserIntranetDocumentAcceptance),
-    ]);
-
     const qb = this.datasource
-      .getRepository(IntranetDocument)
-      .createQueryBuilder('id')
-      .leftJoinAndSelect(
-        'id.versions',
-        'idv',
-        `idv.category = :category 
-     OR idv.review_number = (
-       SELECT MAX(idv2.review_number)
-       FROM intranet_documents_versions idv2
-       WHERE idv2.document_id = id.id
-     )`,
-        { category: 'video' },
-      )
-      .select(['id', 'idv']);
+      .getRepository(IntranetDocumentVersion)
+      .createQueryBuilder('idv')
+      .innerJoinAndSelect('idv.document', 'id') // join com documento
+      .leftJoinAndSelect('idv.acceptances', 'acceptance'); // join com acceptances
+
+    // filtro: categoria 'video' ou último reviewNumber
+    qb.where('idv.category = :category', { category: 'video' }).orWhere(
+      (qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('MAX(idv2.reviewNumber)')
+          .from(IntranetDocumentVersion, 'idv2')
+          .where('idv2.documentId = id.id')
+          .getQuery();
+
+        return 'idv.reviewNumber = ' + subQuery;
+      },
+    );
 
     const documents = await qb.getMany();
+    const users = await this.datasource.manager.find(User);
 
-    const response: {
-      userId: string;
-      userName: string;
-      pendenciesQuantity: number;
-      pendingDocumentVersions: IntranetDocumentVersion[];
-    }[] = [];
+    const response: GetPendingAcceptanceDocumentsResponseDto[] = [];
 
-    // TODO: WIP
-    // for(const user of users){
-    //   for (const document of documents){
-    //     const userAcceptDocument = document.
-    //   }
-    // }
-    /**
-     * userid
-     * username
-     * qtd pendencias
-     * pendencias documentVersions
-     *
-     */
+    for (const user of users) {
+      const pendingDocumentVersions = documents.filter(
+        (d) => !d.acceptances.some((a) => a.userId === user.id),
+      );
+
+      const hasSomePendingDocument = pendingDocumentVersions.length > 0;
+
+      if (!hasSomePendingDocument) {
+        continue;
+      }
+
+      response.push(
+        new GetPendingAcceptanceDocumentsResponseDto({
+          userId: user.id,
+          userName: user.name,
+          userRole: user.role as UserRole,
+          userRoleName: USER_DEPARTMENTS.find((i) => i.key === user.role).label,
+          pendencesQuantity: pendingDocumentVersions.length,
+          pendingDocumentVersions,
+        }),
+      );
+    }
+
+    return response;
   }
 
   async updateDocument(id: string, dto: UpdateIntranetDocumentRequestDto) {
@@ -350,6 +363,7 @@ export class IntranetDocumentService {
     return await this.datasource.manager.save(dataToUpdate);
   }
 
+  // auxiliar methods
   private getFileExtension(filename: string) {
     return FileUtils.fileExtension(filename);
   }
