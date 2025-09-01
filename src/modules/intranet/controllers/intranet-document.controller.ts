@@ -90,6 +90,13 @@ export class IntranetDocumentController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('get-pending-acceptance-documents')
+  @HttpCode(HttpStatus.OK)
+  getPendingAcceptanceDocuments() {
+    return this.intranetDocumentService.getPendingAcceptanceDocuments();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   find() {
