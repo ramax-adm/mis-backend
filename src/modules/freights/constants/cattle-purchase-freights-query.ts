@@ -3,6 +3,7 @@ import { CattlePurchaseFreightsStatusEnum } from '../enums/cattle-purchase-freig
 export const CATTLE_PURCHASE_FREIGHTS_QUERY = /* sql */ `
 select 
   scpf.slaughter_date,
+  scpf.receipt_date,
   scpf.company_code,
   sc."name" as company_name,
   scpf.purchase_cattle_order_id,
@@ -15,14 +16,19 @@ select
   scpf.supplier_name,
   scpf.cattle_advisor_name,
   scpf.freight_transport_plate,
+  scpf.freight_transport_capacity,
   scpf.freight_transport_type, 
   scpf.feedlot_name,
   scpf.feedlot_km_distance,
   scpf.negotiated_km_distance,
   scpf.cattle_quantity,
   scpf.reference_freight_table_price,
+  scpf.road_price,
+  scpf.earth_price,
+  scpf.toll_price,
+  scpf.additional_price,
+  scpf.discount_price,
   scpf.negotiated_freight_price,
-  scpf.negotiated_freight_price - scpf.reference_freight_table_price as dif_price,
   case
   	when scpf.negotiated_km_distance = 0 then 0
   	else scpf.negotiated_freight_price / scpf.negotiated_km_distance
