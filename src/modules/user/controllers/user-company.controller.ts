@@ -35,10 +35,12 @@ export class UserSensattaCompanyController {
   findByUser(
     @CurrentUser() user: User,
     @Query('isConsideredOnStock') isConsideredOnStock?: boolean,
+    @Query('isConsideredOnFreight') isConsideredOnFreight?: boolean,
   ) {
     return this.userCompanyService.findByUser({
       user,
       isConsideredOnStock,
+      isConsideredOnFreight,
     });
   }
 

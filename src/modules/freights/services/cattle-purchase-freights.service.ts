@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CATTLE_PURCHASE_FREIGHTS_QUERY } from '../constants/cattle-purchase-freights-query';
-import { CattlePurchaseFreight } from '@/core/entities/sensatta/cattle-purchase-freight.entity';
+import { CattlePurchaseFreight } from '@/modules/freights/entities/cattle-purchase-freight.entity';
 import { GetCattlePurchaseFreightLastUpdatedAtResponseDto } from '../dtos/get-cattle-purchase-freight-last-updated-at-response.dto';
 import { GetCattlePurchaseFreightsResponse } from '../types/cattle-purchase-freights.types';
 import { GetAnalyticalCattlePurchaseFreightsResponseDto } from '../dtos/get-analytical-cattle-purchase-freights-response.dto';
 import { CattlePurchaseFreightsStatusEnum } from '../enums/cattle-purchase-freights-status.enum';
+import { DateUtils } from '@/modules/utils/services/date.utils';
+import { NumberUtils } from '@/modules/utils/services/number.utils';
 
 @Injectable()
 export class CattlePurchaseFreightService {
@@ -49,7 +51,25 @@ export class CattlePurchaseFreightService {
       cattleAdvisor,
     ]);
 
-    return data;
+    return data.map((item) => {
+      if (item.status === CattlePurchaseFreightsStatusEnum.OPEN) {
+        item.open_days = DateUtils.getDifferenceInDays(
+          item.slaughter_date,
+          new Date(),
+        );
+      }
+
+      const base_price = item.road_price + item.earth_price;
+      const dif_price = base_price - item.reference_freight_table_price;
+
+      Object.assign(item, {
+        base_price,
+        dif_price,
+        discount_price: -item.discount_price,
+      });
+
+      return item;
+    });
   }
 
   async getAnalyticalFreightData({
@@ -106,12 +126,14 @@ export class CattlePurchaseFreightService {
       quantityActive: 0,
       quantityClosed: 0,
       quantityNoFreight: 0,
+      cattleQuantity: 0,
       cattleQuantityActiveFreights: 0,
       cattleQuantityClosedFreights: 0,
       cattleQuantityNoFreights: 0,
-      negotiatedPrice: 0,
+      basePrice: 0,
       tablePrice: 0,
       difPrice: 0,
+      openDays: 0,
     };
 
     const quantityClosedByFreightCompany = new Map<
@@ -127,14 +149,16 @@ export class CattlePurchaseFreightService {
     const priceByFreightCompany = new Map<string, number>();
 
     const freightsOverPriceTable: {
-      date: string;
+      slaughterDate: string;
       purchaseCattleOrderId: string;
       freightCompany: string;
       cattleAdvisor: string;
       cattleQuantity: number;
-      negotiatedPrice: number;
-      tablePrice: number;
+      roadPrice: number;
+      earthPrice: number;
+      basePrice: number;
       difPrice: number;
+      tablePrice: number;
     }[] = [];
 
     const freightsByFreightCompany: {
@@ -183,6 +207,7 @@ export class CattlePurchaseFreightService {
       const advisor = item.cattle_advisor_name || 'SEM ASSESSOR';
       const transportType = item.freight_transport_type || 'SEM TIPO';
       const isNoFreight = transportType === 'SEM FRETE';
+      totals.cattleQuantity += item.cattle_quantity;
 
       if (isNoFreight) {
         totals.quantityNoFreight++;
@@ -190,11 +215,12 @@ export class CattlePurchaseFreightService {
       } else if (status === CattlePurchaseFreightsStatusEnum.CLOSED) {
         totals.quantityClosed++;
         totals.cattleQuantityClosedFreights += item.cattle_quantity;
-        totals.negotiatedPrice += item.negotiated_freight_price;
+        totals.basePrice += item.base_price;
         totals.tablePrice += item.reference_freight_table_price;
         totals.difPrice += item.dif_price;
       } else if (status === CattlePurchaseFreightsStatusEnum.OPEN) {
         totals.quantityActive++;
+        totals.openDays += item.open_days || 0;
         totals.cattleQuantityActiveFreights += item.cattle_quantity;
       }
 
@@ -212,6 +238,7 @@ export class CattlePurchaseFreightService {
           quantity: 0,
         };
         current.quantity += 1;
+
         quantityActiveByFreightCompany.set(freightCompany, current);
       }
 
@@ -280,14 +307,19 @@ export class CattlePurchaseFreightService {
       typeGroup.tablePrice += item.reference_freight_table_price;
       typeGroup.difPrice += item.dif_price;
 
-      if (item.negotiated_freight_price > item.reference_freight_table_price) {
+      if (
+        NumberUtils.nb0(item.base_price) >
+        NumberUtils.nb0(item.reference_freight_table_price)
+      ) {
         freightsOverPriceTable.push({
-          date: dateKey,
+          slaughterDate: dateKey,
           purchaseCattleOrderId: item.purchase_cattle_order_id,
           freightCompany: item.freight_company_name,
           cattleAdvisor: item.cattle_advisor_name,
           cattleQuantity: item.cattle_quantity,
-          negotiatedPrice: item.negotiated_freight_price,
+          basePrice: item.base_price,
+          earthPrice: item.earth_price,
+          roadPrice: item.road_price,
           tablePrice: item.reference_freight_table_price,
           difPrice: item.dif_price,
         });
@@ -303,8 +335,12 @@ export class CattlePurchaseFreightService {
       obj.percent = obj.quantity / (totals.quantityActive || 1);
     }
 
+    totals.openDays =
+      totals.openDays / data.filter((i) => i.open_days > 0).length || 0;
+
     const byStatus = {
       quantityActive: totals.quantityActive,
+      openDays: totals.openDays,
       percentActive: totals.quantityActive / totals.quantity,
       quantityClosed: totals.quantityClosed,
       percentClosed: totals.quantityClosed / totals.quantity,

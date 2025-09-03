@@ -36,9 +36,11 @@ export class UserSensattaCompanyService {
   async findByUser({
     user,
     isConsideredOnStock,
+    isConsideredOnFreight,
   }: {
     user: User;
     isConsideredOnStock?: boolean;
+    isConsideredOnFreight?: boolean;
   }) {
     const isUserAdmin = user.role === UserRole.Admin;
 
@@ -52,6 +54,12 @@ export class UserSensattaCompanyService {
       if (isConsideredOnStock !== undefined) {
         qb.andWhere('sc.is_considered_on_stock = :isConsideredOnStock', {
           isConsideredOnStock,
+        });
+      }
+
+      if (isConsideredOnFreight !== undefined) {
+        qb.andWhere('sc.is_considered_on_freight = :isConsideredOnFreight', {
+          isConsideredOnFreight,
         });
       }
 
