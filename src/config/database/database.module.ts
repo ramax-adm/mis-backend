@@ -13,7 +13,7 @@ import { Warehouse } from '@/core/entities/sensatta/warehouse.entity';
 import { ExternalIncomingBatch } from '@/core/entities/external/external-incoming-batch.entity';
 import { UploadFile } from '@/modules/utils/entities/upload-file.entity';
 import { UploadedFile } from '@/modules/utils/entities/uploaded-files.entity';
-import { CattlePurchaseFreight } from '@/core/entities/sensatta/cattle-purchase-freight.entity';
+import { CattlePurchaseFreight } from '@/modules/freights/entities/cattle-purchase-freight.entity';
 import { ExternalHumanResourcesHours } from '@/core/entities/external/external-human-resources-hours.entity';
 import { AppWebpage } from '@/core/entities/application/app-webpage.entity';
 import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';

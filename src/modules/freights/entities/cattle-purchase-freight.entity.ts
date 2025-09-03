@@ -16,6 +16,9 @@ export class CattlePurchaseFreight {
   @Column({ name: 'freight_closing_date', type: 'date', nullable: true })
   freightClosingDate: Date | null;
 
+  @Column({ name: 'receipt_date', type: 'date', nullable: true })
+  receiptDate: Date | null;
+
   @Column({ name: 'purchase_cattle_order_id', nullable: true })
   purchaseCattleOrderId: string;
 
@@ -42,6 +45,13 @@ export class CattlePurchaseFreight {
 
   @Column({ name: 'freight_transport_type', nullable: true })
   freightTransportType: string;
+
+  @Column({
+    name: 'freight_transport_capacity',
+    type: 'int',
+    nullable: true,
+  })
+  freightTransportCapacity: number;
 
   @Column({ name: 'freight_transport_plate', nullable: true })
   freightTransportPlate: string;
@@ -76,6 +86,24 @@ export class CattlePurchaseFreight {
 
   @Column({ name: 'negotiated_freight_price', type: 'float4', nullable: true })
   negotiatedFreightPrice: number;
+
+  @Column({ name: 'toll_price', type: 'float4', nullable: true })
+  tollPrice: number;
+
+  @Column({ name: 'road_price', type: 'float4', nullable: true })
+  roadPrice: number;
+
+  @Column({ name: 'earth_price', type: 'float4', nullable: true })
+  earthPrice: number;
+
+  @Column({ name: 'outing_price', type: 'float4', nullable: true })
+  outingPrice: number;
+
+  @Column({ name: 'additional_price', type: 'float4', nullable: true })
+  additionalPrice: number;
+
+  @Column({ name: 'discount_price', type: 'float4', nullable: true })
+  discountPrice: number;
 
   // @Column({ name: 'nf_freight_price', type: 'float4', nullable: true })
   // nfFreightPrice: number;

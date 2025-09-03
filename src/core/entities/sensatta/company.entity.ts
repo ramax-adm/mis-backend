@@ -52,6 +52,13 @@ export class Company {
   @Column({ name: 'is_considered_on_stock', type: 'boolean', default: 'false' })
   isConsideredOnStock: boolean;
 
+  @Column({
+    name: 'is_considered_on_freight',
+    type: 'boolean',
+    default: 'false',
+  })
+  isConsideredOnFreight: boolean;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamptz',

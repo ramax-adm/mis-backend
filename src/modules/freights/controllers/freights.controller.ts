@@ -91,13 +91,6 @@ export class FreightsController {
       (item) => item.status === CattlePurchaseFreightsStatusEnum.OPEN,
     );
 
-    const maxFreightOutOfTable = closedFreights.sort(
-      (a, b) => Number(b.difPrice) - Number(a.difPrice),
-    )[0];
-    const minFreightOutOfTable = closedFreights.sort(
-      (a, b) => Number(a.difPrice) - Number(b.difPrice),
-    )[0];
-
     const dataResponse = {
       parsedData: response.map((item) => item.toJSON()),
       originalData: response.map((item) => item),
@@ -113,6 +106,10 @@ export class FreightsController {
           cattleQuantity: NumberUtils.toLocaleString(
             openFreights.reduce((acc, item) => acc + item.cattleQuantity, 0),
           ),
+          openDays: NumberUtils.toLocaleString(
+            openFreights.reduce((acc, item) => acc + item.openDays, 0) /
+              openFreights.filter((i) => i.openDays > 0).length || 0,
+          ),
         },
         closedFreights: {
           amount: NumberUtils.toLocaleString(closedFreights.length),
@@ -120,10 +117,18 @@ export class FreightsController {
             closedFreights.reduce((acc, item) => acc + item.cattleQuantity, 0),
           ),
           price: NumberUtils.toLocaleString(
+            closedFreights.reduce((acc, item) => acc + item.basePrice, 0),
+          ),
+          otherPrices: NumberUtils.toLocaleString(
             closedFreights.reduce(
-              (acc, item) => acc + item.negotiatedFreightPrice,
+              (acc, item) =>
+                acc +
+                item.additionalPrice +
+                item.tollPrice +
+                item.discountPrice,
               0,
             ),
+            0,
           ),
           tablePrice: NumberUtils.toLocaleString(
             closedFreights.reduce(
@@ -132,15 +137,22 @@ export class FreightsController {
             ),
             0,
           ),
-
+          totalPrice: NumberUtils.toLocaleString(
+            closedFreights.reduce(
+              (acc, item) => acc + item.negotiatedFreightPrice,
+              0,
+            ),
+            0,
+          ),
           difPrice: NumberUtils.toLocaleString(
             closedFreights.reduce((acc, item) => acc + item.difPrice, 0),
             0,
           ),
-
-          maxFreightOutOfTable,
-          minFreightOutOfTable,
         },
+        quantity: response.length,
+        cattleQuantity: NumberUtils.nb0(
+          response.reduce((acc, item) => acc + item.cattleQuantity, 0),
+        ),
       },
     };
 
