@@ -5,32 +5,15 @@ import { AnttFreightCompaniesConsultation } from '../entities/antt-freight-compa
 import { FreightCompany } from '@/core/entities/sensatta/freight-company.entity';
 import { FreightCompanyStatusEnum } from '../enums/freight-company-status.enum';
 import { GetFreightCompanyRawItem } from '../types/freight-companies.types';
+import { NumberUtils } from '@/modules/utils/services/number.utils';
 
 @Injectable()
 export class FreightCompaniesService {
   constructor(private readonly datasource: DataSource) {}
 
-  /***
-   * data:{
-   *    sensatta_code,
-   *    name,
-   *    cnpj,
-   *    rnrtc_code,
-   *    rnrtc_status,
-   *    registered_at,
-   *    location,
-   *    result_status,
-   *    result_description,
-   *    result_observation
-   * }
-   * kpis:{
-   * quantity_status_ok
-   * quantity_status_error
-   * status_by_day
-   * }
-   *
+  /**
+   * Detalhamento de uma transportadora com todas as metricas ANTT
    */
-
   async findOne(sensattaCode: string) {
     const consultations = await this.datasource
       .getRepository(AnttFreightCompaniesConsultation)
@@ -115,24 +98,13 @@ export class FreightCompaniesService {
   }
 
   /**
-   * Listagem de empresas com status ANTT
-        ).length,
-        quantityStatusError: consultations.filter(
-          (c) => c.resultStatus === FreightCompanyStatusEnum.NAO_CONFORME,
-        ).length,
-      },
-    };
-  }
-
-  /**
-   * Listagem de empresas com status ANTT
+   * Listagem de transportadoras com status ANTT
    */
   async findAll() {
     const qb = this.datasource
-      .getRepository(FreightCompany) // dev.sensatta_freight_companies
+      .getRepository(FreightCompany)
       .createQueryBuilder('sfc');
 
-    // subquery: última data por sensatta_code (não referencia sfc)
     qb.leftJoin(
       'antt_freight_companies_consultations',
       'afcc',
@@ -155,7 +127,7 @@ export class FreightCompaniesService {
     ]);
     const data = await qb.getRawMany<GetFreightCompanyRawItem>();
 
-    const result = data.map((item) => ({
+    const freightCompanies = data.map((item) => ({
       sensattaCode: item.sensatta_code,
       name: item.name,
       cnpj: item.cnpj,
@@ -163,9 +135,49 @@ export class FreightCompaniesService {
       city: item.city,
       uf: item.uf,
       rnrtcCode: item.rnrtc_code,
-      resultStatus: item.result_status || 'ERRO CONSULTA',
+      resultStatus:
+        item.result_status || FreightCompanyStatusEnum.ERRO_CONSULTA,
       verifiedAt: item.verified_at,
     }));
-    return result;
+
+    const successFreightCompanies = freightCompanies.filter(
+      (i) => i.resultStatus === FreightCompanyStatusEnum.OK,
+    );
+    const errorFreightCompanies = freightCompanies.filter(
+      (i) => i.resultStatus === FreightCompanyStatusEnum.NAO_CONFORME,
+    );
+    const notConsultedFreightCompanies = freightCompanies.filter(
+      (i) => i.resultStatus === FreightCompanyStatusEnum.ERRO_CONSULTA,
+    );
+
+    const totalCount = freightCompanies.length || 1;
+    const successPercent = NumberUtils.nb2(
+      (successFreightCompanies.length / totalCount) * 100,
+    );
+    const errorPercent = NumberUtils.nb2(
+      (errorFreightCompanies.length / totalCount) * 100,
+    );
+    const notConsultedPercent = NumberUtils.nb2(
+      (notConsultedFreightCompanies.length / totalCount) * 100,
+    );
+
+    return {
+      data: freightCompanies,
+      totals: {
+        quantity: freightCompanies.length,
+        success: {
+          quantity: successFreightCompanies.length,
+          percent: successPercent,
+        },
+        error: {
+          quantity: errorFreightCompanies.length,
+          percent: errorPercent,
+        },
+        notConsulted: {
+          quantity: notConsultedFreightCompanies.length,
+          percent: notConsultedPercent,
+        },
+      },
+    };
   }
 }
