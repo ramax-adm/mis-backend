@@ -93,9 +93,22 @@ export class FreightCompaniesService {
     }
 
     return {
-      freightCompany,
+      freightCompany: {
+        sensattaCode: freightCompany.sensatta_code,
+        name: freightCompany.name,
+        cnpj: freightCompany.cnpj,
+        rnrtcCode: freightCompany.rnrtc_code,
+        rnrtcStatus: freightCompany.rnrtc_status,
+        registeredAt: freightCompany.registered_at,
+        location: freightCompany.location,
+        resultStatus: freightCompany.result_status,
+        resultDescription: freightCompany.result_description,
+        resultObservation: freightCompany.result_observation,
+        verifiedAt: freightCompany.verified_at,
+      },
       kpis: {
-        ...kpis,
+        quantityStatusOk: kpis.quantityStatusOk,
+        quantityStatusError: kpis.quantityStatusError,
         statusByDay: Object.fromEntries(kpis.statusByDay),
       },
     };
