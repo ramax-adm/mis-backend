@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -145,5 +146,12 @@ export class IntranetDocumentController {
     console.log('sending');
 
     res.send(result);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('version/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeVersion(@Param('id') id: string) {
+    return this.intranetDocumentService.removeVersion(id);
   }
 }
