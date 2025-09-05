@@ -166,6 +166,7 @@ export class CattlePurchaseFreightService {
       purchaseCattleOrderId: string;
       freightCompany: string;
       cattleQuantity: number;
+      freightTransportType: string;
       freightTransportCapacity: number;
       dif: number;
     }[] = [];
@@ -340,6 +341,7 @@ export class CattlePurchaseFreightService {
           purchaseCattleOrderId: item.purchase_cattle_order_id,
           freightCompany: item.freight_company_name,
           cattleQuantity: item.cattle_quantity,
+          freightTransportType: item.freight_transport_type,
           freightTransportCapacity: item.freight_transport_capacity,
           dif: item.cattle_quantity - item.freight_transport_capacity,
         });
