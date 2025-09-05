@@ -363,6 +363,28 @@ export class IntranetDocumentService {
     return await this.datasource.manager.save(dataToUpdate);
   }
 
+  async removeVersion(id: string) {
+    const documentVersion = await this.datasource.manager.findOne(
+      IntranetDocumentVersion,
+      {
+        where: { id },
+      },
+    );
+
+    if (!documentVersion) {
+      throw new NotFoundException(
+        'Não foi possivel encontrar a versão do documento pelo ID',
+      );
+    }
+
+    await this.datasource.manager.remove(documentVersion);
+
+    await this.storageService.deleteFile(
+      this.envService.get('AWS_S3_BUCKET'),
+      documentVersion.storageKey,
+    );
+  }
+
   // auxiliar methods
   private getFileExtension(filename: string) {
     return FileUtils.fileExtension(filename);

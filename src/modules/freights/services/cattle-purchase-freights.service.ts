@@ -161,6 +161,15 @@ export class CattlePurchaseFreightService {
       tablePrice: number;
     }[] = [];
 
+    const freightsOverCapacityTable: {
+      slaughterDate: string;
+      purchaseCattleOrderId: string;
+      freightCompany: string;
+      cattleQuantity: number;
+      freightTransportCapacity: number;
+      dif: number;
+    }[] = [];
+
     const freightsByFreightCompany: {
       freightCompanyCode: string;
       freightCompany: string;
@@ -324,6 +333,17 @@ export class CattlePurchaseFreightService {
           difPrice: item.dif_price,
         });
       }
+
+      if (item.cattle_quantity > item.freight_transport_capacity) {
+        freightsOverCapacityTable.push({
+          slaughterDate: dateKey,
+          purchaseCattleOrderId: item.purchase_cattle_order_id,
+          freightCompany: item.freight_company_name,
+          cattleQuantity: item.cattle_quantity,
+          freightTransportCapacity: item.freight_transport_capacity,
+          dif: item.cattle_quantity - item.freight_transport_capacity,
+        });
+      }
     }
 
     // Calcula porcentagens após o loop
@@ -360,6 +380,7 @@ export class CattlePurchaseFreightService {
       day: Object.fromEntries(day),
       priceByFreightCompany: Object.fromEntries(priceByFreightCompany),
       freightsOverPriceTable,
+      freightsOverCapacityTable,
       freightsByFreightCompany,
       freightsByCattleAdvisor,
       freightsByFreightType,
