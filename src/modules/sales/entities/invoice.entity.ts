@@ -13,11 +13,17 @@ export class Invoice {
   @Column({ type: 'date', nullable: true })
   date?: Date;
 
+  @Column({ name: 'nf_id', nullable: true })
+  nfId?: string;
+
   @Column({ name: 'nf_situation', nullable: true })
   nfSituation?: string;
 
   @Column({ name: 'nf_type', nullable: true })
   nfType?: string;
+
+  @Column({ name: 'nf_number', nullable: true })
+  nfNumber?: string;
 
   @Column({ name: 'client_type_code', nullable: true })
   clientTypeCode?: string;
@@ -34,11 +40,8 @@ export class Invoice {
   @Column({ name: 'cfop_description', nullable: true })
   cfopDescription?: string;
 
-  @Column({ name: 'nf_number', nullable: true })
-  nfNumber?: string;
-
-  @Column({ name: 'request_id', nullable: true })
-  requestId?: string; // sequencial pedido
+  @Column({ name: 'order_id', nullable: true })
+  orderId?: string; // sequencial pedido
 
   @Column({ name: 'client_code', nullable: true })
   clientCode?: string;

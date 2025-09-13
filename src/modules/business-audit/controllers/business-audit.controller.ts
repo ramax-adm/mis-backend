@@ -11,6 +11,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
 import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
 import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
+import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
 
 @Controller('business-audit')
 export class BusinessAuditController {
@@ -31,15 +32,52 @@ export class BusinessAuditController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('resumed')
+  @Get('overview')
   @HttpCode(HttpStatus.OK)
-  async getData(
+  async getOverviewData(
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date,
   ) {
-    return await this.businessAuditService.getData({
+    return await this.businessAuditService.getOverviewData({
       startDate,
       endDate,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('sales')
+  @HttpCode(HttpStatus.OK)
+  async getSalesAuditData(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('priceConsideration')
+    priceConsideration?: OrderPriceConsiderationEnum,
+  ) {
+    return await this.businessAuditService.getSalesAuditData({
+      startDate,
+      endDate,
+      priceConsideration,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('data/orders-lines')
+  @HttpCode(HttpStatus.OK)
+  async getOrderLinesData(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('nfNumber') nfNumber?: string,
+    @Query('productCode') productCode?: string,
+    @Query('clientCode') clientCode?: string,
+    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
+  ) {
+    return await this.businessAuditService.getOrdersLines({
+      startDate,
+      endDate,
+      nfNumber,
+      productCode,
+      clientCode,
+      salesRepresentativeCode,
     });
   }
 }
