@@ -21,7 +21,6 @@ import { CreateUserDto } from '../dtos/create-user.dto';
 import { PasswordTokenDto } from '../dtos/password-token.dto';
 import { UpdateUserDto } from '../dtos/update-user.dto';
 import { UserAppWebpageService } from '../services/user-app-webpage.service';
-import { UserSensattaCompanyService } from '../services/user-sensatta-company.service';
 import { UserService } from '../services/user.service';
 import { USER_DEPARTMENTS } from '../constants/user-departments';
 

@@ -148,7 +148,7 @@ export class SalesInvoicesService {
       cfop_code?: string;
       cfop_description?: string;
       nf_number?: string;
-      request_id?: string;
+      order_id?: string;
       client_code?: string;
       client_name?: string;
       product_code?: string;
@@ -173,7 +173,7 @@ export class SalesInvoicesService {
       cfopCode: i.cfop_code,
       cfopDescription: i.cfop_description,
       nfNumber: i.nf_number,
-      requestId: i.request_id,
+      orderId: i.order_id,
       clientCode: i.client_code,
       clientName: i.client_name,
       productCode: i.product_code,

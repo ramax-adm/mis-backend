@@ -1,6 +1,6 @@
 import { GetCattlePurchaseFreightsItem } from '../../types/get-freights.type';
 
-type GetBusinessAuditResumeDataAggregated = Record<
+type GetBusinessAuditOverviewDataAggregated = Record<
   string,
   {
     companyCode: string;
@@ -11,7 +11,7 @@ type GetBusinessAuditResumeDataAggregated = Record<
     totalPrice: number;
   }
 >;
-export class GetBusinessAuditResumeDataResponseDto {
+export class GetBusinessAuditOverviewDataResponseDto {
   invoicesWithSamePrice: {
     date: Date;
     nfNumber: string;
@@ -25,8 +25,8 @@ export class GetBusinessAuditResumeDataResponseDto {
     quantity: number;
     totalPrice: number;
   };
-  manuallyEnteredInvoicesByCompany: GetBusinessAuditResumeDataAggregated;
-  manuallyEnteredInvoicesByClient: GetBusinessAuditResumeDataAggregated;
+  manuallyEnteredInvoicesByCompany: GetBusinessAuditOverviewDataAggregated;
+  manuallyEnteredInvoicesByClient: GetBusinessAuditOverviewDataAggregated;
   manuallyEnteredInvoicesTotals: {
     quantity: number;
     productQuantity: number;
@@ -82,7 +82,7 @@ export class GetBusinessAuditResumeDataResponseDto {
     totalAlertExpiresStockWeightInKg: number; // estoque de 15 a 30 dias
   };
 
-  constructor(data: GetBusinessAuditResumeDataResponseDto) {
+  constructor(data: GetBusinessAuditOverviewDataResponseDto) {
     Object.assign(this, data);
   }
 }
