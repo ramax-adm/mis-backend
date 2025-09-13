@@ -6,7 +6,7 @@ export type GetInvoicesItem = {
   cfopCode: string;
   cfopDescription: string;
   nfNumber: string;
-  requestId: string;
+  orderId: string;
   clientCode: string;
   clientName: string;
   productCode: string;

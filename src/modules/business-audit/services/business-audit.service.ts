@@ -1,7 +1,7 @@
 import * as dateFns from 'date-fns';
 import { DataSource } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { GetBusinessAuditResumeDataResponseDto } from '../dtos/response/get-business-resume-data-response.dto';
+import { GetBusinessAuditOverviewDataResponseDto } from '../dtos/response/get-business-overview-data-response.dto';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { StringUtils } from '@/modules/utils/services/string.utils';
 import { GetCattlePurchaseFreightsItem } from '../types/get-freights.type';
@@ -11,22 +11,39 @@ import { GetStockIncomingBatchesItem } from '../types/get-stock-incoming-batches
 import { InvoicesNfTypesEnum } from '@/modules/sales';
 import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
 import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
+import { OrderLine } from '@/modules/sales/entities/order-line.entity';
+import {
+  InvoiceAgg,
+  ProductAgg,
+  ClientAgg,
+  SalesRepresentativeAgg,
+} from '../types/get-sales-audit-data.type';
+import { GetBusinessAuditSalesDataResponseDto } from '../dtos/response/get-business-sales-data-response.dto';
+import { OrderSituationEnum } from '../enums/order-situation.enum';
+import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
 
 @Injectable()
 export class BusinessAuditService {
   constructor(private readonly datasource: DataSource) {}
 
-  // METODO PRINCIPAL
-  async getData({ startDate, endDate }: { startDate?: Date; endDate?: Date }) {
+  // METODOS PRINCIPAIS
+  async getOverviewData({
+    startDate,
+    endDate,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+  }) {
     // faturamento
     const [invoices, manuallyEnteredInvoices] = await Promise.all([
       this.getInvoices({
         startDate,
         endDate,
       }),
-      this.getManualInvoices({
+      this.getInvoices({
         startDate,
         endDate,
+        nfType: InvoicesNfTypesEnum.AVULSA,
       }),
     ]);
 
@@ -220,7 +237,7 @@ export class BusinessAuditService {
     }
 
     // Totais
-    return new GetBusinessAuditResumeDataResponseDto({
+    return new GetBusinessAuditOverviewDataResponseDto({
       invoicesWithSamePrice,
       invoicesWithSamePriceTotals,
 
@@ -244,13 +261,335 @@ export class BusinessAuditService {
     });
   }
 
+  async getSalesAuditData({
+    startDate,
+    endDate,
+    priceConsideration,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    priceConsideration?: OrderPriceConsiderationEnum;
+  }) {
+    const orderLines = await this.getOrdersLines({
+      startDate,
+      endDate,
+      priceConsideration,
+    });
+
+    const salesByInvoice = new Map<string, InvoiceAgg>();
+    const salesByProduct = new Map<string, ProductAgg>();
+    const salesByClient = new Map<string, ClientAgg>();
+    const salesByRepresentative = new Map<string, SalesRepresentativeAgg>();
+
+    for (const orderLine of orderLines) {
+      const invoicingValue = Number(orderLine.totalValue ?? 0);
+      const tableValue = Number(
+        orderLine.referenceTableUnitValue * orderLine.weightInKg,
+      );
+      const difValue = invoicingValue - tableValue;
+      const weightInKg = Number(orderLine.weightInKg ?? 0);
+
+      // 1) Agrupar por NF + Pedido
+      const invoiceKey = `${orderLine.nfNumber ?? 'nof'}`;
+      if (!salesByInvoice.has(invoiceKey)) {
+        salesByInvoice.set(invoiceKey, {
+          companyCode: orderLine.companyCode,
+          companyName: orderLine.companyName,
+          date: orderLine.billingDate,
+          orderNumber: orderLine.orderId,
+          clientCode: orderLine.clientCode,
+          clientName: orderLine.clientName,
+          representativeCode: orderLine.salesRepresentativeCode,
+          representativeName: orderLine.salesRepresentativeName,
+          paymentTerm: orderLine.paymentTerm,
+          salesCount: 0,
+          totalFatValue: 0,
+          totalTableValue: 0,
+          totalDiff: 0,
+          totalKg: 0,
+        });
+      }
+      const curSalesByInvoice = salesByInvoice.get(invoiceKey)!;
+      curSalesByInvoice.salesCount += 1;
+      curSalesByInvoice.totalFatValue += invoicingValue;
+      curSalesByInvoice.totalTableValue += tableValue;
+      curSalesByInvoice.totalDiff += difValue;
+      curSalesByInvoice.totalKg += weightInKg;
+
+      // 2) Agrupar por Produto
+      const productKey = `${orderLine.productCode} - ${orderLine.productName}`;
+
+      if (!salesByProduct.has(productKey)) {
+        salesByProduct.set(productKey, {
+          productCode: orderLine.productCode,
+          productName: orderLine.productName,
+          salesCount: 0,
+          totalKg: 0,
+          totalFatValue: 0,
+          totalTableValue: 0,
+          totalDiff: 0,
+          percentValue: 0,
+        });
+      }
+      const curSalesByProduct = salesByProduct.get(productKey)!;
+      curSalesByProduct.salesCount += 1;
+      curSalesByProduct.totalKg += weightInKg;
+      curSalesByProduct.totalFatValue += invoicingValue;
+      curSalesByProduct.totalTableValue += tableValue;
+      curSalesByProduct.totalDiff += difValue;
+
+      // 3) Agrupar por Cliente
+      const clientKey = `${orderLine.clientCode} - ${orderLine.clientName}`;
+      if (!salesByClient.has(clientKey)) {
+        salesByClient.set(clientKey, {
+          clientCode: orderLine.clientCode,
+          clientName: orderLine.clientName,
+          salesCount: 0,
+          totalKg: 0,
+          totalFatValue: 0,
+          totalTableValue: 0,
+          totalDiff: 0,
+          percentValue: 0,
+        });
+      }
+      const curSalesByClient = salesByClient.get(clientKey)!;
+      curSalesByClient.salesCount += 1;
+      curSalesByClient.totalKg += weightInKg;
+      curSalesByClient.totalFatValue += invoicingValue;
+      curSalesByClient.totalTableValue += tableValue;
+      curSalesByClient.totalDiff += difValue;
+
+      // 4) Agrupar por Representante
+      const representativeKey = `${orderLine.salesRepresentativeCode} - ${orderLine.salesRepresentativeName}`;
+      if (!salesByRepresentative.has(representativeKey)) {
+        salesByRepresentative.set(representativeKey, {
+          salesRepresentativeCode: orderLine.salesRepresentativeCode,
+          salesRepresentativeName: orderLine.salesRepresentativeName,
+          salesCount: 0,
+          totalKg: 0,
+          totalFatValue: 0,
+          totalTableValue: 0,
+          totalDiff: 0,
+          percentValue: 0,
+        });
+      }
+      const curSalesByRepresentative =
+        salesByRepresentative.get(representativeKey)!;
+      curSalesByRepresentative.salesCount += 1;
+      curSalesByRepresentative.totalKg += weightInKg;
+      curSalesByRepresentative.totalFatValue += invoicingValue;
+      curSalesByRepresentative.totalTableValue += tableValue;
+      curSalesByRepresentative.totalDiff += difValue;
+    }
+
+    // calcular totais globais de cada agrupamento
+    const invoiceTotals = Array.from(salesByInvoice.values()).reduce(
+      (tot, i) => {
+        tot.count += i.salesCount;
+        tot.totalFatValue += i.totalFatValue;
+        tot.totalTableValue += i.totalTableValue;
+        tot.totalDiff += i.totalDiff;
+        return tot;
+      },
+      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
+    );
+
+    const productTotals = Array.from(salesByProduct.values()).reduce(
+      (tot, i) => {
+        tot.count += i.salesCount;
+        tot.totalFatValue += i.totalFatValue;
+        tot.totalTableValue += i.totalTableValue;
+        tot.totalDiff += i.totalDiff;
+        return tot;
+      },
+      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
+    );
+
+    salesByProduct.forEach((p) => {
+      p.percentValue = productTotals.totalFatValue
+        ? p.totalFatValue / productTotals.totalFatValue
+        : 0;
+    });
+
+    const clientTotals = Array.from(salesByClient.values()).reduce(
+      (acc, i) => {
+        acc.count += i.salesCount;
+        acc.totalFatValue += i.totalFatValue;
+        acc.totalTableValue += i.totalTableValue;
+        acc.totalDiff += i.totalDiff;
+        return acc;
+      },
+      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
+    );
+
+    salesByClient.forEach((p) => {
+      p.percentValue = clientTotals.totalFatValue
+        ? p.totalFatValue / clientTotals.totalFatValue
+        : 0;
+    });
+
+    const representativeTotals = Array.from(
+      salesByRepresentative.values(),
+    ).reduce(
+      (tot, i) => {
+        tot.count += i.salesCount;
+        tot.totalFatValue += i.totalFatValue;
+        tot.totalTableValue += i.totalTableValue;
+        tot.totalDiff += i.totalDiff;
+        return tot;
+      },
+      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
+    );
+    salesByRepresentative.forEach((p) => {
+      p.percentValue = representativeTotals.totalFatValue
+        ? p.totalFatValue / representativeTotals.totalFatValue
+        : 0;
+    });
+
+    return new GetBusinessAuditSalesDataResponseDto({
+      salesByInvoice: {
+        totals: invoiceTotals,
+        data: Object.fromEntries(salesByInvoice), // Map<string, InvoiceAgg>
+      },
+      salesByProduct: {
+        totals: productTotals,
+        data: Object.fromEntries(salesByProduct), // Map<string, ProductAgg>
+      },
+      salesByClient: {
+        totals: clientTotals,
+        data: Object.fromEntries(salesByClient), // Map<string, ClientAgg>
+      },
+      salesByRepresentative: {
+        totals: representativeTotals,
+        data: Object.fromEntries(salesByRepresentative), // Map<string, SalesRepresentativeAgg>
+      },
+    });
+  }
+
   // FETCH DE DADOS
+  async getOrdersLines({
+    startDate,
+    endDate,
+    productCode,
+    clientCode,
+    salesRepresentativeCode,
+    priceConsideration,
+    nfNumber,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    productCode?: string;
+    clientCode?: string;
+    priceConsideration?: OrderPriceConsiderationEnum;
+    salesRepresentativeCode?: string;
+    nfNumber?: string;
+  }) {
+    const qb = this.datasource
+      .getRepository(OrderLine)
+      .createQueryBuilder('so')
+      .leftJoinAndSelect(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = so.companyCode',
+      );
+
+    qb.where('1=1').andWhere('so.situation = :situation', {
+      situation: OrderSituationEnum.INVOICED,
+    });
+
+    if (startDate) {
+      qb.andWhere('so.issueDate >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('so.issueDate <= :endDate', { endDate });
+    }
+    if (productCode) {
+      qb.andWhere('so.productCode = :productCode', { productCode });
+    }
+    if (clientCode) {
+      qb.andWhere('so.clientCode = :clientCode', { clientCode });
+    }
+    if (salesRepresentativeCode) {
+      qb.andWhere('so.salesRepresentativeCode = :salesRepresentativeCode', {
+        salesRepresentativeCode,
+      });
+    }
+    if (nfNumber) {
+      qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
+    }
+
+    switch (priceConsideration) {
+      case OrderPriceConsiderationEnum.NONE:
+        break;
+      case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
+        break;
+    }
+
+    const result = await qb.getRawMany();
+
+    return result.map((i) => {
+      const orderLine = new OrderLine();
+
+      // todos os campos do alias `so`
+      orderLine.id = i.so_id;
+      orderLine.billingDate = i.so_billing_date;
+      orderLine.issueDate = i.so_issue_date;
+      orderLine.companyCode = i.so_company_code;
+      orderLine.companyName = i.sc_name; // <-- pega de sc.name
+      orderLine.orderId = i.so_order_id;
+      orderLine.situation = i.so_situation;
+      orderLine.paymentTerm = i.so_payment_term;
+      orderLine.clientCode = i.so_client_code;
+      orderLine.clientName = i.so_client_name;
+      orderLine.salesRepresentativeCode = i.so_sales_representative_code;
+      orderLine.salesRepresentativeName = i.so_sales_representative_name;
+      orderLine.category = i.so_category;
+      orderLine.productLineCode = i.so_product_line_code;
+      orderLine.productLineName = i.so_product_line_name;
+      orderLine.productCode = i.so_product_code;
+      orderLine.productName = i.so_product_name;
+      orderLine.quantity = i.so_quantity;
+      orderLine.weightInKg = i.so_weight_in_kg;
+      orderLine.costValue = i.so_cost_value;
+      orderLine.discountPromotionValue = i.so_discount_promotion_value;
+      orderLine.saleUnitValue = i.so_sale_unit_value;
+      orderLine.referenceTableUnitValue = i.so_reference_table_unit_value;
+      orderLine.totalValue = i.so_total_value;
+      orderLine.receivableTitleValue = i.so_receivable_title_value;
+      orderLine.referenceTableId = i.so_reference_table_id;
+      orderLine.referenceTableDescription = i.so_reference_table_description;
+      orderLine.freightCompanyId = i.so_freight_company_id;
+      orderLine.freightCompanyName = i.so_freight_company_name;
+      orderLine.description = i.so_description;
+      orderLine.receivableTitleId = i.so_receivable_title_id;
+      orderLine.receivableTitleNumber = i.so_receivable_title_number;
+      orderLine.receivableTitleObservation = i.so_receivable_title_observation;
+      orderLine.accountGroupCode = i.so_account_group_code;
+      orderLine.accountGroupName = i.so_account_group_name;
+      orderLine.accountCode = i.so_account_code;
+      orderLine.accountName = i.so_account_name;
+      orderLine.nfId = i.so_nf_id;
+      orderLine.nfNumber = i.so_nf_number;
+      orderLine.cfopCode = i.so_cfop_code;
+      orderLine.cfopDescription = i.so_cfop_description;
+      orderLine.createdAt = i.so_created_at;
+
+      return orderLine;
+    });
+  }
+
   private async getInvoices({
     startDate,
     endDate,
+    nfType,
   }: {
     startDate?: Date;
     endDate?: Date;
+    nfType?: InvoicesNfTypesEnum;
   }): Promise<GetInvoicesItem[]> {
     const qb = this.datasource
       .createQueryBuilder()
@@ -262,7 +601,7 @@ export class BusinessAuditService {
         'si.cfop_code',
         'si.cfop_description',
         'si.nf_number',
-        'si.request_id',
+        'si.order_id',
         'si.client_code',
         'si.client_name',
         'si.product_code',
@@ -284,6 +623,9 @@ export class BusinessAuditService {
       })
       .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS: CONSIDERED_CFOPS });
 
+    if (nfType) {
+      qb.andWhere('si.nf_type = :nfType', { nfType });
+    }
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
     }
@@ -302,77 +644,7 @@ export class BusinessAuditService {
       cfopCode: i.cfop_code,
       cfopDescription: i.cfop_description,
       nfNumber: i.nf_number,
-      requestId: i.request_id,
-      clientCode: i.client_code,
-      clientName: i.client_name,
-      productCode: i.product_code,
-      productName: i.product_name,
-      boxAmount: i.box_amount,
-      weightInKg: i.weight_in_kg,
-      unitPrice: i.unit_price,
-      totalPrice: i.total_price,
-    }));
-  }
-
-  private async getManualInvoices({
-    startDate,
-    endDate,
-  }: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<GetInvoicesItem[]> {
-    const qb = this.datasource
-      .createQueryBuilder()
-      .select([
-        'si."date"',
-        'si.nf_type',
-        'si.company_code',
-        'sc.name AS company_name',
-        'si.cfop_code',
-        'si.cfop_description',
-        'si.nf_number',
-        'si.request_id',
-        'si.client_code',
-        'si.client_name',
-        'si.product_code',
-        'si.product_name',
-        'si.box_amount',
-        'si.weight_in_kg',
-        'si.unit_price',
-        'si.total_price',
-      ])
-      .from('sensatta_invoices', 'si')
-      .leftJoin(
-        'sensatta_companies',
-        'sc',
-        'sc.sensatta_code = si.company_code',
-      )
-      .where('1=1')
-      .andWhere('si.nf_type = :nfType', { nfType: InvoicesNfTypesEnum.AVULSA })
-      .andWhere('si.nf_situation IN (:...NF_SITUATIONS)', {
-        NF_SITUATIONS: CONSIDERED_NF_SITUATIONS,
-      })
-      .andWhere('si.cfop_code IN (:...CFOPS)', { CFOPS: CONSIDERED_CFOPS });
-
-    if (startDate) {
-      qb.andWhere('si.date >= :startDate', { startDate });
-    }
-
-    if (endDate) {
-      qb.andWhere('si.date <= :endDate', { endDate });
-    }
-
-    const results = await qb.getRawMany();
-
-    return results.map((i) => ({
-      date: i.date,
-      nfType: i.nf_type,
-      companyCode: i.company_code,
-      companyName: i.company_name,
-      cfopCode: i.cfop_code,
-      cfopDescription: i.cfop_description,
-      nfNumber: i.nf_number,
-      requestId: i.request_id,
+      orderId: i.order_id,
       clientCode: i.client_code,
       clientName: i.client_name,
       productCode: i.product_code,
@@ -571,11 +843,6 @@ export class BusinessAuditService {
     }
 
     return result;
-  }
-
-  // todo:
-  private getInvoicesWithWeightInconsistences(invoices: GetInvoicesItem[]) {
-    return invoices.filter((i) => i.weightInKg);
   }
 
   // todo:
