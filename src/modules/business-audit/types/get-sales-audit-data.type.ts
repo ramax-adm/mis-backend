@@ -1,3 +1,5 @@
+import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+
 export type InvoiceAgg = {
   companyCode?: string;
   companyName?: string;
@@ -9,6 +11,8 @@ export type InvoiceAgg = {
   representativeCode?: string;
   representativeName?: string;
   paymentTerm?: string;
+  market?: MarketEnum;
+  currency?: string;
   salesCount: number;
   totalFatValue: number;
   totalTableValue: number;
