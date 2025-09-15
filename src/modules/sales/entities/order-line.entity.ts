@@ -1,3 +1,4 @@
+import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 import {
   Column,
   CreateDateColumn,
@@ -24,6 +25,9 @@ export class OrderLine {
 
   @Column({ name: 'order_id', nullable: true })
   orderId?: string;
+
+  @Column({ nullable: true })
+  market?: MarketEnum;
 
   @Column({ nullable: true })
   situation?: string;
@@ -63,6 +67,9 @@ export class OrderLine {
 
   @Column({ name: 'weight_in_kg', type: 'float4', nullable: true })
   weightInKg?: number;
+
+  @Column({ nullable: true })
+  currency?: string;
 
   @Column({ name: 'cost_value', type: 'float4', nullable: true })
   costValue?: number;

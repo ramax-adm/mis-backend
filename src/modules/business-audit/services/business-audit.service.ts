@@ -21,6 +21,7 @@ import {
 import { GetBusinessAuditSalesDataResponseDto } from '../dtos/response/get-business-sales-data-response.dto';
 import { OrderSituationEnum } from '../enums/order-situation.enum';
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
+import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 
 @Injectable()
 export class BusinessAuditService {
@@ -265,15 +266,21 @@ export class BusinessAuditService {
     startDate,
     endDate,
     priceConsideration,
+    market,
+    companyCodes,
   }: {
     startDate?: Date;
     endDate?: Date;
     priceConsideration?: OrderPriceConsiderationEnum;
+    market?: MarketEnum;
+    companyCodes?: string[];
   }) {
     const orderLines = await this.getOrdersLines({
       startDate,
       endDate,
       priceConsideration,
+      market,
+      companyCodes,
     });
 
     const salesByInvoice = new Map<string, InvoiceAgg>();
@@ -302,6 +309,8 @@ export class BusinessAuditService {
           representativeCode: orderLine.salesRepresentativeCode,
           representativeName: orderLine.salesRepresentativeName,
           paymentTerm: orderLine.paymentTerm,
+          market: orderLine.market,
+          currency: orderLine.currency,
           salesCount: 0,
           totalFatValue: 0,
           totalTableValue: 0,
@@ -475,6 +484,8 @@ export class BusinessAuditService {
     salesRepresentativeCode,
     priceConsideration,
     nfNumber,
+    market,
+    companyCodes,
   }: {
     startDate?: Date;
     endDate?: Date;
@@ -483,6 +494,8 @@ export class BusinessAuditService {
     priceConsideration?: OrderPriceConsiderationEnum;
     salesRepresentativeCode?: string;
     nfNumber?: string;
+    market?: MarketEnum;
+    companyCodes?: string[];
   }) {
     const qb = this.datasource
       .getRepository(OrderLine)
@@ -498,10 +511,10 @@ export class BusinessAuditService {
     });
 
     if (startDate) {
-      qb.andWhere('so.issueDate >= :startDate', { startDate });
+      qb.andWhere('so.billing_date >= :startDate', { startDate });
     }
     if (endDate) {
-      qb.andWhere('so.issueDate <= :endDate', { endDate });
+      qb.andWhere('so.billing_date <= :endDate', { endDate });
     }
     if (productCode) {
       qb.andWhere('so.productCode = :productCode', { productCode });
@@ -518,14 +531,25 @@ export class BusinessAuditService {
       qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
     }
 
+    if (market) {
+      qb.andWhere('so.market = :market', { market });
+    }
+
+    if (companyCodes) {
+      qb.andWhere('so.company_code IN (:...companyCodes)', {
+        companyCodes,
+      });
+    }
+
     switch (priceConsideration) {
-      case OrderPriceConsiderationEnum.NONE:
-        break;
       case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
         qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
         break;
       case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
         qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.NONE:
+      default:
         break;
     }
 
@@ -542,6 +566,7 @@ export class BusinessAuditService {
       orderLine.companyName = i.sc_name; // <-- pega de sc.name
       orderLine.orderId = i.so_order_id;
       orderLine.situation = i.so_situation;
+      orderLine.market = i.so_market;
       orderLine.paymentTerm = i.so_payment_term;
       orderLine.clientCode = i.so_client_code;
       orderLine.clientName = i.so_client_name;
@@ -554,6 +579,7 @@ export class BusinessAuditService {
       orderLine.productName = i.so_product_name;
       orderLine.quantity = i.so_quantity;
       orderLine.weightInKg = i.so_weight_in_kg;
+      orderLine.currency = i.so_currency;
       orderLine.costValue = i.so_cost_value;
       orderLine.discountPromotionValue = i.so_discount_promotion_value;
       orderLine.saleUnitValue = i.so_sale_unit_value;
