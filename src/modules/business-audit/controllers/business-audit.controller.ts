@@ -12,6 +12,7 @@ import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
 import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
 import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
+import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 
 @Controller('business-audit')
 export class BusinessAuditController {
@@ -52,11 +53,15 @@ export class BusinessAuditController {
     @Query('endDate') endDate?: Date,
     @Query('priceConsideration')
     priceConsideration?: OrderPriceConsiderationEnum,
+    @Query('market') market?: MarketEnum,
+    @Query('companyCodes') companyCodes?: string,
   ) {
     return await this.businessAuditService.getSalesAuditData({
       startDate,
       endDate,
       priceConsideration,
+      market,
+      companyCodes: companyCodes?.split(','),
     });
   }
 
