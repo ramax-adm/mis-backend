@@ -275,13 +275,17 @@ export class BusinessAuditService {
     market?: MarketEnum;
     companyCodes?: string[];
   }) {
-    const orderLines = await this.getOrdersLines({
+    const orderLinesInDatabase = await this.getOrdersLines({
       startDate,
       endDate,
       priceConsideration,
       market,
       companyCodes,
     });
+
+    const orderLines = orderLinesInDatabase.filter((o) =>
+      CONSIDERED_CFOPS.includes(o.cfopCode),
+    );
 
     const salesByInvoice = new Map<string, InvoiceAgg>();
     const salesByProduct = new Map<string, ProductAgg>();
@@ -297,13 +301,16 @@ export class BusinessAuditService {
       const weightInKg = Number(orderLine.weightInKg ?? 0);
 
       // 1) Agrupar por NF + Pedido
-      const invoiceKey = `${orderLine.nfNumber ?? 'nof'}`;
+      const invoiceKey = `${orderLine.nfId ?? 'nof'}`;
       if (!salesByInvoice.has(invoiceKey)) {
         salesByInvoice.set(invoiceKey, {
           companyCode: orderLine.companyCode,
           companyName: orderLine.companyName,
           date: orderLine.billingDate,
+          nfNumber: orderLine.nfNumber,
           orderNumber: orderLine.orderId,
+          cfopCode: orderLine.cfopCode,
+          cfopDescription: orderLine.cfopDescription,
           clientCode: orderLine.clientCode,
           clientName: orderLine.clientName,
           representativeCode: orderLine.salesRepresentativeCode,
@@ -484,6 +491,7 @@ export class BusinessAuditService {
     salesRepresentativeCode,
     priceConsideration,
     nfNumber,
+    nfId,
     market,
     companyCodes,
   }: {
@@ -494,6 +502,7 @@ export class BusinessAuditService {
     priceConsideration?: OrderPriceConsiderationEnum;
     salesRepresentativeCode?: string;
     nfNumber?: string;
+    nfId?: string;
     market?: MarketEnum;
     companyCodes?: string[];
   }) {
@@ -529,6 +538,10 @@ export class BusinessAuditService {
     }
     if (nfNumber) {
       qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
+    }
+
+    if (nfId) {
+      qb.andWhere('so.nfId = :nfId', { nfId });
     }
 
     if (market) {
