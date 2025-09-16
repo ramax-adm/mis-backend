@@ -6,6 +6,8 @@ export type InvoiceAgg = {
   date?: Date;
   nfNumber?: string;
   orderNumber?: string;
+  cfopCode?: string;
+  cfopDescription?: string;
   clientCode?: string;
   clientName?: string;
   representativeCode?: string;
