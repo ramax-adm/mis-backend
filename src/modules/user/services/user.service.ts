@@ -89,7 +89,7 @@ export class UserService {
         email: updateUserDto.email,
       });
       if (existingUser) {
-        throw new ConflictException('A user with this email already exists');
+        throw new ConflictException(`Um usuario com esse email ja existe!`);
       }
     }
     if (updateUserDto.password) {
@@ -118,7 +118,9 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with email "${email}" not found.`);
+      throw new NotFoundException(
+        `Email:"${email}" não encontrado no sistema.`,
+      );
     }
 
     // Token generation
