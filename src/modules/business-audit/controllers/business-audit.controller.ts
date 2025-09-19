@@ -72,9 +72,9 @@ export class BusinessAuditController {
       companyCodes: companyCodes.split(','),
     });
     return results.map((i) => ({
-      key: i.client_code,
-      label: i.client_name,
-      value: i.client_code,
+      key: i.so_client_code,
+      label: i.so_client_name,
+      value: i.so_client_code,
     }));
   }
 
@@ -103,9 +103,9 @@ export class BusinessAuditController {
       companyCodes: companyCodes.split(','),
     });
     return results.map((i) => ({
-      key: i.sales_representative_code,
-      label: i.sales_representative_name,
-      value: i.sales_representative_code,
+      key: i.so_sales_representative_code,
+      label: i.so_sales_representative_name,
+      value: i.so_sales_representative_code,
     }));
   }
 
