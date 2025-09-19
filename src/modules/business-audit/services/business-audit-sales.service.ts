@@ -34,24 +34,30 @@ export class BusinessAuditSalesService {
     priceConsideration,
     market,
     companyCodes,
+    clientCode,
+    salesRepresentativeCode,
   }: {
     startDate?: Date;
     endDate?: Date;
     priceConsideration?: OrderPriceConsiderationEnum;
     market?: MarketEnum;
     companyCodes?: string[];
+    clientCode?: string;
+    salesRepresentativeCode?: string;
   }) {
-    const orderLinesInDatabase = await this.getOrdersLines({
+    const orderLines = await this.getOrdersLines({
       startDate,
       endDate,
       priceConsideration,
       market,
       companyCodes,
+      clientCode,
+      salesRepresentativeCode,
     });
 
-    const orderLines = orderLinesInDatabase.filter((o) =>
-      CONSIDERED_CFOPS.includes(o.cfopCode),
-    );
+    // const orderLines = orderLinesInDatabase.filter((o) =>
+    //   CONSIDERED_CFOPS.includes(o.cfopCode),
+    // );
 
     const salesByInvoice = new Map<string, InvoiceAgg>();
     const salesByProduct = new Map<string, ProductAgg>();
@@ -281,9 +287,13 @@ export class BusinessAuditSalesService {
         'sc.sensatta_code = so.companyCode',
       );
 
-    qb.where('1=1').andWhere('so.situation = :situation', {
-      situation: OrderSituationEnum.INVOICED,
-    });
+    qb.where('1=1')
+      .andWhere('so.situation = :situation', {
+        situation: OrderSituationEnum.INVOICED,
+      })
+      .andWhere('so.cfop_code IN (:...cfops)', {
+        cfops: CONSIDERED_CFOPS,
+      });
 
     if (startDate) {
       qb.andWhere('so.billing_date >= :startDate', { startDate });
@@ -305,15 +315,12 @@ export class BusinessAuditSalesService {
     if (nfNumber) {
       qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
     }
-
     if (nfId) {
       qb.andWhere('so.nfId = :nfId', { nfId });
     }
-
     if (market) {
       qb.andWhere('so.market = :market', { market });
     }
-
     if (companyCodes) {
       qb.andWhere('so.company_code IN (:...companyCodes)', {
         companyCodes,
@@ -385,5 +392,195 @@ export class BusinessAuditSalesService {
 
       return orderLine;
     });
+  }
+
+  async getClients({
+    startDate,
+    endDate,
+    productCode,
+    clientCode,
+    salesRepresentativeCode,
+    priceConsideration,
+    nfNumber,
+    nfId,
+    market,
+    companyCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    productCode?: string;
+    clientCode?: string;
+    priceConsideration?: OrderPriceConsiderationEnum;
+    salesRepresentativeCode?: string;
+    nfNumber?: string;
+    nfId?: string;
+    market?: MarketEnum;
+    companyCodes?: string[];
+  }) {
+    const qb = this.datasource
+      .getRepository(OrderLine)
+      .createQueryBuilder('so')
+      .select(['so.client_code', 'so.client_name'])
+      .distinct(true)
+      .leftJoinAndSelect(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = so.companyCode',
+      )
+      .orderBy('so.client_name', 'ASC');
+
+    qb.where('1=1')
+      .andWhere('so.situation = :situation', {
+        situation: OrderSituationEnum.INVOICED,
+      })
+      .andWhere('so.cfop_code IN (:...cfops)', {
+        cfops: CONSIDERED_CFOPS,
+      });
+
+    if (startDate) {
+      qb.andWhere('so.billing_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('so.billing_date <= :endDate', { endDate });
+    }
+    if (productCode) {
+      qb.andWhere('so.productCode = :productCode', { productCode });
+    }
+    if (clientCode) {
+      qb.andWhere('so.clientCode = :clientCode', { clientCode });
+    }
+    if (salesRepresentativeCode) {
+      qb.andWhere('so.salesRepresentativeCode = :salesRepresentativeCode', {
+        salesRepresentativeCode,
+      });
+    }
+    if (nfNumber) {
+      qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
+    }
+    if (nfId) {
+      qb.andWhere('so.nfId = :nfId', { nfId });
+    }
+    if (market) {
+      qb.andWhere('so.market = :market', { market });
+    }
+    if (companyCodes) {
+      qb.andWhere('so.company_code IN (:...companyCodes)', {
+        companyCodes,
+      });
+    }
+
+    switch (priceConsideration) {
+      case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.NONE:
+      default:
+        break;
+    }
+
+    const result = await qb.getRawMany<{
+      client_code: string;
+      client_name: string;
+    }>();
+
+    return result;
+  }
+
+  async getRepresentatives({
+    startDate,
+    endDate,
+    productCode,
+    clientCode,
+    salesRepresentativeCode,
+    priceConsideration,
+    nfNumber,
+    nfId,
+    market,
+    companyCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    productCode?: string;
+    clientCode?: string;
+    priceConsideration?: OrderPriceConsiderationEnum;
+    salesRepresentativeCode?: string;
+    nfNumber?: string;
+    nfId?: string;
+    market?: MarketEnum;
+    companyCodes?: string[];
+  }) {
+    const qb = this.datasource
+      .getRepository(OrderLine)
+      .createQueryBuilder('so')
+      .select(['so.sales_representative_code', 'so.sales_representative_name'])
+      .distinct(true)
+      .leftJoinAndSelect(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = so.companyCode',
+      )
+      .orderBy('so.sales_representative_name', 'ASC');
+
+    qb.where('1=1')
+      .andWhere('so.situation = :situation', {
+        situation: OrderSituationEnum.INVOICED,
+      })
+      .andWhere('so.cfop_code IN (:...cfops)', {
+        cfops: CONSIDERED_CFOPS,
+      });
+
+    if (startDate) {
+      qb.andWhere('so.billing_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('so.billing_date <= :endDate', { endDate });
+    }
+    if (productCode) {
+      qb.andWhere('so.productCode = :productCode', { productCode });
+    }
+    if (clientCode) {
+      qb.andWhere('so.clientCode = :clientCode', { clientCode });
+    }
+    if (salesRepresentativeCode) {
+      qb.andWhere('so.salesRepresentativeCode = :salesRepresentativeCode', {
+        salesRepresentativeCode,
+      });
+    }
+    if (nfNumber) {
+      qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
+    }
+    if (nfId) {
+      qb.andWhere('so.nfId = :nfId', { nfId });
+    }
+    if (market) {
+      qb.andWhere('so.market = :market', { market });
+    }
+    if (companyCodes) {
+      qb.andWhere('so.company_code IN (:...companyCodes)', {
+        companyCodes,
+      });
+    }
+
+    switch (priceConsideration) {
+      case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.NONE:
+      default:
+        break;
+    }
+
+    const result = await qb.getRawMany<{
+      sales_representative_code: string;
+      sales_representative_name: string;
+    }>();
+
+    return result;
   }
 }
