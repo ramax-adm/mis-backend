@@ -8,4 +8,5 @@ export enum EntitiesEnum {
   STOCK_BALANCE = 'stock-balance',
   INVOICE = 'invoice',
   RETURN_INVOICE = 'return-invoice',
+  ORDER_LINE = 'order-line',
 }
