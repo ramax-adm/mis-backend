@@ -420,14 +420,15 @@ export class BusinessAuditSalesService {
     const qb = this.datasource
       .getRepository(OrderLine)
       .createQueryBuilder('so')
-      .select(['so.client_code', 'so.client_name'])
-      .distinct(true)
+      .select(['so.clientCode', 'so.clientName'])
+      .distinctOn(['so.clientCode']) // 👈 aqui
       .leftJoinAndSelect(
         'sensatta_companies',
         'sc',
         'sc.sensatta_code = so.companyCode',
       )
-      .orderBy('so.client_name', 'ASC');
+      .orderBy('so.clientCode', 'ASC')
+      .addOrderBy('so.clientName', 'ASC');
 
     qb.where('1=1')
       .andWhere('so.situation = :situation', {
@@ -482,11 +483,13 @@ export class BusinessAuditSalesService {
     }
 
     const result = await qb.getRawMany<{
-      client_code: string;
-      client_name: string;
+      so_client_code: string;
+      so_client_name: string;
     }>();
 
-    return result;
+    return result.sort((a, b) =>
+      a.so_client_name.localeCompare(b.so_client_name, 'pt-br'),
+    );
   }
 
   async getRepresentatives({
@@ -515,14 +518,17 @@ export class BusinessAuditSalesService {
     const qb = this.datasource
       .getRepository(OrderLine)
       .createQueryBuilder('so')
-      .select(['so.sales_representative_code', 'so.sales_representative_name'])
-      .distinct(true)
+      .select(['so.salesRepresentativeCode', 'so.salesRepresentativeName'])
+      .distinctOn(['so.salesRepresentativeCode']) // 👈 aqui
       .leftJoinAndSelect(
         'sensatta_companies',
         'sc',
         'sc.sensatta_code = so.companyCode',
       )
-      .orderBy('so.sales_representative_name', 'ASC');
+      // 👇 primeiro vem o campo do DISTINCT ON
+      .orderBy('so.salesRepresentativeCode', 'ASC')
+      // 👇 depois você pode ordenar os outros
+      .addOrderBy('so.salesRepresentativeName', 'ASC');
 
     qb.where('1=1')
       .andWhere('so.situation = :situation', {
@@ -577,10 +583,15 @@ export class BusinessAuditSalesService {
     }
 
     const result = await qb.getRawMany<{
-      sales_representative_code: string;
-      sales_representative_name: string;
+      so_sales_representative_code: string;
+      so_sales_representative_name: string;
     }>();
 
-    return result;
+    return result.sort((a, b) =>
+      a.so_sales_representative_name.localeCompare(
+        b.so_sales_representative_name,
+        'pt-br',
+      ),
+    );
   }
 }
