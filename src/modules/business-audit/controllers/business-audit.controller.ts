@@ -23,13 +23,15 @@ import { BusinessAuditReportTypeEnum } from '../enums/business-audit-report-type
 import { BusinessAuditSalesService } from '../services/business-audit-sales.service';
 import { BusinessAuditSalesReportService } from '../services/business-audit-sales-report.service';
 import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-audit-report-request.dto';
+import { DataSource } from 'typeorm';
+import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 
 @Controller('business-audit')
 export class BusinessAuditController {
   constructor(
+    private readonly dataSource: DataSource,
     private readonly businessAuditSalesReportService: BusinessAuditSalesReportService,
     private readonly businessAuditSalesService: BusinessAuditSalesService,
-
     private readonly businessAuditOverviewService: BusinessAuditOverviewService,
   ) {}
 
@@ -45,6 +47,66 @@ export class BusinessAuditController {
   @HttpCode(HttpStatus.OK)
   getConsideredNfSituations() {
     return CONSIDERED_NF_SITUATIONS;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('filters/clients')
+  @HttpCode(HttpStatus.OK)
+  async getClients(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('priceConsideration')
+    priceConsideration?: OrderPriceConsiderationEnum,
+    @Query('market') market?: MarketEnum,
+    @Query('companyCodes') companyCodes?: string,
+    @Query('clientCode') clientCode?: string,
+    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
+  ) {
+    const results = await this.businessAuditSalesService.getClients({
+      startDate,
+      endDate,
+      market,
+      clientCode,
+      salesRepresentativeCode,
+      priceConsideration,
+      companyCodes: companyCodes.split(','),
+    });
+    return results.map((i) => ({
+      key: i.client_code,
+      label: i.client_name,
+      value: i.client_code,
+    }));
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('filters/sales-representatives')
+  @HttpCode(HttpStatus.OK)
+  async getSalesRepresentatives(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('priceConsideration')
+    priceConsideration?: OrderPriceConsiderationEnum,
+    @Query('market') market?: MarketEnum,
+    @Query('companyCodes') companyCodes?: string,
+    @Query('clientCode') clientCode?: string,
+    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
+  ) {
+    // dos dados que ja foram filtrados, pego apenas o set de clientes
+
+    const results = await this.businessAuditSalesService.getRepresentatives({
+      startDate,
+      endDate,
+      market,
+      clientCode,
+      salesRepresentativeCode,
+      priceConsideration,
+      companyCodes: companyCodes.split(','),
+    });
+    return results.map((i) => ({
+      key: i.sales_representative_code,
+      label: i.sales_representative_name,
+      value: i.sales_representative_code,
+    }));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -70,6 +132,8 @@ export class BusinessAuditController {
     priceConsideration?: OrderPriceConsiderationEnum,
     @Query('market') market?: MarketEnum,
     @Query('companyCodes') companyCodes?: string,
+    @Query('clientCode') clientCode?: string,
+    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
   ) {
     return await this.businessAuditSalesService.getSalesAuditData({
       startDate,
@@ -77,6 +141,8 @@ export class BusinessAuditController {
       priceConsideration,
       market,
       companyCodes: companyCodes?.split(','),
+      clientCode,
+      salesRepresentativeCode,
     });
   }
 
