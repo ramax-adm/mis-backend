@@ -24,7 +24,6 @@ import { BusinessAuditSalesService } from '../services/business-audit-sales.serv
 import { BusinessAuditSalesReportService } from '../services/business-audit-sales-report.service';
 import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-audit-report-request.dto';
 import { DataSource } from 'typeorm';
-import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 
 @Controller('business-audit')
 export class BusinessAuditController {
@@ -59,15 +58,11 @@ export class BusinessAuditController {
     priceConsideration?: OrderPriceConsiderationEnum,
     @Query('market') market?: MarketEnum,
     @Query('companyCodes') companyCodes?: string,
-    @Query('clientCode') clientCode?: string,
-    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
   ) {
     const results = await this.businessAuditSalesService.getClients({
       startDate,
       endDate,
       market,
-      clientCode,
-      salesRepresentativeCode,
       priceConsideration,
       companyCodes: companyCodes.split(','),
     });
@@ -88,8 +83,6 @@ export class BusinessAuditController {
     priceConsideration?: OrderPriceConsiderationEnum,
     @Query('market') market?: MarketEnum,
     @Query('companyCodes') companyCodes?: string,
-    @Query('clientCode') clientCode?: string,
-    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
   ) {
     // dos dados que ja foram filtrados, pego apenas o set de clientes
 
@@ -97,8 +90,6 @@ export class BusinessAuditController {
       startDate,
       endDate,
       market,
-      clientCode,
-      salesRepresentativeCode,
       priceConsideration,
       companyCodes: companyCodes.split(','),
     });
@@ -132,8 +123,8 @@ export class BusinessAuditController {
     priceConsideration?: OrderPriceConsiderationEnum,
     @Query('market') market?: MarketEnum,
     @Query('companyCodes') companyCodes?: string,
-    @Query('clientCode') clientCode?: string,
-    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
+    @Query('clientCodes') clientCodes?: string,
+    @Query('salesRepresentativeCodes') salesRepresentativeCodes?: string,
   ) {
     return await this.businessAuditSalesService.getSalesAuditData({
       startDate,
@@ -141,8 +132,8 @@ export class BusinessAuditController {
       priceConsideration,
       market,
       companyCodes: companyCodes?.split(','),
-      clientCode,
-      salesRepresentativeCode,
+      clientCodes: clientCodes?.split(','),
+      salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
     });
   }
 
@@ -155,8 +146,8 @@ export class BusinessAuditController {
     @Query('nfNumber') nfNumber?: string,
     @Query('nfId') nfId?: string,
     @Query('productCode') productCode?: string,
-    @Query('clientCode') clientCode?: string,
-    @Query('salesRepresentativeCode') salesRepresentativeCode?: string,
+    @Query('clientCodes') clientCodes?: string,
+    @Query('salesRepresentativeCodes') salesRepresentativeCodes?: string,
   ) {
     return await this.businessAuditSalesService.getOrdersLines({
       startDate,
@@ -164,8 +155,8 @@ export class BusinessAuditController {
       nfNumber,
       nfId,
       productCode,
-      clientCode,
-      salesRepresentativeCode,
+      clientCodes: clientCodes?.split(','),
+      salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
     });
   }
 

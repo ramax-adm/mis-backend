@@ -1,16 +1,6 @@
-import * as dateFns from 'date-fns';
 import { DataSource } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { GetBusinessAuditOverviewDataResponseDto } from '../dtos/response/get-business-overview-data-response.dto';
-import { NumberUtils } from '@/modules/utils/services/number.utils';
-import { StringUtils } from '@/modules/utils/services/string.utils';
-import { GetCattlePurchaseFreightsItem } from '../types/get-freights.type';
-import { DateUtils } from '@/modules/utils/services/date.utils';
-import { GetInvoicesItem } from '../types/get-invoices.type';
-import { GetStockIncomingBatchesItem } from '../types/get-stock-incoming-batches.type';
-import { InvoicesNfTypesEnum } from '@/modules/sales';
 import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
-import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
 import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 import {
   InvoiceAgg,
@@ -34,16 +24,16 @@ export class BusinessAuditSalesService {
     priceConsideration,
     market,
     companyCodes,
-    clientCode,
-    salesRepresentativeCode,
+    clientCodes,
+    salesRepresentativeCodes,
   }: {
     startDate?: Date;
     endDate?: Date;
     priceConsideration?: OrderPriceConsiderationEnum;
     market?: MarketEnum;
     companyCodes?: string[];
-    clientCode?: string;
-    salesRepresentativeCode?: string;
+    clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
   }) {
     const orderLines = await this.getOrdersLines({
       startDate,
@@ -51,8 +41,8 @@ export class BusinessAuditSalesService {
       priceConsideration,
       market,
       companyCodes,
-      clientCode,
-      salesRepresentativeCode,
+      clientCodes,
+      salesRepresentativeCodes,
     });
 
     // const orderLines = orderLinesInDatabase.filter((o) =>
@@ -259,8 +249,8 @@ export class BusinessAuditSalesService {
     startDate,
     endDate,
     productCode,
-    clientCode,
-    salesRepresentativeCode,
+    clientCodes,
+    salesRepresentativeCodes,
     priceConsideration,
     nfNumber,
     nfId,
@@ -270,9 +260,9 @@ export class BusinessAuditSalesService {
     startDate?: Date;
     endDate?: Date;
     productCode?: string;
-    clientCode?: string;
+    clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
     priceConsideration?: OrderPriceConsiderationEnum;
-    salesRepresentativeCode?: string;
     nfNumber?: string;
     nfId?: string;
     market?: MarketEnum;
@@ -304,13 +294,16 @@ export class BusinessAuditSalesService {
     if (productCode) {
       qb.andWhere('so.productCode = :productCode', { productCode });
     }
-    if (clientCode) {
-      qb.andWhere('so.clientCode = :clientCode', { clientCode });
+    if (clientCodes) {
+      qb.andWhere('so.clientCode IN (:...clientCodes)', { clientCodes });
     }
-    if (salesRepresentativeCode) {
-      qb.andWhere('so.salesRepresentativeCode = :salesRepresentativeCode', {
-        salesRepresentativeCode,
-      });
+    if (salesRepresentativeCodes) {
+      qb.andWhere(
+        'so.salesRepresentativeCode IN (:...salesRepresentativeCodes)',
+        {
+          salesRepresentativeCodes,
+        },
+      );
     }
     if (nfNumber) {
       qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
@@ -488,7 +481,7 @@ export class BusinessAuditSalesService {
     }>();
 
     return result.sort((a, b) =>
-      a.so_client_name.localeCompare(b.so_client_name, 'pt-br'),
+      a.so_client_name?.localeCompare(b.so_client_name, 'pt-br'),
     );
   }
 
@@ -588,7 +581,7 @@ export class BusinessAuditSalesService {
     }>();
 
     return result.sort((a, b) =>
-      a.so_sales_representative_name.localeCompare(
+      a.so_sales_representative_name?.localeCompare(
         b.so_sales_representative_name,
         'pt-br',
       ),
