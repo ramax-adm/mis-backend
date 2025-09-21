@@ -8,7 +8,7 @@ export class ExportBusinessAuditReportDto {
     companyCodes?: string;
     market?: MarketEnum;
     priceConsideration?: OrderPriceConsiderationEnum;
-    clientCode?: string;
-    salesRepresentativeCode?: string;
+    clientCodes?: string;
+    salesRepresentativeCodes?: string;
   };
 }
