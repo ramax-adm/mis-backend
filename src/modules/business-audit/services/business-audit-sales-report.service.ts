@@ -162,8 +162,8 @@ export class BusinessAuditSalesReportService {
         companyCodes,
         market,
         priceConsideration,
-        clientCode,
-        salesRepresentativeCode,
+        clientCodes,
+        salesRepresentativeCodes,
       },
     } = dto;
 
@@ -177,21 +177,21 @@ export class BusinessAuditSalesReportService {
     const data = await this.businessAuditSalesService.getSalesAuditData({
       startDate,
       endDate,
-      companyCodes: companyCodes.split(','),
+      companyCodes: companyCodes?.split(','),
       market,
       priceConsideration,
-      clientCode,
-      salesRepresentativeCode,
+      clientCodes: clientCodes?.split(','),
+      salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
     });
 
     const orderLinesData = await this.businessAuditSalesService.getOrdersLines({
       startDate,
       endDate,
-      companyCodes: companyCodes.split(','),
+      companyCodes: companyCodes?.split(','),
       market,
       priceConsideration,
-      clientCode,
-      salesRepresentativeCode,
+      clientCodes: clientCodes?.split(','),
+      salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
     });
 
     // filtering
