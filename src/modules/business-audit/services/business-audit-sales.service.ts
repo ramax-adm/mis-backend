@@ -431,50 +431,6 @@ export class BusinessAuditSalesService {
         cfops: CONSIDERED_CFOPS,
       });
 
-    if (startDate) {
-      qb.andWhere('so.billing_date >= :startDate', { startDate });
-    }
-    if (endDate) {
-      qb.andWhere('so.billing_date <= :endDate', { endDate });
-    }
-    if (productCode) {
-      qb.andWhere('so.productCode = :productCode', { productCode });
-    }
-    if (clientCode) {
-      qb.andWhere('so.clientCode = :clientCode', { clientCode });
-    }
-    if (salesRepresentativeCode) {
-      qb.andWhere('so.salesRepresentativeCode = :salesRepresentativeCode', {
-        salesRepresentativeCode,
-      });
-    }
-    if (nfNumber) {
-      qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
-    }
-    if (nfId) {
-      qb.andWhere('so.nfId = :nfId', { nfId });
-    }
-    if (market) {
-      qb.andWhere('so.market = :market', { market });
-    }
-    if (companyCodes) {
-      qb.andWhere('so.company_code IN (:...companyCodes)', {
-        companyCodes,
-      });
-    }
-
-    switch (priceConsideration) {
-      case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
-        qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
-        break;
-      case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
-        qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
-        break;
-      case OrderPriceConsiderationEnum.NONE:
-      default:
-        break;
-    }
-
     const result = await qb.getRawMany<{
       so_client_code: string;
       so_client_name: string;
@@ -530,50 +486,6 @@ export class BusinessAuditSalesService {
       .andWhere('so.cfop_code IN (:...cfops)', {
         cfops: CONSIDERED_CFOPS,
       });
-
-    if (startDate) {
-      qb.andWhere('so.billing_date >= :startDate', { startDate });
-    }
-    if (endDate) {
-      qb.andWhere('so.billing_date <= :endDate', { endDate });
-    }
-    if (productCode) {
-      qb.andWhere('so.productCode = :productCode', { productCode });
-    }
-    if (clientCode) {
-      qb.andWhere('so.clientCode = :clientCode', { clientCode });
-    }
-    if (salesRepresentativeCode) {
-      qb.andWhere('so.salesRepresentativeCode = :salesRepresentativeCode', {
-        salesRepresentativeCode,
-      });
-    }
-    if (nfNumber) {
-      qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
-    }
-    if (nfId) {
-      qb.andWhere('so.nfId = :nfId', { nfId });
-    }
-    if (market) {
-      qb.andWhere('so.market = :market', { market });
-    }
-    if (companyCodes) {
-      qb.andWhere('so.company_code IN (:...companyCodes)', {
-        companyCodes,
-      });
-    }
-
-    switch (priceConsideration) {
-      case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
-        qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
-        break;
-      case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
-        qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
-        break;
-      case OrderPriceConsiderationEnum.NONE:
-      default:
-        break;
-    }
 
     const result = await qb.getRawMany<{
       so_sales_representative_code: string;
