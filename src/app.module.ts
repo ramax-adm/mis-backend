@@ -4,7 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { DatabaseModule } from './config/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { SharedSensattaController } from './shared/shared-sensatta.controller';
+import { SharedSensattaController } from './shared/sensatta/shared-sensatta.controller';
 import { SensattaController } from './modules/sensatta/controllers/sensatta.controller';
 import { ParametersModule } from './modules/parameters/parameters.module';
 import { SalesModule } from './modules/sales/sales.module';
@@ -19,6 +19,7 @@ import { UtilsModule } from './modules/utils/utils.module';
 import { FreightsModule } from './modules/freights/freights.module';
 import { HumanResourcesModule } from './modules/human-resources/human-resources.module';
 import { IntranetModule } from './modules/intranet/intranet.module';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { IntranetModule } from './modules/intranet/intranet.module';
     ParametersModule,
     PurchasesModule,
     SalesModule,
+    SharedModule,
     StockModule,
     UserModule,
     UtilsModule,
@@ -47,7 +49,6 @@ import { IntranetModule } from './modules/intranet/intranet.module';
     AppController,
 
     // sensatta
-    SharedSensattaController,
     SensattaController,
   ],
 })
