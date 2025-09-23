@@ -1,4 +1,5 @@
 import { TempLivroFiscal } from '@/core/entities/temp/temp-livro-fiscal.entity';
+import { Page, PageMeta, PageOptions } from '@/core/paginate';
 import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
@@ -9,6 +10,7 @@ export class SharedFiscalController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async getFiscalData(
+    @Query() pageOptions: PageOptions,
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date,
   ) {
@@ -24,8 +26,13 @@ export class SharedFiscalController {
       qb.andWhere('lf.ENTRADA <= :endDate', { endDate });
     }
 
-    const fiscalData = await qb.getMany();
+    const [fiscalData, total] = await qb
+      .skip((pageOptions.page - 1) * pageOptions.limit)
+      .take(pageOptions.limit)
+      .getManyAndCount();
 
-    return { fiscalData };
+    const pageMeta = new PageMeta({ pageOptions, total });
+
+    return new Page(fiscalData, pageMeta);
   }
 }
