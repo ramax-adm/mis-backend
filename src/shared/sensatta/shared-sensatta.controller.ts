@@ -13,7 +13,6 @@ import { ApiKeyGuard } from '@/modules/auth/guards/api-key-guard';
 export class SharedSensattaController {
   constructor(private readonly dataSource: DataSource) {}
 
-  @UseGuards(ApiKeyGuard)
   @Get('product')
   @HttpCode(HttpStatus.OK)
   getProducts() {
