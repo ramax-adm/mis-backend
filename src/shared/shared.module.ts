@@ -14,6 +14,6 @@ const ApiKeyGuardProvider: Provider = {
 @Module({
   imports: [DatabaseModule, EnvModule],
   controllers: [SharedSensattaController, SharedFiscalController],
-  providers: [ApiKeyGuardProvider],
+  /*providers: [ApiKeyGuardProvider],*/
 })
 export class SharedModule {}
