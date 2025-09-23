@@ -35,9 +35,9 @@ export class PageOptions {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(15000)
   @IsOptional()
-  readonly limit?: number = 10;
+  readonly limit?: number = 1000;
 
   get skip(): number {
     return (this.page - 1) * this.limit;
