@@ -24,6 +24,7 @@ import { BusinessAuditSalesService } from '../services/business-audit-sales.serv
 import { BusinessAuditSalesReportService } from '../services/business-audit-sales-report.service';
 import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-audit-report-request.dto';
 import { DataSource } from 'typeorm';
+import { BusinessAuditReturnOccurrencesService } from '../services/business-audit-return-occurrences.service';
 
 @Controller('business-audit')
 export class BusinessAuditController {
@@ -31,6 +32,7 @@ export class BusinessAuditController {
     private readonly dataSource: DataSource,
     private readonly businessAuditSalesReportService: BusinessAuditSalesReportService,
     private readonly businessAuditSalesService: BusinessAuditSalesService,
+    private readonly businessAuditReturnOccurrencesService: BusinessAuditReturnOccurrencesService,
     private readonly businessAuditOverviewService: BusinessAuditOverviewService,
   ) {}
 
@@ -157,6 +159,27 @@ export class BusinessAuditController {
       productCode,
       clientCodes: clientCodes?.split(','),
       salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('return-occurrences')
+  @HttpCode(HttpStatus.OK)
+  async getReturnOccurrencesAuditData(
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('occurrenceNumber') occurrenceNumber?: string,
+    @Query('companyCodes') companyCodes?: string,
+    @Query('occurrenceCauses') occurrenceCauses?: string,
+    @Query('returnTypes') returnTypes?: string,
+  ) {
+    return await this.businessAuditReturnOccurrencesService.getData({
+      startDate,
+      endDate,
+      occurrenceNumber,
+      companyCodes: companyCodes?.split(','),
+      occurrenceCauses: occurrenceCauses?.split(','),
+      returnTypes: returnTypes?.split(','),
     });
   }
 

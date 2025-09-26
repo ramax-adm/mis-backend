@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
-import { SalesReturnInvoicesService } from './services/sales-return-invoices.service';
-import { SalesReturnInvoicesController } from './controllers/sales-return-invoices.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ReturnInvoices } from './entities/return-invoice.entity';
+import { ReturnOccurrence } from './entities/return-occurrence.entity';
 import { Invoice } from './entities/invoice.entity';
 import { SalesInvoicesService } from './services/sales-invoices.service';
 import { SalesInvoicesController } from './controllers/sales-invoices.controller';
@@ -13,7 +11,7 @@ import { ExcelReaderService } from '@/core/services/excel-reader.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReturnInvoices, Invoice]),
+    TypeOrmModule.forFeature([ReturnOccurrence, Invoice]),
     EnvModule,
     HttpModule,
   ],
@@ -21,8 +19,7 @@ import { ExcelReaderService } from '@/core/services/excel-reader.service';
     ExcelReaderService,
     SalesInvoicesService,
     SalesInvoicesReportService,
-    SalesReturnInvoicesService,
   ],
-  controllers: [SalesInvoicesController, SalesReturnInvoicesController],
+  controllers: [SalesInvoicesController],
 })
 export class SalesModule {}

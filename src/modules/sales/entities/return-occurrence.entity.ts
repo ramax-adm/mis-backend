@@ -5,13 +5,25 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ name: 'sensatta_return_invoices' })
-export class ReturnInvoices {
+@Entity({ name: 'sensatta_return_occurrences' })
+export class ReturnOccurrence {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'date', nullable: true })
   date?: Date;
+
+  @Column({ name: 'occurrence_number', nullable: true })
+  occurrenceNumber?: string;
+
+  @Column({ name: 'occurrence_cause', nullable: true })
+  occurrenceCause?: string;
+
+  @Column({ name: 'return_type', nullable: true })
+  returnType?: string;
+
+  @Column({ name: 'observation', nullable: true })
+  observation?: string;
 
   @Column({ name: 'invoice_date', type: 'date', nullable: true })
   invoiceDate?: Date;
@@ -52,6 +64,9 @@ export class ReturnInvoices {
   @Column({ name: 'invoice_quantity', type: 'int', nullable: true })
   invoiceQuantity?: number;
 
+  @Column({ name: 'invoice_unit_value', type: 'float4', nullable: true })
+  invoiceUnitValue?: number;
+
   @Column({ name: 'invoice_value', type: 'float4', nullable: true })
   invoiceValue?: number;
 
@@ -63,6 +78,9 @@ export class ReturnInvoices {
 
   @Column({ name: 'return_quantity', type: 'int', nullable: true })
   returnQuantity?: number;
+
+  @Column({ name: 'return_unit_value', type: 'float4', nullable: true })
+  returnUnitValue?: number;
 
   @Column({ name: 'return_value', type: 'float4', nullable: true })
   returnValue?: number;
@@ -76,14 +94,11 @@ export class ReturnInvoices {
   @Column({ name: 're_invoicing_quantity', type: 'int', nullable: true })
   reInvoicingQuantity?: number;
 
+  @Column({ name: 're_invoicing_unit_value', type: 'float4', nullable: true })
+  reInvoicingUnitValue?: number;
+
   @Column({ name: 're_invoicing_value', type: 'float4', nullable: true })
   reInvoicingValue?: number;
-
-  @Column({ name: 'return_cause', nullable: true })
-  returnCause?: string;
-
-  @Column({ name: 'observation', nullable: true })
-  observation?: string;
 
   @CreateDateColumn({
     name: 'created_at',
