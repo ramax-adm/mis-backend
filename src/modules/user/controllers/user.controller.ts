@@ -100,7 +100,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/filters/departments')
-  getDepartments() {
-    return USER_DEPARTMENTS;
+  getDepartments(@CurrentUser() user: User) {
+    const isCurrentUserAdmin = user.role === UserRole.Admin;
+    return USER_DEPARTMENTS.filter((i) =>
+      isCurrentUserAdmin ? true : i.key !== UserRole.Admin,
+    );
   }
 }
