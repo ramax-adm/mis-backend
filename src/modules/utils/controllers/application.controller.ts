@@ -14,7 +14,7 @@ import { DataSource } from 'typeorm';
 export class ApplicationController {
   constructor(private readonly datasource: DataSource) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('webpages')
   @HttpCode(HttpStatus.OK)
   getAppWebpages() {
