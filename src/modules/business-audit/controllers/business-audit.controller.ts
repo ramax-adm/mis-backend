@@ -25,6 +25,7 @@ import { BusinessAuditSalesReportService } from '../services/business-audit-sale
 import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-audit-report-request.dto';
 import { DataSource } from 'typeorm';
 import { BusinessAuditReturnOccurrencesService } from '../services/business-audit-return-occurrences.service';
+import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
 
 @Controller('business-audit')
 export class BusinessAuditController {
@@ -36,6 +37,7 @@ export class BusinessAuditController {
     private readonly businessAuditOverviewService: BusinessAuditOverviewService,
   ) {}
 
+  // FILTERS & CONSTANTS
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('constants/considered-cfops')
   @HttpCode(HttpStatus.OK)
@@ -102,6 +104,7 @@ export class BusinessAuditController {
     }));
   }
 
+  // GET AGG DATA
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('overview')
   @HttpCode(HttpStatus.OK)
@@ -139,6 +142,7 @@ export class BusinessAuditController {
     });
   }
 
+  // GET RAW DATA
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('data/orders-lines')
   @HttpCode(HttpStatus.OK)
@@ -162,27 +166,7 @@ export class BusinessAuditController {
     });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('return-occurrences')
-  @HttpCode(HttpStatus.OK)
-  async getReturnOccurrencesAuditData(
-    @Query('startDate') startDate?: Date,
-    @Query('endDate') endDate?: Date,
-    @Query('occurrenceNumber') occurrenceNumber?: string,
-    @Query('companyCodes') companyCodes?: string,
-    @Query('occurrenceCauses') occurrenceCauses?: string,
-    @Query('returnTypes') returnTypes?: string,
-  ) {
-    return await this.businessAuditReturnOccurrencesService.getData({
-      startDate,
-      endDate,
-      occurrenceNumber,
-      companyCodes: companyCodes?.split(','),
-      occurrenceCauses: occurrenceCauses?.split(','),
-      returnTypes: returnTypes?.split(','),
-    });
-  }
-
+  // EXPORT
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/export-xlsx/:type')
   @HttpCode(HttpStatus.OK)

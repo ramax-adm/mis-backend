@@ -33,7 +33,10 @@ export class GetBusinessAuditReturnOccurrencesDataResponseDto {
     data: Record<string, any>;
   };
   occurrencesByType?: Record<string, any>;
-  returnOccurrences: ReturnOccurrence[];
+  returnOccurrences: {
+    data: ReturnOccurrence[];
+    totals: BusinessAuditReturnOccurrencesDataTotals;
+  };
 
   constructor(data: GetBusinessAuditReturnOccurrencesDataResponseDto) {
     Object.assign(this, data);
