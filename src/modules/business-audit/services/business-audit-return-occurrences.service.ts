@@ -2,6 +2,8 @@ import { DataSource } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
 import { GetBusinessAuditReturnOccurrencesDataResponseDto } from '../dtos/response/get-business-return-ocurrences-data-response.dto';
+import { NumberUtils } from '@/modules/utils/services/number.utils';
+import { ReturnOccurrenceReturnTypeEnum } from '../enums/return-types.enum';
 
 @Injectable()
 export class BusinessAuditReturnOccurrencesService {
@@ -14,14 +16,18 @@ export class BusinessAuditReturnOccurrencesService {
     companyCodes,
     occurrenceCauses,
     occurrenceNumber,
-    returnTypes,
+    returnType,
+    clientCodes,
+    representativeCodes,
   }: {
     startDate?: Date;
     endDate?: Date;
     occurrenceNumber?: string;
     companyCodes?: string[];
-    returnTypes?: string[];
+    returnType?: string;
     occurrenceCauses?: string[];
+    clientCodes?: string[];
+    representativeCodes?: string[];
   }) {
     const qb = this.datasource
       .getRepository(ReturnOccurrence)
@@ -35,19 +41,37 @@ export class BusinessAuditReturnOccurrencesService {
       qb.andWhere('ro.date <= :endDate', { endDate });
     }
     if (occurrenceNumber) {
-      qb.andWhere('ro.occurrenceNumber = :occurrenceNumber', {
-        occurrenceNumber,
+      qb.andWhere('ro.occurrenceNumber ILIKE :occurrenceNumber', {
+        occurrenceNumber: `%${occurrenceNumber}%`,
       });
     }
+
     if (companyCodes) {
       qb.andWhere('ro.companyCode IN (:...companyCodes)', { companyCodes });
     }
-    if (returnTypes) {
-      qb.andWhere('ro.returnType IN (:...returnTypes)', { returnTypes });
+    if (returnType) {
+      const returnTypeMap = {
+        [ReturnOccurrenceReturnTypeEnum.FULL]: 'Integral',
+        [ReturnOccurrenceReturnTypeEnum.PARTIAL]: 'Parcial',
+      };
+      qb.andWhere('ro.returnType ILIKE :returnType', {
+        returnType: `%${returnTypeMap[returnType]}%`,
+      });
     }
     if (occurrenceCauses) {
       qb.andWhere('ro.occurrenceCause IN (:...occurrenceCauses)', {
         occurrenceCauses,
+      });
+    }
+
+    if (clientCodes) {
+      qb.andWhere('ro.clientCode IN (:...clientCodes)', {
+        clientCodes,
+      });
+    }
+    if (representativeCodes) {
+      qb.andWhere('ro.salesRepresentativeCode IN (:...representativeCodes)', {
+        representativeCodes,
       });
     }
 
@@ -60,14 +84,18 @@ export class BusinessAuditReturnOccurrencesService {
     companyCodes,
     occurrenceCauses,
     occurrenceNumber,
-    returnTypes,
+    returnType,
+    clientCodes,
+    representativeCodes,
   }: {
     startDate: Date;
     endDate: Date;
     occurrenceNumber?: string;
     companyCodes?: string[];
-    returnTypes?: string[];
+    returnType?: string;
     occurrenceCauses?: string[];
+    clientCodes?: string[];
+    representativeCodes?: string[];
   }) {
     const returnOccurrences = await this.getReturnOccurrences({
       startDate,
@@ -75,7 +103,9 @@ export class BusinessAuditReturnOccurrencesService {
       occurrenceNumber,
       companyCodes,
       occurrenceCauses,
-      returnTypes,
+      returnType,
+      clientCodes,
+      representativeCodes,
     });
     // totais p/ cada registro
     /**
@@ -98,7 +128,7 @@ export class BusinessAuditReturnOccurrencesService {
       const representativeKey = `${occurrence.salesRepresentativeCode} - ${occurrence.salesRepresentativeName}`;
       const clientKey = `${occurrence.clientCode} - ${occurrence.clientName}`;
       const productKey = `${occurrence.productCode} - ${occurrence.productName}`;
-      const dayKey = new Date(occurrence.date)?.toISOString().split('T')[0];
+      const dayKey = new Date(occurrence.date)?.toISOString();
 
       // p/ empresa
       if (!occurrencesByCompany.has(companyKey)) {
@@ -202,6 +232,7 @@ export class BusinessAuditReturnOccurrencesService {
       if (!occurrencesByType.has(returnTypeKey)) {
         occurrencesByType.set(returnTypeKey, {
           quantity: 0,
+          percentValue: 0,
           weightInKg: 0,
           value: 0,
         });
@@ -210,6 +241,13 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByType.quantity += occurrence.returnQuantity;
       currentOccurrencesByType.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByType.value += occurrence.returnValue;
+    }
+
+    const occurrencesByTypeTotals = this.getDataTotals(occurrencesByType);
+    for (const [, obj] of occurrencesByType) {
+      obj.percentValue = NumberUtils.nb2(
+        obj.value / occurrencesByTypeTotals.value,
+      );
     }
 
     return new GetBusinessAuditReturnOccurrencesDataResponseDto({
@@ -238,7 +276,18 @@ export class BusinessAuditReturnOccurrencesService {
         totals: this.getDataTotals(occurrencesByRepresentative),
       },
       occurrencesByType: Object.fromEntries(occurrencesByType),
-      returnOccurrences,
+      returnOccurrences: {
+        data: returnOccurrences,
+        totals: returnOccurrences.reduce(
+          (acc, i) => ({
+            count: acc.count + 1,
+            quantity: acc.quantity + i.returnQuantity,
+            weightInKg: acc.weightInKg + i.returnWeightInKg,
+            value: acc.value + i.returnValue,
+          }),
+          { count: 0, quantity: 0, weightInKg: 0, value: 0 },
+        ),
+      },
     });
   }
 
