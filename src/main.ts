@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { EnvService } from './config/env/env.service';
 import { ConsoleLogger, Logger, ValidationPipe } from '@nestjs/common';
 import { LogInterceptor } from './core/interceptors/log-interceptor';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -10,6 +11,8 @@ async function bootstrap() {
       prefix: 'RAMAX', // Default is "Nest"
     }),
   });
+
+  // App config
   app.enableCors();
   app.setGlobalPrefix('api');
 
@@ -23,18 +26,40 @@ async function bootstrap() {
     }),
   );
 
+  // Global intercepting for logging all comming requests
   app.useGlobalInterceptors(new LogInterceptor());
 
+  // Docs Config
+  /**
+   * TODO:Docs Anatomy
+   *
+   * Endpoint Description
+   * Request Payload
+   * Response Payload
+   */
+  const swaggerUrlPrefix = `api/docs`;
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('RAMAX - MIS')
+    .setDescription('Sistema de informações gerenciais e gerais da RAMAX Group')
+    .setVersion('1.0')
+    .build();
+
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, swaggerConfig);
+
+  SwaggerModule.setup(swaggerUrlPrefix, app, documentFactory, {
+    jsonDocumentUrl: `${swaggerUrlPrefix}/json`,
+  });
+
   const envService = app.get(EnvService);
-  const HOST = 'http://localhost'; // TODO
+  const HOST = envService.get('BE_HOST');
   const PORT = envService.get('BE_PORT');
   await app.listen(PORT);
 
-  console.log();
   const logger = new Logger('API Bootstrap');
-  logger.verbose(`API available on: ${HOST}:${PORT}/api`);
-  logger.verbose(`API health available on: ${HOST}:${PORT}/api/health`);
-
-  // TODO: docs
+  console.log();
+  logger.verbose(`API available on: ${HOST}/api`);
+  logger.verbose(`API health available on: ${HOST}/api/health`);
+  logger.verbose(`API Docs available on: ${HOST}/api/docs`);
 }
 bootstrap();

@@ -5,6 +5,7 @@ import { BusinessAuditSalesService } from './services/business-audit-sales.servi
 import { BusinessAuditSalesReportService } from './services/business-audit-sales-report.service';
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
 import { BusinessAuditReturnOccurrencesService } from './services/business-audit-return-occurrences.service';
+import { BusinessAuditReturnOccurrencesController } from './controllers/business-audit-return-occurrences.controller';
 
 @Module({
   providers: [
@@ -14,6 +15,9 @@ import { BusinessAuditReturnOccurrencesService } from './services/business-audit
     BusinessAuditReturnOccurrencesService,
     ExcelReaderService,
   ],
-  controllers: [BusinessAuditController],
+  controllers: [
+    BusinessAuditController,
+    BusinessAuditReturnOccurrencesController,
+  ],
 })
 export class BusinessAuditModule {}
