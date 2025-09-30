@@ -23,6 +23,10 @@ export class EnvSchema {
 
   @IsString()
   @IsNotEmpty()
+  BE_HOST: string;
+
+  @IsString()
+  @IsNotEmpty()
   BE_SECRET: string;
 
   @IsString()
