@@ -20,6 +20,7 @@ import { EMAIL_SERVICE_PROVIDER, IEmailService } from '../../aws';
 import { EmailUtils } from '../../utils/services/email.utils';
 import { EmailTemplateEnum } from '../../utils/enums/email-template.enum';
 import { IPASSWORD_RECOVERY_TEMPLATE } from '../../utils/emails/password-recovery.template';
+import { IWELCOME_USER_TEMPLATE } from '@/modules/utils/emails/welcome-user.template';
 
 @Injectable()
 export class UserService {
@@ -39,12 +40,37 @@ export class UserService {
       throw new ConflictException('Esse email já esta atribuido a um usuario.');
     }
 
-    Object.assign(createUserDto, {
+    const userCreated = await this.userRepository.save({
+      ...createUserDto,
       isActive: true,
       password: hashSync(createUserDto.password, 10),
     });
 
-    return this.userRepository.save(createUserDto);
+    // Email sending
+    const emailTemplate = EmailUtils.createFromTemplate<IWELCOME_USER_TEMPLATE>(
+      {
+        username: userCreated.name,
+        email: userCreated.email,
+        defaultPassword: createUserDto.password,
+      },
+      EmailTemplateEnum.WELCOME_USER,
+    );
+
+    console.log({
+      toAddresses: [userCreated.email],
+      ccAddresses: [],
+      subject: 'Acesso ao MIS - RAMAX Group',
+      htmlBody: emailTemplate,
+    });
+
+    await this.sesEmailService.sendEmail({
+      ccAddresses: [],
+      htmlBody: emailTemplate,
+      subject: 'Acesso ao MIS - RAMAX Group',
+      toAddresses: [userCreated.email],
+    });
+
+    return userCreated;
   }
 
   async profile(userId: string) {
