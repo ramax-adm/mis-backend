@@ -10,5 +10,8 @@ export class ExportBusinessAuditReportDto {
     priceConsideration?: OrderPriceConsiderationEnum;
     clientCodes?: string;
     salesRepresentativeCodes?: string;
+    occurrenceNumber?: string;
+    returnType?: string;
+    occurrenceCauses?: string;
   };
 }

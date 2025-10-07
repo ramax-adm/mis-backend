@@ -1,14 +1,30 @@
+import { ApiKeyAuth } from '@/core/decorators/api-key-auth.decorator';
 import { TempBalancete } from '@/core/entities/temp/temp-balancete.entity';
 import { TempLivroFiscal } from '@/core/entities/temp/temp-livro-fiscal.entity';
 import { TempRazaoContabil } from '@/core/entities/temp/temp-razao-contabil.entity';
 import { Page, PageMeta, PageOptions } from '@/core/paginate';
-import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { ApiKeyGuard } from '@/modules/auth/guards/api-key-guard';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
 
+@ApiTags('Shared:FISCAL')
+@ApiKeyAuth()
+@UseGuards(ApiKeyGuard)
 @Controller('shared/fiscal')
 export class SharedFiscalController {
   constructor(private readonly dataSource: DataSource) {}
 
+  @ApiOkResponse({
+    description: 'Retorna os registros do livro fiscal (Integração TONHA).',
+  })
   @Get('livro-fiscal')
   @HttpCode(HttpStatus.OK)
   async getLivroFiscalData(
@@ -38,6 +54,9 @@ export class SharedFiscalController {
     return new Page(fiscalData, pageMeta);
   }
 
+  @ApiOkResponse({
+    description: 'Retorna os registros do balancete (Integração TONHA).',
+  })
   @Get('balancete')
   @HttpCode(HttpStatus.OK)
   async getBalanceteData(@Query() pageOptions: PageOptions) {
@@ -55,6 +74,9 @@ export class SharedFiscalController {
     return new Page(fiscalData, pageMeta);
   }
 
+  @ApiOkResponse({
+    description: 'Retorna os registros de razao contabil (Integração TONHA).',
+  })
   @Get('razao-contabil')
   @HttpCode(HttpStatus.OK)
   async getRazaoContabilData(
