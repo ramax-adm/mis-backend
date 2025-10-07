@@ -5,7 +5,29 @@ import { Holiday } from '@/modules/utils/entities/holiday.entity';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { EnvService } from '@/config/env/env.service';
 import { DateUtils } from '@/modules/utils/services/date.utils';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiProperty,
+  ApiTags,
+} from '@nestjs/swagger';
 
+class GetHealthResponseDto {
+  @ApiProperty()
+  message: string;
+  @ApiProperty()
+  moment: Date;
+  @ApiProperty()
+  uptime: string;
+  @ApiProperty()
+  environment: string;
+  @ApiProperty()
+  dbCheck: boolean;
+  @ApiProperty()
+  dbCount: number;
+}
+
+@ApiTags('App')
 @Controller()
 export class AppController {
   constructor(
@@ -16,7 +38,10 @@ export class AppController {
   ) {}
 
   // TODO: docs
-
+  @ApiOkResponse({
+    description: 'Retorna uma resposta com indicadores de status da aplicação.',
+    type: GetHealthResponseDto,
+  })
   @Get('health')
   @HttpCode(200)
   async health() {
