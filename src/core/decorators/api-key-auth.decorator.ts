@@ -5,6 +5,7 @@ import {
   ApiHeader,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { SWAGGER_API_SECURITY } from '../constants/swagger-security';
 
 /**
  * Aplica segurança baseada em API Key (header x-api-key)
@@ -12,7 +13,7 @@ import {
  */
 export function ApiKeyAuth(description?: string) {
   return applyDecorators(
-    ApiSecurity('apiKeyAuth'),
+    ApiSecurity(SWAGGER_API_SECURITY.API_KEY_AUTH),
     ApiHeader({
       name: 'x-api-key',
       description:

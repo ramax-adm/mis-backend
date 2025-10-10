@@ -4,6 +4,7 @@ import { EnvService } from './config/env/env.service';
 import { ConsoleLogger, Logger, ValidationPipe } from '@nestjs/common';
 import { LogInterceptor } from './core/interceptors/log-interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SWAGGER_API_SECURITY } from './core/constants/swagger-security';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -30,18 +31,24 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LogInterceptor());
 
   // Docs Config
-  /**
-   * TODO:Docs Anatomy
-   *
-   * Endpoint Description
-   * Request Payload
-   * Response Payload
-   */
   const swaggerUrlPrefix = `api/docs`;
   const swaggerConfig = new DocumentBuilder()
     .setTitle('RAMAX - MIS')
     .setDescription('Sistema de informações gerenciais e gerais da RAMAX Group')
     .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      SWAGGER_API_SECURITY.BEARER_AUTH,
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-api-key',
+        in: 'header',
+        description: 'Chave de acesso à API (header x-api-key)',
+      },
+      SWAGGER_API_SECURITY.API_KEY_AUTH,
+    )
     .build();
 
   const documentFactory = () =>
