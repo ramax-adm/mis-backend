@@ -57,7 +57,7 @@ export class SalesInvoicesReportService {
         [`F${row(index)}`, item.nfSituation],
         [`G${row(index)}`, item.cfopCode],
         [`H${row(index)}`, item.cfopDescription],
-        [`I${row(index)}`, item.requestId],
+        [`I${row(index)}`, item.orderId],
         [`J${row(index)}`, item.clientCode],
         [`K${row(index)}`, item.clientName],
         [`L${row(index)}`, item.productCode],
