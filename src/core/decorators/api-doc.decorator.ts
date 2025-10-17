@@ -33,7 +33,7 @@ export function ApiControllerDoc(options: ApiControllerDocOptions) {
 
     // Responses genéricos (podem ser opcionais)
     ApiBadRequestResponse({
-      description: 'Requisição mal-formada - Verifique os dados!',
+      description: 'Requisição mal-formada',
     }),
     ApiUnauthorizedResponse({ description: 'Sem Autenticação' }),
     ApiForbiddenResponse({ description: 'Sem Autorização/Permissão' }),
