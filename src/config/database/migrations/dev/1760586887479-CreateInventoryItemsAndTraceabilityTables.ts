@@ -26,6 +26,7 @@ export class CreateInventoryItemsAndTraceabilityTables1760586887479
     await queryRunner.query(
       `CREATE TABLE "dev"."sensatta_inventory_item_traceability" ("id" uuid NOT NULL DEFAULT uuid_generate_v4()
       , "inventory_id" character varying
+      , "date" date
       , "box_number" character varying
       , "weight_in_kg" real
       , "tare_weight_in_kg" real
