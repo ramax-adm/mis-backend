@@ -1,0 +1,52 @@
+export type GetInventoryItemWithTraceabilityRaw = {
+  // Campos da tabela InventoryItem (sii.*)
+  id: string;
+  inventory_id: string;
+  warehouse_code: string;
+  box_number: string;
+  production_date: Date;
+  due_date: Date;
+  product_id: string;
+  product_code: string;
+  product_name: string;
+  sif_code: string;
+  weight_in_kg: number;
+  tare_weight_in_kg: number;
+  sensatta_created_by: string;
+  traceability_id: string;
+  traceability_date: Date;
+  operation: string;
+  status: string;
+  line1: string;
+  line2: string;
+  line3: string;
+  line4: string;
+  line5: string;
+  line6: string;
+};
+
+export type GetInventoryItemWithTraceability = {
+  id: string;
+  inventoryId: string;
+  warehouseCode: string;
+  boxNumber: string;
+  productionDate: Date;
+  dueDate: Date;
+  productId: string;
+  productCode: string;
+  productName: string;
+  sifCode: string;
+  weightInKg: number;
+  tareWeightInKg: number;
+  sensattaCreatedBy: string;
+  traceabilityId: string;
+  traceabilityDate: Date;
+  operation: string;
+  status: string;
+  line1: string;
+  line2: string;
+  line3: string;
+  line4: string;
+  line5: string;
+  line6: string;
+};
