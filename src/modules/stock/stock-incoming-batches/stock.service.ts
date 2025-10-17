@@ -12,7 +12,7 @@ import {
 } from './types/stock.types';
 import { GetStockLastUpdatedAtResponseDto } from './dto/get-stock-last-updated-at-response.dto';
 import { Company } from '@/core/entities/sensatta/company.entity';
-import { IncomingBatches } from '@/core/entities/sensatta/incoming-batch.entity';
+import { IncomingBatches } from '@/modules/stock/entities/incoming-batch.entity';
 import { ReferencePrice } from '@/core/entities/sensatta/reference-price.entity';
 import { StockUtilsService } from './stock-utils.service';
 import { INCOMING_BATCHES_QUERY } from './constants/incoming-batches-query';

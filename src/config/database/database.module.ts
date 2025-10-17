@@ -5,7 +5,7 @@ import { EnvService } from '../env/env.service';
 import { join } from 'path';
 import { Holiday } from '@/modules/utils/entities/holiday.entity';
 import { Company } from '@/core/entities/sensatta/company.entity';
-import { IncomingBatches } from '@/core/entities/sensatta/incoming-batch.entity';
+import { IncomingBatches } from '@/modules/stock/entities/incoming-batch.entity';
 import { ProductLine } from '@/core/entities/sensatta/product-line.entity';
 import { Product } from '@/core/entities/sensatta/product.entity';
 import { ReferencePrice } from '@/core/entities/sensatta/reference-price.entity';

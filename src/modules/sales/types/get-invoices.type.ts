@@ -1,23 +1,6 @@
-export type GetInvoicesItem = {
-  id: string;
-  date?: Date;
-  nfSituation?: string;
-  nfType?: string;
-  clientTypeCode?: string;
-  clientTypeName?: string;
-  companyCode?: string;
-  companyName: string;
-  cfopCode?: string;
-  cfopDescription?: string;
-  nfNumber?: string;
-  requestId?: string; // sequencial pedido
-  clientCode?: string;
-  clientName?: string;
-  productCode?: string;
-  productName?: string;
-  boxAmount?: number;
-  weightInKg?: number;
-  unitPrice?: number;
-  totalPrice?: number;
-  createdAt: Date;
-};
+import { Invoice } from '../entities/invoice.entity';
+import { ReturnOccurrence } from '../entities/return-occurrence.entity';
+
+export type GetInvoicesItem = Invoice & { companyName: string };
+
+export type GetReturnOccurrenceItem = ReturnOccurrence;

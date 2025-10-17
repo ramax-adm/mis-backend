@@ -8,6 +8,8 @@ import { HttpModule } from '@nestjs/axios';
 import { EnvModule } from '@/config/env/env.module';
 import { SalesInvoicesReportService } from './services/sales-invoices-report.service';
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
+import { ReturnOccurrencesController } from './controllers/return-occurrences.controller';
+import { ReturnOccurrencesService } from './services/return-occurrences.service';
 
 @Module({
   imports: [
@@ -19,7 +21,8 @@ import { ExcelReaderService } from '@/core/services/excel-reader.service';
     ExcelReaderService,
     SalesInvoicesService,
     SalesInvoicesReportService,
+    ReturnOccurrencesService,
   ],
-  controllers: [SalesInvoicesController],
+  controllers: [SalesInvoicesController, ReturnOccurrencesController],
 })
 export class SalesModule {}
