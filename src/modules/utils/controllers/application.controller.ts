@@ -18,6 +18,10 @@ export class ApplicationController {
   @Get('webpages')
   @HttpCode(HttpStatus.OK)
   getAppWebpages() {
-    return this.datasource.manager.find(AppWebpage);
+    return this.datasource.manager.find(AppWebpage, {
+      where: {
+        isActive: true,
+      },
+    });
   }
 }

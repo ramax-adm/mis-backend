@@ -24,6 +24,9 @@ export class AppWebpage {
   @Column({ name: 'is_auth_page', default: true })
   isAuthPage: boolean;
 
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamptz',

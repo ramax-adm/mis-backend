@@ -14,11 +14,11 @@ export class FreightCompaniesService {
   /**
    * Detalhamento de uma transportadora com todas as metricas ANTT
    */
-  async findOne(sensattaCode: string) {
+  async findOne(freightCompanyCode: string) {
     const consultations = await this.datasource
       .getRepository(AnttFreightCompaniesConsultation)
       .find({
-        where: { sensattaCode },
+        where: { freightCompanyCode },
       });
 
     const qb = this.datasource
@@ -29,11 +29,11 @@ export class FreightCompaniesService {
     qb.leftJoin(
       'antt_freight_companies_consultations',
       'afcc',
-      `afcc.sensatta_code = sfc.sensatta_code
+      `afcc.freight_company_code = sfc.sensatta_code
      AND afcc."date" = (
         SELECT MAX(sub."date")
         FROM dev.antt_freight_companies_consultations sub
-        WHERE sub.sensatta_code = sfc.sensatta_code
+        WHERE sub.freight_company_code = sfc.sensatta_code
      )`,
     ).select([
       'sfc.sensatta_code as sensatta_code',
@@ -48,7 +48,7 @@ export class FreightCompaniesService {
       'afcc.result_observation as result_observation',
       'afcc.created_at as verified_at',
     ]);
-    qb.where('sfc.sensatta_code = :sensattaCode', { sensattaCode });
+    qb.where('sfc.sensatta_code = :freightCompanyCode', { freightCompanyCode });
 
     const freightCompany = await qb.getRawOne();
 
@@ -108,11 +108,11 @@ export class FreightCompaniesService {
     qb.leftJoin(
       'antt_freight_companies_consultations',
       'afcc',
-      `afcc.sensatta_code = sfc.sensatta_code
+      `afcc.freight_company_code = sfc.sensatta_code
      AND afcc."date" = (
         SELECT MAX(sub."date")
         FROM dev.antt_freight_companies_consultations sub
-        WHERE sub.sensatta_code = sfc.sensatta_code
+        WHERE sub.freight_company_code = sfc.sensatta_code
      )`,
     ).select([
       'sfc.sensatta_code as sensatta_code',
