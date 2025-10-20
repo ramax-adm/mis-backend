@@ -1,4 +1,4 @@
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 export const getMarketLabel = (entity: MarketEnum) => {
   const map = {

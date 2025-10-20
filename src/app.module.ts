@@ -29,8 +29,10 @@ import { SharedModule } from './shared/shared.module';
     HttpModule,
     ScheduleModule.forRoot(),
 
-    // domain modules
+    // infra modules
     AwsModule,
+
+    // domain modules
     AuthModule,
     BusinessAuditModule,
     CashFlowModule,

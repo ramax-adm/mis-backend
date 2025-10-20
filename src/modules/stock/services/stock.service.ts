@@ -2,23 +2,23 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { StringUtils } from '../../utils/services/string.utils';
-import { GetStockByCompanyResponseDto } from './dto/get-stock-by-company-response.dto';
-import { GetToExpiresByCompanyResponseDto } from './dto/get-to-expires-by-company-response.dto';
+import { GetStockByCompanyResponseDto } from '../dtos/response/stock-get-by-company-response.dto';
+import { GetToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-to-expires-by-company-response.dto';
 import { DateUtils } from '../../utils/services/date.utils';
 import {
   GetExternalIncomingBatchesQueryResponse,
   GetIncomingBatchesQueryResponse,
   StockOptionalData,
-} from './types/stock.types';
-import { GetStockLastUpdatedAtResponseDto } from './dto/get-stock-last-updated-at-response.dto';
+} from '../types/stock.types';
+import { GetStockLastUpdatedAtResponseDto } from '../dtos/response/stock-get-last-updated-at-response.dto';
 import { Company } from '@/core/entities/sensatta/company.entity';
 import { IncomingBatches } from '@/modules/stock/entities/incoming-batch.entity';
-import { ReferencePrice } from '@/core/entities/sensatta/reference-price.entity';
+import { ReferencePrice } from '@/modules/stock/entities/reference-price.entity';
 import { StockUtilsService } from './stock-utils.service';
-import { INCOMING_BATCHES_QUERY } from './constants/incoming-batches-query';
-import { GetAnalyticalStockByCompanyResponseDto } from './dto/get-analytical-stock-by-company-response.dto';
-import { GetAnalyticalToExpiresByCompanyResponseDto } from './dto/get-analytical-to-expires-by-company-response.dto';
-import { EXTERNAL_INCOMING_BATCHES_QUERY } from './constants/external-incoming-batches-query';
+import { INCOMING_BATCHES_QUERY } from '../constants/stock-incoming-batches-query';
+import { GetAnalyticalStockByCompanyResponseDto } from '../dtos/response/stock-get-analytical-by-company-response.dto';
+import { GetAnalyticalToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-analytical-to-expires-by-company-response.dto';
+import { EXTERNAL_INCOMING_BATCHES_QUERY } from '../constants/external-incoming-batches-query';
 import { ExternalIncomingBatch } from '@/core/entities/external/external-incoming-batch.entity';
 
 @Injectable()
@@ -75,8 +75,16 @@ export class StockService {
   }
 
   // Retorna os dados de preço de referencia
-  async getReferencePricesData() {
-    return await this.referencePriceRepository.find();
+  async getReferencePricesData({ company }: { company: Company }) {
+    return await this.referencePriceRepository.find({
+      where: {
+        companyCode: company.sensattaCode,
+        mainTableNumber: In([
+          company.priceTableNumberCar,
+          company.priceTableNumberTruck,
+        ]),
+      },
+    });
   }
 
   /**
@@ -110,7 +118,7 @@ export class StockService {
         this.getIncomingBatchesData(company),
         // external incoming batches
         this.getExternalIncomingBatchesData(company),
-        this.getReferencePricesData(),
+        this.getReferencePricesData({ company }),
       ]);
     }
 
@@ -431,7 +439,7 @@ export class StockService {
       await Promise.all([
         this.getIncomingBatchesData(company),
         this.getExternalIncomingBatchesData(company),
-        this.getReferencePricesData(),
+        this.getReferencePricesData({ company }),
       ]);
 
     const map = new Map<string, any>();
@@ -588,7 +596,7 @@ export class StockService {
         this.getIncomingBatchesData(company),
         // external incoming batches
         this.getExternalIncomingBatchesData(company),
-        this.getReferencePricesData(),
+        this.getReferencePricesData({ company }),
       ]);
 
     const map = new Map<string, any>();

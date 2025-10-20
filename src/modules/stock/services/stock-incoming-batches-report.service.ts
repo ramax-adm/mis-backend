@@ -1,13 +1,12 @@
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { StockIncomingBatchesService } from './stock-incoming-batches.service';
-import { GetStockIncomingBatchesResumedDataResponseDto } from '../dtos/response/get-stock-incoming-batches-resumed-data-response.dto';
-import { ExportStockReportDto } from '../../stock-incoming-batches/dto/export-stock-report.dto';
-import { NumberUtils } from '@/modules/utils/services/number.utils';
-import { ExportStockIncomingBatchesReportRequestDto } from '../dtos/request/export-stock-incoming-batches-report-request.dto';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 import { ExcelUtils } from '@/modules/utils/services/excel.utils';
-import { GetStockIncomingBatchesAnalyticalDataResponseDto } from '../dtos/response/get-stock-incoming-batches-analytical-data-response.dto';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
+import { NumberUtils } from '@/modules/utils/services/number.utils';
+import { ExportStockIncomingBatchesReportRequestDto } from '../dtos/request/stock-incoming-batches-export-report-request.dto';
+import { GetStockIncomingBatchesAnalyticalDataResponseDto } from '../dtos/response/stock-incoming-batches-get-analytical-data-response.dto';
+import { GetStockIncomingBatchesResumedDataResponseDto } from '../dtos/response/stock-incoming-batches-get-resumed-data-response.dto';
 
 @Injectable()
 export class StockIncomingBatchesReportService {

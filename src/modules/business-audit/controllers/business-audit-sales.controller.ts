@@ -19,7 +19,7 @@ import { BusinessAuditReturnOccurrencesService } from '../services/business-audi
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
 import { BusinessAuditSalesService } from '../services/business-audit-sales.service';
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('business-audit/sales')

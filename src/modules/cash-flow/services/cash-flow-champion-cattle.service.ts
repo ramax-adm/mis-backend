@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CashFlowProduct } from '../entities/cash-flow-product.entity';
 import { CommonChampionCattleDto } from '../dtos/common/champion-cattle/common.dto';
 import { CashFlowService } from './cash-flow.service';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { GetProductionValuesResponseDto } from '../dtos/get-production-values-response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

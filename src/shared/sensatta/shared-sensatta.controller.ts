@@ -1,4 +1,4 @@
-import { Product } from '@/core/entities/sensatta/product.entity';
+import { Product } from '@/modules/stock/entities/product.entity';
 import {
   Controller,
   Get,

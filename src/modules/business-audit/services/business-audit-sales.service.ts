@@ -11,7 +11,7 @@ import {
 import { GetBusinessAuditSalesDataResponseDto } from '../dtos/response/get-business-sales-data-response.dto';
 import { OrderSituationEnum } from '../enums/order-situation.enum';
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 @Injectable()
 export class BusinessAuditSalesService {

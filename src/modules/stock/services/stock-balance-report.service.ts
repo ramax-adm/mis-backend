@@ -4,7 +4,7 @@ import {
   ExcelReaderService,
   NumFormats,
 } from '@/core/services/excel-reader.service';
-import { ExportStockBalanceReportDto } from '../dtos/export-stock-new-report.dto';
+import { ExportStockBalanceReportDto } from '../dtos/request/stock-balance-export-report-request.dto';
 import { DateUtils } from '@/modules/utils/services/date.utils';
 import { GetStockBalanceItem } from '../types/get-stock-balance.type';
 

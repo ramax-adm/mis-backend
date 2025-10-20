@@ -31,7 +31,7 @@ import { TipoArrendEnum } from '../enums/tipo-arrend.enum';
 import { Repository } from 'typeorm';
 import { CashFlowProduct } from '../entities/cash-flow-product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 @Injectable()
 export class CashFlowService {

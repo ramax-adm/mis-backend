@@ -1,4 +1,4 @@
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import {
   ConflictException,
   Injectable,
