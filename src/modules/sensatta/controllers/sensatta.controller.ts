@@ -95,7 +95,7 @@ export class SensattaController {
         'sib.product_line_code AS sensatta_code',
         'spl.name AS name',
         'spl.acronym AS acronym',
-        'spl.is_considered_on_stock AS is_considered_on_stock',
+        'spl.is_active AS is_considered_on_stock',
         'spl.created_at AS created_at',
       ])
       .from('sensatta_incoming_batches', 'sib')
@@ -105,7 +105,7 @@ export class SensattaController {
         'spl.sensatta_code = sib.product_line_code',
       )
       .where('1=1')
-      .andWhere('spl.is_considered_on_stock = :isStock', { isStock: true })
+      .andWhere('spl.is_active = :isStock', { isStock: true })
       .distinct(true) // ✅ aqui você aplica o DISTINCT globalmente;
       .orderBy('sensatta_code', 'ASC');
 

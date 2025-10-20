@@ -19,9 +19,6 @@ export class Warehouse {
   @Column()
   name: string;
 
-  @Column({ name: 'is_considered_on_stock', type: 'boolean', default: false })
-  isConsideredOnStock: boolean;
-
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 

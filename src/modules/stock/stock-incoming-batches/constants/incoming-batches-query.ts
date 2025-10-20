@@ -21,4 +21,4 @@ LEFT JOIN "dev".sensatta_products sp ON sp.sensatta_code = sib.product_code
 LEFT JOIN "dev".sensatta_product_lines spl ON spl.sensatta_code = sib.product_line_code
 WHERE 1=1
     AND sw.company_code = $1
-    AND sw.is_considered_on_stock = $2`;
+    AND sw.is_active = $2`;

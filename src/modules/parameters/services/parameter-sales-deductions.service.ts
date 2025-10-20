@@ -5,8 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, ILike } from 'typeorm';
-import { ParameterSalesDeduction } from '../entities/parameter-sales-deduction.entity';
-import { ParameterSalesDeductionProductLine } from '../entities/parameter-sales-deduction-product-line.entity';
 import { CreateParameterSalesDeductionRequestDto } from '../dtos/request/create-parameter-sales-deduction-request.dto';
 import { UpdateParameterSalesDeductionRequestDto } from '../dtos/request/update-parameter-sales-deduction-request.dto';
 
@@ -14,144 +12,144 @@ import { UpdateParameterSalesDeductionRequestDto } from '../dtos/request/update-
 export class ParameterSalesDeductionsService {
   constructor(private readonly datasource: DataSource) {}
 
-  async create(
-    userId: string,
-    {
-      name,
-      companyCode,
-      market,
-      value,
-      unit,
-    }: CreateParameterSalesDeductionRequestDto,
-  ) {
-    return await this.datasource.manager.save(ParameterSalesDeduction, {
-      name,
-      companyCode,
-      market,
-      value,
-      unit,
-      createdById: userId,
-    });
-  }
+  // async create(
+  //   userId: string,
+  //   {
+  //     name,
+  //     companyCode,
+  //     market,
+  //     value,
+  //     unit,
+  //   }: CreateParameterSalesDeductionRequestDto,
+  // ) {
+  //   return await this.datasource.manager.save(ParameterSalesDeduction, {
+  //     name,
+  //     companyCode,
+  //     market,
+  //     value,
+  //     unit,
+  //     createdById: userId,
+  //   });
+  // }
 
-  async find({
-    name,
-    companyCode,
-    market,
-  }: {
-    name: string;
-    companyCode: string;
-    market: MarketEnum;
-  }) {
-    const data = await this.datasource.manager.find(ParameterSalesDeduction, {
-      where: {
-        name: ILike(`${name}`),
-        companyCode,
-        market,
-      },
-    });
+  // async find({
+  //   name,
+  //   companyCode,
+  //   market,
+  // }: {
+  //   name: string;
+  //   companyCode: string;
+  //   market: MarketEnum;
+  // }) {
+  //   const data = await this.datasource.manager.find(ParameterSalesDeduction, {
+  //     where: {
+  //       name: ILike(`${name}`),
+  //       companyCode,
+  //       market,
+  //     },
+  //   });
 
-    return data;
-  }
+  //   return data;
+  // }
 
-  async update(
-    id: string,
-    userId: string,
-    {
-      name,
-      companyCode,
-      market,
-      value,
-      unit,
-    }: UpdateParameterSalesDeductionRequestDto,
-  ) {
-    const previousData = await this.datasource.manager.findOne(
-      ParameterSalesDeduction,
-      { where: { id } },
-    );
+  // async update(
+  //   id: string,
+  //   userId: string,
+  //   {
+  //     name,
+  //     companyCode,
+  //     market,
+  //     value,
+  //     unit,
+  //   }: UpdateParameterSalesDeductionRequestDto,
+  // ) {
+  //   const previousData = await this.datasource.manager.findOne(
+  //     ParameterSalesDeduction,
+  //     { where: { id } },
+  //   );
 
-    if (!previousData) {
-      throw new NotFoundException('O registro nao pode ser encontrado');
-    }
+  //   if (!previousData) {
+  //     throw new NotFoundException('O registro nao pode ser encontrado');
+  //   }
 
-    const toUpdateData = this.datasource.manager.merge(
-      ParameterSalesDeduction,
-      previousData,
-      {
-        name,
-        companyCode,
-        market,
-        value,
-        unit,
-        updatedById: userId,
-      },
-    );
+  //   const toUpdateData = this.datasource.manager.merge(
+  //     ParameterSalesDeduction,
+  //     previousData,
+  //     {
+  //       name,
+  //       companyCode,
+  //       market,
+  //       value,
+  //       unit,
+  //       updatedById: userId,
+  //     },
+  //   );
 
-    return await this.datasource.manager.save(
-      ParameterSalesDeduction,
-      toUpdateData,
-    );
-  }
+  //   return await this.datasource.manager.save(
+  //     ParameterSalesDeduction,
+  //     toUpdateData,
+  //   );
+  // }
 
-  async remove(id: string, userId: string) {
-    return await this.datasource.manager.save(ParameterSalesDeduction, {
-      id,
-      updatedById: userId,
-      deleletById: userId,
-    });
-  }
+  // async remove(id: string, userId: string) {
+  //   return await this.datasource.manager.save(ParameterSalesDeduction, {
+  //     id,
+  //     updatedById: userId,
+  //     deleletById: userId,
+  //   });
+  // }
 
-  async addParameterProductLine({
-    paramSaleDeductionId,
-    productLineId,
-  }: {
-    paramSaleDeductionId: string;
-    productLineId: string;
-  }) {
-    const relationAlreadyExists = await this.datasource.manager.findOne(
-      ParameterSalesDeductionProductLine,
-      {
-        where: {
-          paramSaleDeductionId,
-          productLineId,
-        },
-      },
-    );
+  // async addParameterProductLine({
+  //   paramSaleDeductionId,
+  //   productLineId,
+  // }: {
+  //   paramSaleDeductionId: string;
+  //   productLineId: string;
+  // }) {
+  //   const relationAlreadyExists = await this.datasource.manager.findOne(
+  //     ParameterSalesDeductionProductLine,
+  //     {
+  //       where: {
+  //         paramSaleDeductionId,
+  //         productLineId,
+  //       },
+  //     },
+  //   );
 
-    if (relationAlreadyExists) {
-      throw new ConflictException(
-        'A Relação ja existe previamente no sensatta',
-      );
-    }
+  //   if (relationAlreadyExists) {
+  //     throw new ConflictException(
+  //       'A Relação ja existe previamente no sensatta',
+  //     );
+  //   }
 
-    return await this.datasource.manager.save(
-      ParameterSalesDeductionProductLine,
-      {
-        paramSaleDeductionId,
-        productLineId,
-      },
-    );
-  }
+  //   return await this.datasource.manager.save(
+  //     ParameterSalesDeductionProductLine,
+  //     {
+  //       paramSaleDeductionId,
+  //       productLineId,
+  //     },
+  //   );
+  // }
 
-  async removeParameterProductLine(id: string) {
-    const relationExists = await this.datasource.manager.findOne(
-      ParameterSalesDeductionProductLine,
-      {
-        where: {
-          id,
-        },
-      },
-    );
+  // async removeParameterProductLine(id: string) {
+  //   const relationExists = await this.datasource.manager.findOne(
+  //     ParameterSalesDeductionProductLine,
+  //     {
+  //       where: {
+  //         id,
+  //       },
+  //     },
+  //   );
 
-    if (!relationExists) {
-      throw new NotFoundException('Essa relação não existe');
-    }
+  //   if (!relationExists) {
+  //     throw new NotFoundException('Essa relação não existe');
+  //   }
 
-    return await this.datasource.manager.delete(
-      ParameterSalesDeductionProductLine,
-      {
-        id,
-      },
-    );
-  }
+  //   return await this.datasource.manager.delete(
+  //     ParameterSalesDeductionProductLine,
+  //     {
+  //       id,
+  //     },
+  //   );
+  // }
 }

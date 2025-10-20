@@ -22,6 +22,9 @@ export class Invoice {
   @Column({ name: 'nf_type', nullable: true })
   nfType?: string;
 
+  @Column({ name: 'nf_document_type', nullable: true })
+  nfDocumentType?: string;
+
   @Column({ name: 'nf_number', nullable: true })
   nfNumber?: string;
 

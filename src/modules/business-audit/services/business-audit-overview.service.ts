@@ -432,7 +432,7 @@ export class BusinessAuditOverviewService {
         'spl',
         'spl.sensatta_code = sib.product_line_code',
       )
-      .where('sw.is_considered_on_stock = true');
+      .where('sw.is_active = true');
 
     const results = await qb.getRawMany();
 
