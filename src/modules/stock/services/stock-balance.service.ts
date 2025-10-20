@@ -1,8 +1,8 @@
-import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';
+import { StockBalance } from '@/modules/stock/entities/stock-balance.entity';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { GetStockNewLastUpdatedAtResponseDto } from '../dtos/get-stock-new-last-updated-at-response.dto';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { GetStockNewLastUpdatedAtResponseDto } from '../dtos/response/stock-incoming-batches-get-last-updated-at-response.dto';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { STOCK_BALANCE_QUERY_PARTIAL_FILTERS } from '../constants/stock-balance-query-partial-filters';
 import {
   GetStockBalanceItem,

@@ -28,7 +28,7 @@ import { UserRole } from '@/core/enums/user-role.enum';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
 import { CommonChampionCattleDto } from '@/modules/cash-flow/dtos/common/champion-cattle/common.dto';
 import { CashFlowChampionCattleSimulateResponseDto } from '@/modules/cash-flow/dtos/cash-flow-champion-cattle-simulate-response.dto';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 @Controller('cash-flow')
 export class CashFlowController {

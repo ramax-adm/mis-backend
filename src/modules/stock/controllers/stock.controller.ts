@@ -17,16 +17,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ExportStockReportDto } from '../dto/export-stock-report.dto';
-import { GetAnalyticalStockByCompanyResponseDto } from '../dto/get-analytical-stock-by-company-response.dto';
-import { GetAnalyticalToExpiresByCompanyResponseDto } from '../dto/get-analytical-to-expires-by-company-response.dto';
-import { GetStockByCompanyResponseDto } from '../dto/get-stock-by-company-response.dto';
-import { GetStockLastUpdatedAtResponseDto } from '../dto/get-stock-last-updated-at-response.dto';
-import { GetToExpiresByCompanyResponseDto } from '../dto/get-to-expires-by-company-response.dto';
-import { StockReportService } from '../stock-report.service';
-import { StockService } from '../stock.service';
 import { DataSource } from 'typeorm';
 import { Company } from '@/core/entities/sensatta/company.entity';
+import { StockService } from '../services/stock.service';
+import { StockReportService } from '../services/stock-report.service';
+import { GetStockLastUpdatedAtResponseDto } from '../dtos/response/stock-get-last-updated-at-response.dto';
+import { GetStockByCompanyResponseDto } from '../dtos/response/stock-get-by-company-response.dto';
+import { GetToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-to-expires-by-company-response.dto';
+import { GetAnalyticalStockByCompanyResponseDto } from '../dtos/response/stock-get-analytical-by-company-response.dto';
+import { GetAnalyticalToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-analytical-to-expires-by-company-response.dto';
+import { ExportStockReportDto } from '../dtos/request/stock-export-report-request.dto';
 
 @Controller('stock')
 export class StockController {

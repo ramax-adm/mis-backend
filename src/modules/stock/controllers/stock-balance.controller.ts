@@ -1,13 +1,13 @@
 import { Roles } from '@/core/decorators/user-roles.decorator';
-import { StockBalance } from '@/modules/stock/stock-balance/entities/stock-balance.entity';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { StockBalance } from '@/modules/stock/entities/stock-balance.entity';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { UserRole } from '@/core/enums/user-role.enum';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
-import { ExportStockBalanceReportDto } from '@/modules/stock/stock-balance/dtos/export-stock-new-report.dto';
-import { GetStockNewLastUpdatedAtResponseDto } from '@/modules/stock/stock-balance/dtos/get-stock-new-last-updated-at-response.dto';
-import { StockBalanceReportService } from '@/modules/stock/stock-balance/services/stock-balance-report.service';
-import { StockBalanceService } from '@/modules/stock/stock-balance/services/stock-balance.service';
+import { ExportStockBalanceReportDto } from '@/modules/stock/dtos/request/stock-balance-export-report-request.dto';
+import { GetStockNewLastUpdatedAtResponseDto } from '@/modules/stock/dtos/response/stock-incoming-batches-get-last-updated-at-response.dto';
+import { StockBalanceReportService } from '@/modules/stock/services/stock-balance-report.service';
+import { StockBalanceService } from '@/modules/stock/services/stock-balance.service';
 import {
   BadRequestException,
   Body,

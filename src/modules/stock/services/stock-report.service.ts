@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { StockService } from './stock.service';
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
-import { GetStockByCompanyResponseDto } from './dto/get-stock-by-company-response.dto';
-import { GetToExpiresByCompanyResponseDto } from './dto/get-to-expires-by-company-response.dto';
-import { GetAnalyticalToExpiresByCompanyResponseDto } from './dto/get-analytical-to-expires-by-company-response.dto';
-import { GetAnalyticalStockByCompanyResponseDto } from './dto/get-analytical-stock-by-company-response.dto';
+import { GetStockByCompanyResponseDto } from '../dtos/response/stock-get-by-company-response.dto';
+import { GetToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-to-expires-by-company-response.dto';
+import { GetAnalyticalToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-analytical-to-expires-by-company-response.dto';
+import { GetAnalyticalStockByCompanyResponseDto } from '../dtos/response/stock-get-analytical-by-company-response.dto';
 import { NumberUtils } from '../../utils/services/number.utils';
-import { ExportStockReportDto } from './dto/export-stock-report.dto';
+import { ExportStockReportDto } from '../dtos/request/stock-export-report-request.dto';
 
 @Injectable()
 export class StockReportService {

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   DEFAULT_PRICE_MAP,
   PRICE_TABLE_MAP,
-} from './constants/price-table-map';
-import { GetIncomingBatchesQueryResponse } from './types/stock.types';
+} from '../constants/stock-price-table-map';
+import { GetIncomingBatchesQueryResponse } from '../types/stock.types';
 
 @Injectable()
 export class StockUtilsService {
