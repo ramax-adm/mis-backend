@@ -17,7 +17,7 @@ import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
 import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
 import { CONSIDERED_NF_SITUATIONS } from '../constants/considered-nf-situations';
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { Response } from 'express';
 import { BusinessAuditReportTypeEnum } from '../enums/business-audit-report-type.enum';
 import { BusinessAuditSalesService } from '../services/business-audit-sales.service';

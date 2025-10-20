@@ -1,4 +1,4 @@
-import { ProductClassificationTypesEnum } from '@/core/enums/sensatta/product-classification-types.enum';
+import { ProductClassificationTypesEnum } from '@/modules/stock/enums/product-classification-types.enum';
 
 export const PRODUCT_CLASSIFICATION_TYPES = [
   {

@@ -1,5 +1,5 @@
 import { Company } from '@/core/entities/sensatta/company.entity';
-import { ReferencePrice } from '@/core/entities/sensatta/reference-price.entity';
+import { ReferencePrice } from '@/modules/stock/entities/reference-price.entity';
 
 export type StockOptionalData = {
   company?: Company;

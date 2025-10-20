@@ -4,7 +4,7 @@ import {
   GetIncomingBatchesItem,
   GetIncomingBatchesItemRaw,
 } from '../types/get-incoming-batches.type';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import * as dateFns from 'date-fns';
 
 @Injectable()

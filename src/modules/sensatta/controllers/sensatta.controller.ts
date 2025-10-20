@@ -1,7 +1,7 @@
-import { PRODUCT_CLASSIFICATION_TYPES } from '@/core/constants/sensatta/product-classification-types';
+import { PRODUCT_CLASSIFICATION_TYPES } from '@/modules/stock/constants/product-classification-types';
 import { Company } from '@/core/entities/sensatta/company.entity';
-import { ProductLine } from '@/core/entities/sensatta/product-line.entity';
-import { Product } from '@/core/entities/sensatta/product.entity';
+import { ProductLine } from '@/modules/stock/entities/product-line.entity';
+import { Product } from '@/modules/stock/entities/product.entity';
 import { EnvService } from '@/config/env/env.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { HttpService } from '@nestjs/axios';
@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, FindOptionsWhere, In } from 'typeorm';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { CurrentUser } from '@/core/decorators/current-user.decorator';
 import { User } from '@/core/user';
 import { UserRole } from '@/core/enums/user-role.enum';

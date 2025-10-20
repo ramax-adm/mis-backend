@@ -11,7 +11,7 @@ import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-au
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { GetBusinessSalesOrderLinesResponseDto } from '../dtos/response/get-business-sales-order-lines-response.dto';
 import { OrderLine } from '@/modules/sales/entities/order-line.entity';
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 @Injectable()
 export class BusinessAuditSalesReportService {

@@ -1,4 +1,4 @@
-import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
 import {
@@ -15,11 +15,11 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { DataSource } from 'typeorm';
-import { StockIncomingBatchesService } from '../services/stock-incoming-batches.service';
 import { IncomingBatches } from '@/modules/stock/entities/incoming-batch.entity';
 import { DateUtils } from '@/modules/utils/services/date.utils';
-import { ExportStockIncomingBatchesReportRequestDto } from '../dtos/request/export-stock-incoming-batches-report-request.dto';
+import { StockIncomingBatchesService } from '../services/stock-incoming-batches.service';
 import { StockIncomingBatchesReportService } from '../services/stock-incoming-batches-report.service';
+import { ExportStockIncomingBatchesReportRequestDto } from '../dtos/request/stock-incoming-batches-export-report-request.dto';
 
 @Controller('stock/incoming-batches')
 export class StockIncomingBatchesController {
