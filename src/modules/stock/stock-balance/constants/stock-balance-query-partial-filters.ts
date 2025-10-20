@@ -23,7 +23,7 @@ WHERE 1=1
 --AND sb.quantity <> 0
 --AND sb.reserved_quantity <> 0
 --AND sb.available_quantity <> 0
-  AND spl.is_considered_on_stock = true
+  AND spl.is_active = true
   AND ($1::TEXT IS NULL OR sb.company_code = $1)              -- filtro empresa
   --AND spl.market::TEXT LIKE '%' || $2 || '%'                  -- filtro mercado
   AND ($2::TEXT IS NULL OR sb.product_line_code = $2)

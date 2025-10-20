@@ -30,54 +30,54 @@ export class ParameterSalesDeductionsController {
   // atualizar parametro
   // remover parametro
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(
-    @Body() dto: CreateParameterSalesDeductionRequestDto,
-    @CurrentUser() user: User,
-  ) {
-    return this.parameterSalesDeductionsService.create(user.id, dto);
-  }
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post()
+  // @HttpCode(HttpStatus.CREATED)
+  // create(
+  //   @Body() dto: CreateParameterSalesDeductionRequestDto,
+  //   @CurrentUser() user: User,
+  // ) {
+  //   return this.parameterSalesDeductionsService.create(user.id, dto);
+  // }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  find(
-    @Query('companyCode') companyCode: string,
-    @Query('market') market: MarketEnum,
-    @Query('name') name: string = '',
-  ) {
-    return this.parameterSalesDeductionsService.find({
-      companyCode,
-      market,
-      name,
-    });
-  }
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Get()
+  // @HttpCode(HttpStatus.OK)
+  // find(
+  //   @Query('companyCode') companyCode: string,
+  //   @Query('market') market: MarketEnum,
+  //   @Query('name') name: string = '',
+  // ) {
+  //   return this.parameterSalesDeductionsService.find({
+  //     companyCode,
+  //     market,
+  //     name,
+  //   });
+  // }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch(':id')
-  @HttpCode(HttpStatus.OK)
-  update(
-    @Param('id') id: string,
-    @CurrentUser() user: User,
-    @Body() dto: UpdateParameterSalesDeductionRequestDto,
-  ) {
-    return this.parameterSalesDeductionsService.update(id, user.id, dto);
-  }
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Patch(':id')
+  // @HttpCode(HttpStatus.OK)
+  // update(
+  //   @Param('id') id: string,
+  //   @CurrentUser() user: User,
+  //   @Body() dto: UpdateParameterSalesDeductionRequestDto,
+  // ) {
+  //   return this.parameterSalesDeductionsService.update(id, user.id, dto);
+  // }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('product-line')
-  addParameterProductLine(
-    @Body() dto: { paramSaleDeductionId: string; productLineId: string },
-  ) {
-    return this.parameterSalesDeductionsService.addParameterProductLine(dto);
-  }
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('product-line')
+  // addParameterProductLine(
+  //   @Body() dto: { paramSaleDeductionId: string; productLineId: string },
+  // ) {
+  //   return this.parameterSalesDeductionsService.addParameterProductLine(dto);
+  // }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Delete('product-line')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  removeParameterProductLine(@Param('id') id: string) {
-    return this.parameterSalesDeductionsService.removeParameterProductLine(id);
-  }
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Delete('product-line')
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // removeParameterProductLine(@Param('id') id: string) {
+  //   return this.parameterSalesDeductionsService.removeParameterProductLine(id);
+  // }
 }

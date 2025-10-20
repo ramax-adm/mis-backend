@@ -4,7 +4,7 @@ import * as dateFns from 'date-fns';
 
 export interface GetAnalyticalCattlePurchaseResponseInput {
   slaughterDate: Date;
-  purchaseCattleOrderId: string;
+  sensattaId: string;
   cattleOwnerCode: string;
   cattleOwnerName: string;
   companyCode: string;
@@ -42,7 +42,7 @@ export class GetAnalyticalCattlePurchaseResponseDto {
   constructor(data: GetAnalyticalCattlePurchaseResponseInput) {
     Object.assign(this, {
       slaughterDate: data.slaughterDate,
-      purchaseCattleOrderId: data.purchaseCattleOrderId,
+      purchaseCattleOrderId: data.sensattaId,
       cattleOwnerCode: data.cattleOwnerCode,
       cattleOwnerName: data.cattleOwnerName,
       companyCode: data.companyCode,

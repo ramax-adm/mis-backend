@@ -116,7 +116,7 @@ export class CattlePurchaseService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    const entityKey = 'purchaseCattleOrderId' as keyof CattlePurchase;
+    const entityKey = 'sensattaId' as keyof CattlePurchase;
     const data = await this.getData({
       companyCode,
       cattleAdvisorName,
@@ -169,8 +169,8 @@ export class CattlePurchaseService {
         continue;
       }
 
-      if (item.purchaseCattleOrderId === '14696') {
-        console.log('oc', item.purchaseCattleOrderId);
+      if (item.sensattaId === '14696') {
+        console.log('oc', item.sensattaId);
         console.log('weightInArroba', item.cattleWeightInArroba);
         console.log(
           'weightInArroba formula',

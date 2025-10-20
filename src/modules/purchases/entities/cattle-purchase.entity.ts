@@ -10,11 +10,11 @@ export class CattlePurchase {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'sensatta_id', nullable: true })
+  sensattaId: string;
+
   @Column({ name: 'slaughter_date', type: 'date', nullable: true })
   slaughterDate: Date;
-
-  @Column({ name: 'purchase_cattle_order_id', nullable: true })
-  purchaseCattleOrderId: string;
 
   @Column({ name: 'cattle_owner_code', nullable: true })
   cattleOwnerCode: string;
@@ -52,7 +52,7 @@ export class CattlePurchase {
   @Column({ name: 'balance_weight_in_kg', type: 'float4', nullable: true })
   balanceWeightInKg: number;
 
-  @Column({ name: 'payment_term', type: 'int', nullable: true })
+  @Column({ name: 'payment_term_in_days', type: 'int', nullable: true })
   paymentTerm: number;
 
   @Column({ name: 'freight_price', type: 'float4', nullable: true })

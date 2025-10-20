@@ -3,7 +3,7 @@ import { Repository } from 'typeorm';
 import { CrudService } from './crud.service';
 import { BaseEntity } from '../entities/base-entity.entity';
 import { Page, PageOptions } from '../paginate';
-import { FindAllParamsDto } from '../dto/find-all-params.dto';
+import { FindAllParamsDto } from '../types/find-all-params.type';
 import { randomUUID } from 'crypto';
 import { Mocked, vi } from 'vitest';
 

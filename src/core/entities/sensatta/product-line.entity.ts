@@ -1,5 +1,4 @@
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
-import { ParameterSalesDeductionProductLine } from '@/modules/parameters/entities/parameter-sales-deduction-product-line.entity';
 import {
   Column,
   CreateDateColumn,
@@ -25,8 +24,8 @@ export class ProductLine {
   @Column()
   acronym: string; // sigla
 
-  @Column({ name: 'is_considered_on_stock', type: 'boolean', default: 'false' })
-  isConsideredOnStock: boolean;
+  @Column({ name: 'is_active', type: 'boolean', default: 'false' })
+  isActive: boolean;
 
   @Column({
     type: 'enum',
@@ -36,11 +35,11 @@ export class ProductLine {
   })
   market: MarketEnum;
 
-  @OneToMany(
-    () => ParameterSalesDeductionProductLine,
-    (item) => item.paramSaleDeduction,
-  )
-  paramSaleDeductionProductLines: ParameterSalesDeductionProductLine[];
+  // @OneToMany(
+  //   () => ParameterSalesDeductionProductLine,
+  //   (item) => item.paramSaleDeduction,
+  // )
+  // paramSaleDeductionProductLines: ParameterSalesDeductionProductLine[];
 
   @CreateDateColumn({
     name: 'created_at',
