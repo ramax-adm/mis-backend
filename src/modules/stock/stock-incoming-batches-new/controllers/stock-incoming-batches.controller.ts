@@ -98,7 +98,7 @@ export class StockIncomingBatchesController {
       )
       .distinct(true)
       .where('1=1')
-      .andWhere('spl.is_considered_on_stock = true');
+      .andWhere('spl.is_active = true');
 
     if (market) {
       qb.andWhere('spl.market =:market', { market });

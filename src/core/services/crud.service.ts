@@ -11,7 +11,7 @@ import { Page, PageMeta, PageOptions } from '../paginate';
 import {
   FindAllNoPaginationParamsDto,
   FindAllParamsDto,
-} from '../dto/find-all-params.dto';
+} from '../types/find-all-params.type';
 
 export abstract class CrudService<
   Entity extends BaseEntity,

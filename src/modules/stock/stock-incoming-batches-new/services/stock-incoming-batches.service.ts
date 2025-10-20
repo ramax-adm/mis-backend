@@ -45,7 +45,7 @@ export class StockIncomingBatchesService {
       )
       .where('1=1')
       .andWhere('sc.is_considered_on_stock = :trueVal', { trueVal: true })
-      .andWhere('sw.is_considered_on_stock = :trueVal', { trueVal: true })
+      .andWhere('sw.is_active = :trueVal', { trueVal: true })
       .select([
         'sc.sensatta_code AS company_code',
         'sc.name AS company_name',

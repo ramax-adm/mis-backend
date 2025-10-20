@@ -21,6 +21,7 @@ import { BusinessAuditSalesService } from '../services/business-audit-sales.serv
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
 import { MarketEnum } from '@/core/enums/sensatta/markets.enum';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('business-audit/sales')
 export class BusinessAuditSalesController {
   constructor(
@@ -28,7 +29,6 @@ export class BusinessAuditSalesController {
     private readonly businessAuditSalesService: BusinessAuditSalesService,
   ) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('filters/clients')
   @HttpCode(HttpStatus.OK)
   async getClients(
@@ -53,7 +53,6 @@ export class BusinessAuditSalesController {
     }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('filters/sales-representatives')
   @HttpCode(HttpStatus.OK)
   async getSalesRepresentatives(
@@ -80,7 +79,6 @@ export class BusinessAuditSalesController {
     }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   async getSalesAuditData(
@@ -105,7 +103,6 @@ export class BusinessAuditSalesController {
   }
 
   // GET RAW DATA
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('data/orders-lines')
   @HttpCode(HttpStatus.OK)
   async getOrderLinesData(

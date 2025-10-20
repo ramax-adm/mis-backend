@@ -63,7 +63,7 @@ export class StockBalanceService {
         'sc.sensatta_code = sb.company_code',
       )
       .where('sb.company_code = :companyCode', { companyCode })
-      .andWhere('spl.is_considered_on_stock = true');
+      .andWhere('spl.is_active = true');
 
     if (market !== MarketEnum.BOTH) {
       qb.andWhere('spl.market::TEXT LIKE :market', { market: `%${market}%` });
