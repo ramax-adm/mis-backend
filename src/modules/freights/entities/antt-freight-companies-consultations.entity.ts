@@ -15,12 +15,12 @@ export class AnttFreightCompaniesConsultation {
   date: Date;
 
   @Column({
-    name: 'sensatta_code',
+    name: 'freight_company_code',
     type: 'varchar',
     length: 50,
     nullable: true,
   })
-  sensattaCode?: string;
+  freightCompanyCode?: string;
 
   @Column({
     name: 'freight_company',
