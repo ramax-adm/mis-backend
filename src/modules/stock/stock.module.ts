@@ -17,6 +17,7 @@ import { InventoryService } from './services/inventory.service';
 import { InventoryController } from './controllers/inventory.controller';
 import { StockController } from './controllers/stock.controller';
 import { StockIncomingBatchesController } from './controllers/stock-incoming-batches.controller';
+import { InventoryReportService } from './services/inventory-report.service';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { StockIncomingBatchesController } from './controllers/stock-incoming-bat
   providers: [
     ExcelReaderService,
     InventoryService,
+    InventoryReportService,
     StockService,
     StockIncomingBatchesService,
     StockIncomingBatchesReportService,
