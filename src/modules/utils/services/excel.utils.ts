@@ -60,4 +60,10 @@ export class ExcelUtils {
       'AZ',
     ];
   }
+
+  static getColumnIndex(position: number) {
+    const indexes = this.getArrayOfExcelColumns();
+
+    return indexes[position];
+  }
 }
