@@ -27,6 +27,9 @@ export class AzureFunction {
   @Column({ name: 'http_trigger', type: 'varchar' })
   httpTrigger: string;
 
+  @Column({ name: 'default_params', type: 'jsonb', nullable: true })
+  defaultParams?: Record<string, any>;
+
   @Column({ name: 'cron_expression', type: 'varchar' })
   cronExpression: string;
 
