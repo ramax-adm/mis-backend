@@ -6,8 +6,11 @@ import { GetStockByCompanyResponseDto } from '../dtos/response/stock-get-by-comp
 import { GetToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-to-expires-by-company-response.dto';
 import { DateUtils } from '../../utils/services/date.utils';
 import {
+  AnalyticalStockToExpiresByCompanyAgg,
   GetExternalIncomingBatchesQueryResponse,
   GetIncomingBatchesQueryResponse,
+  ResumedStockByCompanyAgg,
+  ResumedStockToExpiresByCompanyAgg,
   StockOptionalData,
 } from '../types/stock.types';
 import { GetStockLastUpdatedAtResponseDto } from '../dtos/response/stock-get-last-updated-at-response.dto';
@@ -122,7 +125,7 @@ export class StockService {
       ]);
     }
 
-    const map = new Map<string, any>();
+    const map = new Map<string, ResumedStockByCompanyAgg>();
 
     for (const batch of incomingBatches) {
       if (!batch.productCode) {
@@ -144,39 +147,26 @@ export class StockService {
 
       const hasPreviousValues = map.has(batch.productCode);
 
-      const data = {
-        companyName: company?.name,
-        productLineAcronym: batch.productLineAcronym,
-        productLineName: batch.productLineName,
-        productName: batch.productName,
-        productClassification: batch.productClassification,
-        basePriceCar,
-        basePriceTruck,
-      };
-
-      if (hasPreviousValues) {
-        const previousValues = map.get(batch.productCode);
-
-        const newBoxAmount = previousValues?.boxAmount + batch.boxAmount;
-        const newQuantity = previousValues?.quantity + batch.quantity;
-        const newWeight = previousValues?.totalWeightInKg + batch.weightInKg;
-
-        Object.assign(data, {
-          boxAmount: newBoxAmount,
-          quantity: newQuantity,
-          totalWeightInKg: newWeight,
-          totalPrice: data.basePriceCar * newWeight,
-        });
-      } else {
-        Object.assign(data, {
-          boxAmount: batch.boxAmount,
-          quantity: batch.quantity,
-          totalWeightInKg: batch.weightInKg,
-          totalPrice: data.basePriceCar * batch.weightInKg,
+      if (!hasPreviousValues) {
+        map.set(batch.productCode, {
+          companyName: company?.name,
+          productLineAcronym: batch.productLineAcronym,
+          productLineName: batch.productLineName,
+          productName: batch.productName,
+          productClassification: batch.productClassification,
+          basePriceCar,
+          basePriceTruck,
+          boxAmount: 0,
+          quantity: 0,
+          totalWeightInKg: 0,
+          totalPrice: 0,
         });
       }
-
-      map.set(batch.productCode, data);
+      const previousValues = map.get(batch.productCode);
+      previousValues.boxAmount += batch.boxAmount;
+      previousValues.quantity += batch.quantity;
+      previousValues.totalWeightInKg += batch.weightInKg;
+      previousValues.totalPrice += basePriceCar * batch.weightInKg;
     }
 
     for (const batch of externalIncomeBatches) {
@@ -198,40 +188,26 @@ export class StockService {
       ) ?? { price: 0 };
 
       const hasPreviousValues = map.has(batch.productCode);
-
-      const data = {
-        companyName: company?.name,
-        productLineAcronym: batch.productLineAcronym,
-        productLineName: batch.productLineName,
-        productName: batch.productName,
-        productClassification: batch.productClassification,
-        basePriceCar,
-        basePriceTruck,
-      };
-
-      if (hasPreviousValues) {
-        const previousValues = map.get(batch.productCode);
-
-        const newBoxAmount = previousValues?.boxAmount + batch.boxAmount;
-        const newQuantity = previousValues?.quantity + batch.quantity;
-        const newWeight = previousValues?.totalWeightInKg + batch.weightInKg;
-
-        Object.assign(data, {
-          boxAmount: newBoxAmount,
-          quantity: newQuantity,
-          totalWeightInKg: newWeight,
-          totalPrice: data.basePriceCar * newWeight,
-        });
-      } else {
-        Object.assign(data, {
-          boxAmount: batch.boxAmount,
-          quantity: batch.quantity,
-          totalWeightInKg: batch.weightInKg,
-          totalPrice: data.basePriceCar * batch.weightInKg,
+      if (!hasPreviousValues) {
+        map.set(batch.productCode, {
+          companyName: company?.name,
+          productLineAcronym: batch.productLineAcronym,
+          productLineName: batch.productLineName,
+          productName: batch.productName,
+          productClassification: batch.productClassification,
+          basePriceCar,
+          basePriceTruck,
+          boxAmount: 0,
+          quantity: 0,
+          totalWeightInKg: 0,
+          totalPrice: 0,
         });
       }
-
-      map.set(batch.productCode, data);
+      const previousValues = map.get(batch.productCode);
+      previousValues.boxAmount += batch.boxAmount;
+      previousValues.quantity += batch.quantity;
+      previousValues.totalWeightInKg += batch.weightInKg;
+      previousValues.totalPrice += basePriceCar * batch.weightInKg;
     }
 
     const response = GetStockByCompanyResponseDto.fromMap(map);
@@ -265,7 +241,7 @@ export class StockService {
         await this.getExternalIncomingBatchesData(company);
       // external incoming batches
     }
-    const map = new Map<string, any>();
+    const map = new Map<string, ResumedStockToExpiresByCompanyAgg>();
 
     for (const batch of incomingBatches) {
       if (!batch.productCode) {
@@ -278,6 +254,7 @@ export class StockService {
       const hasPreviousValues = map.has(key);
 
       const data = {
+        productionDate: batch.productionDate,
         dueDate: batch.dueDate,
         productCode: batch.productCode,
         companyName: company?.name,
@@ -285,6 +262,10 @@ export class StockService {
         productLineName: batch.productLineName,
         productName: batch.productName,
         productClassification: batch.productClassification,
+        daysFromProduction: DateUtils.getDifferenceInDays(
+          batch.productionDate,
+          DateUtils.today(),
+        ),
         daysToExpires: DateUtils.getDifferenceInDays(
           DateUtils.today(),
           batch.dueDate,
@@ -325,6 +306,7 @@ export class StockService {
       const hasPreviousValues = map.has(key);
 
       const data = {
+        productionDate: batch.productCode,
         dueDate: batch.dueDate,
         productCode: batch.productCode,
         companyName: company?.name,
@@ -335,6 +317,10 @@ export class StockService {
         daysToExpires: DateUtils.getDifferenceInDays(
           DateUtils.today(),
           batch.dueDate,
+        ),
+        daysFromProduction: DateUtils.getDifferenceInDays(
+          batch.productionDate,
+          DateUtils.today(),
         ),
       };
 
@@ -599,7 +585,7 @@ export class StockService {
         this.getReferencePricesData({ company }),
       ]);
 
-    const map = new Map<string, any>();
+    const map = new Map<string, AnalyticalStockToExpiresByCompanyAgg>();
 
     for (const batch of incomingBatches) {
       if (!batch.productCode) {
@@ -624,6 +610,7 @@ export class StockService {
       const hasPreviousValues = map.has(key);
 
       const data = {
+        productionDate: batch.productionDate,
         dueDate: batch.dueDate,
         companyName: company?.name,
         productLineAcronym: batch.productLineAcronym,
@@ -634,6 +621,10 @@ export class StockService {
         productClassification: batch.productClassification,
         basePriceCar,
         basePriceTruck,
+        daysFromProduction: DateUtils.getDifferenceInDays(
+          batch.productionDate,
+          DateUtils.today(),
+        ),
         daysToExpires: DateUtils.getDifferenceInDays(
           DateUtils.today(),
           batch.dueDate,
@@ -688,6 +679,7 @@ export class StockService {
       const hasPreviousValues = map.has(key);
 
       const data = {
+        productionDate: batch.productionDate,
         dueDate: batch.dueDate,
         companyName: company?.name,
         productLineAcronym: batch.productLineAcronym,
@@ -698,6 +690,10 @@ export class StockService {
         productClassification: batch.productClassification,
         basePriceCar,
         basePriceTruck,
+        daysFromProduction: DateUtils.getDifferenceInDays(
+          batch.productionDate,
+          DateUtils.today(),
+        ),
         daysToExpires: DateUtils.getDifferenceInDays(
           DateUtils.today(),
           batch.dueDate,

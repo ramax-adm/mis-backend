@@ -23,7 +23,9 @@ export class UtilsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/synced-files/entity')
   getEntities() {
-    return SYNCED_FILE_ENTITIES;
+    return SYNCED_FILE_ENTITIES.sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true }),
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -41,3 +41,53 @@ export type GetExternalIncomingBatchesQueryResponse = {
   quantity: number;
   weightInKg: number;
 };
+
+export type ResumedStockByCompanyAgg = {
+  companyName: string;
+  productLineAcronym: string;
+  productLineName: string;
+  productName: string;
+  productClassification: string;
+  basePriceCar: number;
+  basePriceTruck: number;
+  boxAmount?: number;
+  quantity?: number;
+  totalWeightInKg?: number;
+  totalPrice?: number;
+};
+
+export type ResumedStockToExpiresByCompanyAgg = {
+  productionDate: string;
+  dueDate: string;
+  productCode: string;
+  companyName: string;
+  productLineAcronym: string;
+  productLineName: string;
+  productName: string;
+  productClassification: string;
+  daysFromProduction: number;
+  daysToExpires: number;
+  boxAmount?: number;
+  quantity?: number;
+  totalWeightInKg?: number;
+};
+
+export type AnalyticalStockToExpiresByCompanyAgg = {
+  productionDate: string;
+  dueDate: string;
+  companyName: string;
+  productLineAcronym: string;
+  productLineCode: string;
+  productLineName: string;
+  productCode: string;
+  productName: string;
+  productClassification: string;
+  basePriceCar;
+  basePriceTruck;
+  daysFromProduction: number;
+  daysToExpires: number;
+  boxAmount?: number;
+  quantity?: number;
+  totalWeightInKg?: number;
+  totalPrice?: number;
+};

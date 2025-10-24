@@ -2,6 +2,7 @@ import { DateUtils } from '@/modules/utils/services/date.utils';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 
 export class GetAnalyticalToExpiresByCompanyResponseDto {
+  productionDate: Date;
   dueDate: Date;
   companyName: string;
   productLineAcronym: string;
@@ -16,6 +17,7 @@ export class GetAnalyticalToExpiresByCompanyResponseDto {
   basePriceCar: number;
   basePriceTruck: number;
   totalPrice: number;
+  daysFromProduction: number;
   daysToExpires: number;
 
   constructor(data: GetAnalyticalToExpiresByCompanyResponseDto) {
@@ -46,6 +48,11 @@ export class GetAnalyticalToExpiresByCompanyResponseDto {
   toJSON() {
     return {
       // TODO
+      productionDate: DateUtils.format(
+        this.productionDate,
+        'date-minified',
+        'UTC',
+      ),
       dueDate: DateUtils.format(this.dueDate, 'date-minified', 'UTC'),
       companyName: this.companyName,
       productLineAcronym: this.productLineAcronym,
@@ -60,6 +67,7 @@ export class GetAnalyticalToExpiresByCompanyResponseDto {
       basePriceCar: NumberUtils.toLocaleString(this.basePriceCar ?? 0, 2),
       basePriceTruck: NumberUtils.toLocaleString(this.basePriceTruck ?? 0, 2),
       totalPrice: NumberUtils.toLocaleString(this.totalPrice ?? 0),
+      daysFromProduction: this.daysFromProduction,
       daysToExpires: this.daysToExpires,
     };
   }
