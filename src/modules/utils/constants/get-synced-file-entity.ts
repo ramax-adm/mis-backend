@@ -17,6 +17,7 @@ export const getSyncedFileEntityLabel = (entity: EntitiesEnum) => {
     [EntitiesEnum.INVOICE]: 'Notas Fiscais (Faturamento)',
     [EntitiesEnum.ORDER_LINE]: 'Pedidos - Item Pedido',
     [EntitiesEnum.PRODUCT]: 'Produtos',
+    [EntitiesEnum.PRODUCT_LINE]: 'Produtos - Linha de produto',
     [EntitiesEnum.PRODUCTION_MOVEMENT]: 'Produção PCP (Entrada e Saída)',
     [EntitiesEnum.REFERENCE_PRICE]: 'Tabela de Preços',
     [EntitiesEnum.RETURN_OCCURRENCE]: 'Devoluções',
@@ -51,6 +52,11 @@ export const SYNCED_FILE_ENTITIES = [
     label: getSyncedFileEntityLabel(EntitiesEnum.PRODUCT),
     key: EntitiesEnum.PRODUCT,
     value: EntitiesEnum.PRODUCT,
+  },
+  {
+    label: getSyncedFileEntityLabel(EntitiesEnum.PRODUCT_LINE),
+    key: EntitiesEnum.PRODUCT_LINE,
+    value: EntitiesEnum.PRODUCT_LINE,
   },
   {
     label: getSyncedFileEntityLabel(EntitiesEnum.REFERENCE_PRICE),

@@ -1,3 +1,6 @@
+import { AzureFunctionAuthLevelEnum } from '@/core/enums/azure-auth-level.enum';
+import { AzureFunctionTriggerTypeEnum } from '@/core/enums/azure-trigger-type.enum';
+import { HttpMethodsEnum } from '@/core/enums/http-methods.enum';
 import {
   Column,
   CreateDateColumn,
@@ -24,8 +27,38 @@ export class AzureFunction {
   @Column({ name: 'description', type: 'varchar', nullable: true })
   description: string;
 
-  @Column({ name: 'http_trigger', type: 'varchar' })
-  httpTrigger: string;
+  @Column({
+    name: 'auth_level',
+    type: 'enum',
+    enum: AzureFunctionAuthLevelEnum,
+    enumName: 'azure_function_auth_level_enum',
+    default: AzureFunctionAuthLevelEnum.Function,
+  })
+  authLevel: AzureFunctionAuthLevelEnum;
+
+  @Column({ name: 'auth_key', type: 'varchar', nullable: true })
+  authKey?: string;
+
+  @Column({
+    name: 'http_method',
+    type: 'enum',
+    enum: HttpMethodsEnum,
+    enumName: 'http_methods_enum',
+    default: HttpMethodsEnum.POST,
+  })
+  httpMethod: HttpMethodsEnum;
+
+  @Column({ name: 'http_trigger', type: 'varchar', nullable: true })
+  httpTrigger?: string;
+
+  @Column({
+    name: 'trigger_type',
+    type: 'enum',
+    enum: AzureFunctionTriggerTypeEnum,
+    enumName: 'azure_function_trigger_type_enum',
+    default: AzureFunctionTriggerTypeEnum.HTTP,
+  })
+  triggerType: AzureFunctionTriggerTypeEnum;
 
   @Column({ name: 'default_params', type: 'jsonb', nullable: true })
   defaultParams?: Record<string, any>;

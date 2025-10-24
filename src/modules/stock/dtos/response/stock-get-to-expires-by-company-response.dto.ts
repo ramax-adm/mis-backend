@@ -2,6 +2,7 @@ import { DateUtils } from '@/modules/utils/services/date.utils';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 
 export class GetToExpiresByCompanyResponseDto {
+  productionDate: Date;
   dueDate: Date;
   companyName: string;
   productLineAcronym: string;
@@ -12,6 +13,7 @@ export class GetToExpiresByCompanyResponseDto {
   boxAmount: number;
   quantity: number;
   totalWeightInKg: number;
+  daysFromProduction: number;
   daysToExpires: number;
 
   constructor(data: GetToExpiresByCompanyResponseDto) {
@@ -40,6 +42,11 @@ export class GetToExpiresByCompanyResponseDto {
   toJSON() {
     return {
       // TODO
+      productionDate: DateUtils.format(
+        this.productionDate,
+        'date-minified',
+        'UTC',
+      ),
       dueDate: DateUtils.format(this.dueDate, 'date-minified', 'UTC'),
       companyName: this.companyName,
       productLineAcronym: this.productLineAcronym,
@@ -50,6 +57,7 @@ export class GetToExpiresByCompanyResponseDto {
       boxAmount: NumberUtils.toLocaleString(this.boxAmount ?? 0),
       quantity: NumberUtils.toLocaleString(this.quantity ?? 0),
       totalWeightInKg: NumberUtils.toLocaleString(this.totalWeightInKg ?? 0),
+      daysFromProduction: this.daysFromProduction,
       daysToExpires: this.daysToExpires,
     };
   }

@@ -13,7 +13,7 @@ export class CreateAzureFunctionList1760133176539
       "name" character varying NOT NULL, 
       "key" character varying NOT NULL,
       "description" character varying, 
-      "http_trigger" character varying NOT NULL, 
+      "http_trigger" character varying, 
       "cron_expression" character varying NOT NULL,
       "is_active" boolean NOT NULL DEFAULT false,
       "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), 
