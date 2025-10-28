@@ -142,6 +142,11 @@ export class StockIncomingBatchesController {
         break;
       }
 
+      case 'all-analytical': {
+        result = await this.stockIncomingBatchesReportService.exportAll(dto);
+        break;
+      }
+
       default:
         throw new BadRequestException('Escolha um relatorio valido.');
     }

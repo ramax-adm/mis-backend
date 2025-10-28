@@ -3,7 +3,7 @@ import { IsString } from 'class-validator';
 
 export class ExportStockIncomingBatchesReportRequestDto {
   @IsString()
-  exportType: 'resumed' | 'analytical';
+  exportType: 'resumed' | 'analytical' | 'all-analytical';
 
   filters: {
     companyCode?: string;
