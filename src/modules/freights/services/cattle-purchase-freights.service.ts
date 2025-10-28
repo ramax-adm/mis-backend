@@ -274,7 +274,7 @@ export class CattlePurchaseFreightService {
 
       const freightGroup = freightCompanyTracker.get(freightCompany)!;
       freightGroup.cattleQuantity += item.cattle_quantity;
-      freightGroup.negotiatedPrice += item.negotiated_freight_price;
+      freightGroup.negotiatedPrice += item.base_price;
       freightGroup.tablePrice += item.reference_freight_table_price;
       freightGroup.difPrice += item.dif_price;
 
@@ -294,7 +294,7 @@ export class CattlePurchaseFreightService {
 
       const advisorGroup = cattleAdvisorTracker.get(advisor)!;
       advisorGroup.cattleQuantity += item.cattle_quantity;
-      advisorGroup.negotiatedPrice += item.negotiated_freight_price;
+      advisorGroup.negotiatedPrice += item.base_price;
       advisorGroup.tablePrice += item.reference_freight_table_price;
       advisorGroup.difPrice += item.dif_price;
 
@@ -313,7 +313,7 @@ export class CattlePurchaseFreightService {
 
       const typeGroup = freightTypeTracker.get(transportType)!;
       typeGroup.cattleQuantity += item.cattle_quantity;
-      typeGroup.negotiatedPrice += item.negotiated_freight_price;
+      typeGroup.negotiatedPrice += item.base_price;
       typeGroup.tablePrice += item.reference_freight_table_price;
       typeGroup.difPrice += item.dif_price;
 
