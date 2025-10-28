@@ -6,6 +6,7 @@ import { GetStockByCompanyResponseDto } from '../dtos/response/stock-get-by-comp
 import { GetToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-to-expires-by-company-response.dto';
 import { DateUtils } from '../../utils/services/date.utils';
 import {
+  AllStockDataAgg,
   AnalyticalStockToExpiresByCompanyAgg,
   GetExternalIncomingBatchesQueryResponse,
   GetIncomingBatchesQueryResponse,
@@ -65,7 +66,7 @@ export class StockService {
     return result;
   }
 
-  // get external incoming batches ->
+  // get external incoming batches
   async getExternalIncomingBatchesData(company: Company) {
     // constants
     const query = EXTERNAL_INCOMING_BATCHES_QUERY;
@@ -755,5 +756,150 @@ export class StockService {
       stockData: stockData,
       toExpiresData: toExpiresData,
     };
+  }
+
+  /**
+   * ALL DATA
+   */
+  async getAllData() {
+    const companies = await this.companyRepository.find({
+      where: {
+        isConsideredOnStock: true,
+      },
+    });
+
+    const map = new Map<string, AllStockDataAgg>();
+    for (const company of companies) {
+      const [incomingBatches, externalIncomingBatches, refPrices] =
+        await Promise.all([
+          this.getIncomingBatchesData(company),
+          this.getExternalIncomingBatchesData(company),
+          this.getReferencePricesData({ company }),
+        ]);
+
+      console.log({
+        incomingBatches: incomingBatches.filter((i) => !i.boxAmount),
+      });
+
+      for (const batch of incomingBatches) {
+        const key = `${company.sensattaCode}-${batch.productCode}`;
+        if (!batch.productCode) {
+          continue;
+        }
+
+        // Preco base
+        const { price: basePriceCar } = refPrices.find(
+          (item) =>
+            item.mainTableNumber == company.priceTableNumberCar &&
+            item.productId == batch.productId,
+        ) ?? { price: 0 };
+
+        const { price: basePriceTruck } = refPrices.find(
+          (item) =>
+            item.mainTableNumber == company.priceTableNumberTruck &&
+            item.productId == batch.productId,
+        ) ?? { price: 0 };
+
+        const hasPreviousValues = map.has(key);
+        if (!hasPreviousValues) {
+          map.set(key, {
+            productionDate: batch.productionDate,
+            dueDate: batch.dueDate,
+            companyCode: company?.sensattaCode,
+            companyName: company?.name,
+            productLineAcronym: batch.productLineAcronym,
+            productLineCode: batch.productLineCode,
+            productLineName: batch.productLineName,
+            productCode: batch.productCode,
+            productName: batch.productName,
+            productClassification: batch.productClassification,
+            basePriceCar,
+            basePriceTruck,
+            daysFromProduction: DateUtils.getDifferenceInDays(
+              batch.productionDate,
+              DateUtils.today(),
+            ),
+            daysToExpires: DateUtils.getDifferenceInDays(
+              DateUtils.today(),
+              batch.dueDate,
+            ),
+            boxAmount: 0,
+            quantity: 0,
+            totalWeightInKg: 0,
+            totalPrice: 0,
+          });
+        }
+
+        const previousValues = map.get(key)!;
+        previousValues.boxAmount += batch.boxAmount;
+        previousValues.quantity += batch.quantity;
+        previousValues.totalWeightInKg += batch.weightInKg;
+        previousValues.totalPrice += basePriceCar * batch.weightInKg;
+      }
+
+      for (const batch of externalIncomingBatches) {
+        const key = `${company.sensattaCode}-${batch.productCode}`;
+        if (!batch.productCode) {
+          continue;
+        }
+
+        // Preco base
+        const { price: basePriceCar } = refPrices.find(
+          (item) =>
+            item.mainTableNumber == company.priceTableNumberCar &&
+            item.productId == batch.productId,
+        ) ?? { price: 0 };
+
+        const { price: basePriceTruck } = refPrices.find(
+          (item) =>
+            item.mainTableNumber == company.priceTableNumberTruck &&
+            item.productId == batch.productId,
+        ) ?? { price: 0 };
+
+        const hasPreviousValues = map.has(key);
+        if (!hasPreviousValues) {
+          map.set(key, {
+            productionDate: batch.productionDate,
+            dueDate: batch.dueDate,
+            companyCode: company?.sensattaCode,
+            companyName: company?.name,
+            productLineAcronym: batch.productLineAcronym,
+            productLineCode: batch.productLineCode,
+            productLineName: batch.productLineName,
+            productCode: batch.productCode,
+            productName: batch.productName,
+            productClassification: batch.productClassification,
+            basePriceCar,
+            basePriceTruck,
+            daysFromProduction: DateUtils.getDifferenceInDays(
+              batch.productionDate,
+              DateUtils.today(),
+            ),
+            daysToExpires: DateUtils.getDifferenceInDays(
+              DateUtils.today(),
+              batch.dueDate,
+            ),
+            boxAmount: 0,
+            quantity: 0,
+            totalWeightInKg: 0,
+            totalPrice: 0,
+          });
+        }
+
+        const previousValues = map.get(key)!;
+        previousValues.boxAmount += batch.boxAmount;
+        previousValues.quantity += batch.quantity;
+        previousValues.totalWeightInKg += batch.weightInKg;
+        previousValues.totalPrice += basePriceCar * batch.weightInKg;
+      }
+    }
+
+    const response: AllStockDataAgg[] = [];
+
+    for (const [, value] of map) {
+      response.push(value);
+    }
+
+    return response;
   }
 }
