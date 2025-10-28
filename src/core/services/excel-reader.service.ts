@@ -10,6 +10,8 @@ export class ExcelReaderService {
   create() {
     const workbook = new Workbook();
     this.workbook = workbook;
+
+    return workbook;
   }
 
   addData(worksheet: Worksheet, cell: string, value: any) {
