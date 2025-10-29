@@ -82,12 +82,33 @@ export type AnalyticalStockToExpiresByCompanyAgg = {
   productCode: string;
   productName: string;
   productClassification: string;
-  basePriceCar;
-  basePriceTruck;
+  basePriceCar: number;
+  basePriceTruck: number;
   daysFromProduction: number;
   daysToExpires: number;
   boxAmount?: number;
   quantity?: number;
   totalWeightInKg?: number;
   totalPrice?: number;
+};
+
+export type AllStockDataAgg = {
+  productionDate: string;
+  dueDate: string;
+  companyCode: string;
+  companyName: string;
+  productLineAcronym: string;
+  productLineCode: string;
+  productLineName: string;
+  productCode: string;
+  productName: string;
+  productClassification: string;
+  daysFromProduction: number;
+  daysToExpires: number;
+  basePriceCar: number;
+  basePriceTruck: number;
+  boxAmount: number;
+  quantity: number;
+  totalWeightInKg: number;
+  totalPrice: number;
 };
