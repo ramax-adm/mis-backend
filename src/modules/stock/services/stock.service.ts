@@ -6,6 +6,7 @@ import { GetStockByCompanyResponseDto } from '../dtos/response/stock-get-by-comp
 import { GetToExpiresByCompanyResponseDto } from '../dtos/response/stock-get-to-expires-by-company-response.dto';
 import { DateUtils } from '../../utils/services/date.utils';
 import {
+  AllStockDataAgg,
   AnalyticalStockToExpiresByCompanyAgg,
   GetExternalIncomingBatchesQueryResponse,
   GetIncomingBatchesQueryResponse,
@@ -65,7 +66,7 @@ export class StockService {
     return result;
   }
 
-  // get external incoming batches ->
+  // get external incoming batches
   async getExternalIncomingBatchesData(company: Company) {
     // constants
     const query = EXTERNAL_INCOMING_BATCHES_QUERY;

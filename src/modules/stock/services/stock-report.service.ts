@@ -15,7 +15,7 @@ export class StockReportService {
     private readonly excelReader: ExcelReaderService,
   ) {}
 
-  getResumedStockDataHeaders(): [string, any][] {
+  getResumedStockDataHeaders() {
     const headers: [string, any][] = [];
 
     // 1. Cabeçalhos de blocos de dados (linhas 1)
@@ -42,7 +42,7 @@ export class StockReportService {
     return headers;
   }
 
-  getAnalyticalStockHeaders(): [string, any][] {
+  getAnalyticalStockHeaders() {
     const headers: [string, any][] = [
       ['A1', 'Cod. Linha'],
       ['B1', 'Linha'],
@@ -95,7 +95,7 @@ export class StockReportService {
     return headers;
   }
 
-  getAnalyticalToExpiresHeaders(): [string, any][] {
+  getAnalyticalToExpiresHeaders() {
     const headers: [string, any][] = [
       ['A1', 'Cod. Linha'],
       ['B1', 'Linha'],
