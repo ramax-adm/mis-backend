@@ -246,7 +246,6 @@ export class StockIncomingBatchesReportService {
       ['C2', 'Linha'],
       ['D2', 'Cod. Produto'],
       ['E2', 'Produto'],
-      ['F2', 'Total KG'],
     ];
     headers.push(...baseHeaders);
 
@@ -257,10 +256,18 @@ export class StockIncomingBatchesReportService {
       ),
     );
 
+    const expireKeys = ['Total KG', 'Vencido', ...Array.from(byExpireKeysSet)];
+    const expireStartIdx = baseHeaders.length - 1; // após F
+
+    headers.push([`${col(expireStartIdx)}1`, 'Por Vencimento']);
+    expireKeys.forEach((key, idx) => {
+      const colIdx = expireStartIdx + idx;
+      headers.push([`${col(colIdx)}2`, key]);
+    });
+
     // =====================================================
     // 🔹 3. POR EMPRESA (COM SUBNÍVEIS)
     // =====================================================
-    const expireKeys = Array.from(byExpireKeysSet);
     const byCompanyKeysSet = new Set<string>();
     const expireRangeKeys = expireKeys.length ? expireKeys : []; // fallback
     Object.values(stockData.data).forEach((i) =>
@@ -271,11 +278,11 @@ export class StockIncomingBatchesReportService {
 
     const companyKeys = Array.from(byCompanyKeysSet);
 
-    let companyStartIdx = 6;
+    let companyStartIdx = expireStartIdx + expireKeys.length;
     headers.push([`${col(companyStartIdx)}1`, 'Por Empresa']);
 
     for (const company of companyKeys) {
-      const subHeaders = ['Total Kg', 'Vencido', ...expireRangeKeys];
+      const subHeaders = [...expireRangeKeys];
 
       // Linha 1 → Nome da empresa
       const span = subHeaders.length;
@@ -337,11 +344,26 @@ export class StockIncomingBatchesReportService {
         [`C${currentRow}`, item.productLineName],
         [`D${currentRow}`, item.productCode],
         [`E${currentRow}`, item.productName],
-        [`F${currentRow}`, NumberUtils.nb2(item.totals.weightInKg)],
       );
 
+      values.push(
+        [`F${currentRow}`, NumberUtils.nb2(item.totals.weightInKg)],
+        [`G${currentRow}`, NumberUtils.nb2(item.totals.expiredWeightInKg)],
+      );
+
+      // --- Por faixa de vencimento (global)
+      let expireColIndex = 7;
+      expireKeys.forEach((key) => {
+        const value = item.totals.byExpireRange.get(key) ?? 0;
+        values.push([
+          `${col(expireColIndex)}${currentRow}`,
+          NumberUtils.nb2(value),
+        ]);
+        expireColIndex++;
+      });
+
       // --- Por empresa (Total, Expirado, e por Faixa)
-      let companyColIndex = 6; // pula uma coluna visual
+      let companyColIndex = expireColIndex; // pula uma coluna visual
       companyKeys.forEach((companyKey) => {
         const companyTotals = item.totals.byCompany.get(companyKey);
 
