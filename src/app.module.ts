@@ -20,6 +20,7 @@ import { FreightsModule } from './modules/freights/freights.module';
 import { HumanResourcesModule } from './modules/human-resources/human-resources.module';
 import { IntranetModule } from './modules/intranet/intranet.module';
 import { SharedModule } from './shared/shared.module';
+import { FinanceModule } from './modules/finance/finance.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SharedModule } from './shared/shared.module';
     AuthModule,
     BusinessAuditModule,
     CashFlowModule,
+    FinanceModule,
     FreightsModule,
     HumanResourcesModule,
     IntranetModule,
