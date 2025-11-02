@@ -46,6 +46,12 @@ export class Invoice {
   @Column({ name: 'order_id', nullable: true })
   orderId?: string; // sequencial pedido
 
+  @Column({ name: 'order_category', nullable: true })
+  orderCategory?: string;
+
+  @Column({ name: 'order_operation', nullable: true })
+  orderOperation?: string;
+
   @Column({ name: 'client_code', nullable: true })
   clientCode?: string;
 
