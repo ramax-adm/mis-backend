@@ -26,6 +26,8 @@ export const getSyncedFileEntityLabel = (entity: EntitiesEnum) => {
     [EntitiesEnum.ANTT_FREIGHT_COMPANY_CONSULTATION]:
       'Transportadora - Consulta ANTT',
     [EntitiesEnum.HOLIDAY]: 'Feriados',
+    [EntitiesEnum.ACCOUNTS_PAYABLE]: 'Titulos a Pagar',
+    [EntitiesEnum.ACCOUNTS_RECEIVABLE]: 'Titulos a Receber',
   };
 
   return map[entity] ?? 'N/D';
@@ -144,5 +146,15 @@ export const SYNCED_FILE_ENTITIES = [
     label: getSyncedFileEntityLabel(EntitiesEnum.HOLIDAY),
     key: EntitiesEnum.HOLIDAY,
     value: EntitiesEnum.HOLIDAY,
+  },
+  {
+    label: getSyncedFileEntityLabel(EntitiesEnum.ACCOUNTS_PAYABLE),
+    key: EntitiesEnum.ACCOUNTS_PAYABLE,
+    value: EntitiesEnum.ACCOUNTS_PAYABLE,
+  },
+  {
+    label: getSyncedFileEntityLabel(EntitiesEnum.ACCOUNTS_RECEIVABLE),
+    key: EntitiesEnum.ACCOUNTS_RECEIVABLE,
+    value: EntitiesEnum.ACCOUNTS_RECEIVABLE,
   },
 ];
