@@ -21,4 +21,6 @@ export enum EntitiesEnum {
   WAREHOUSE = 'warehouse',
   ANTT_FREIGHT_COMPANY_CONSULTATION = 'antt-freight-company-consultation',
   HOLIDAY = 'holiday',
+  ACCOUNTS_PAYABLE = 'accounts-payable',
+  ACCOUNTS_RECEIVABLE = 'accounts-receivable',
 }
