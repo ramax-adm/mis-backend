@@ -46,7 +46,7 @@ export class ReturnOccurrencesController {
     summary: 'Devoluções: Ultima atualização',
     successStatus: HttpStatus.OK,
     successDescription:
-      'Retorna a data e hora da ulltima atualização dos dados de devoluções.',
+      'Retorna a data e hora da ultima atualização dos dados de devoluções.',
   })
   @Get('/last-update')
   @HttpCode(HttpStatus.OK)

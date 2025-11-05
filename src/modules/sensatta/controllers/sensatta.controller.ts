@@ -236,4 +236,22 @@ export class SensattaController {
       throw error;
     }
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('/finance/sync')
+  @HttpCode(HttpStatus.CREATED)
+  async syncFinanceWithServer() {
+    const serverUrlCall = this.envService
+      .get('SERVER_API_URL')
+      .concat('/sensatta/sync/finance');
+    try {
+      await this.httpService.axiosRef.post(
+        serverUrlCall,
+        {},
+        { timeout: 120 * 1000 },
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
 }
