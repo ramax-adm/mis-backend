@@ -8,7 +8,7 @@ import {
 @Entity({ name: 'sensatta_accounts_receivable' })
 export class AccountReceivable {
   @PrimaryGeneratedColumn('uuid')
-  id?: string;
+  id: string;
 
   @Column({ name: 'base_date', type: 'date', nullable: true })
   baseDate?: Date;
