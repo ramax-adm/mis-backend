@@ -7,11 +7,14 @@ import {
   ProductAgg,
   ClientAgg,
   SalesRepresentativeAgg,
+  GetBusinessAuditSalesDataTotals,
 } from '../types/get-sales-audit-data.type';
 import { GetBusinessAuditSalesDataResponseDto } from '../dtos/response/get-business-sales-data-response.dto';
 import { OrderSituationEnum } from '../enums/order-situation.enum';
 import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.enum';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
+import { NumberUtils } from '@/modules/utils/services/number.utils';
+import { GetOrderLineItem } from '../types/get-order-line.type';
 
 @Injectable()
 export class BusinessAuditSalesService {
@@ -84,7 +87,12 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          additionPercent: 0,
+          additionValue: 0,
+          discountPercent: 0,
+          discountValue: 0,
           totalKg: 0,
+          percentValue: 0,
         });
       }
       const currentSalesByInvoice = salesByInvoice.get(invoiceKey)!;
@@ -93,6 +101,11 @@ export class BusinessAuditSalesService {
       currentSalesByInvoice.totalTableValue += tableValue;
       currentSalesByInvoice.totalDiff += difValue;
       currentSalesByInvoice.totalKg += weightInKg;
+      if (difValue > 0) {
+        currentSalesByInvoice.additionValue += invoicingValue - tableValue;
+      } else {
+        currentSalesByInvoice.discountValue += tableValue - invoicingValue;
+      }
 
       // 2) Agrupar por Produto
       const productKey = `${orderLine.productCode} - ${orderLine.productName}`;
@@ -106,6 +119,10 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          additionPercent: 0,
+          additionValue: 0,
+          discountPercent: 0,
+          discountValue: 0,
           percentValue: 0,
         });
       }
@@ -115,6 +132,11 @@ export class BusinessAuditSalesService {
       currentSalesByProduct.totalFatValue += invoicingValue;
       currentSalesByProduct.totalTableValue += tableValue;
       currentSalesByProduct.totalDiff += difValue;
+      if (difValue > 0) {
+        currentSalesByProduct.additionValue += invoicingValue - tableValue;
+      } else {
+        currentSalesByProduct.discountValue += tableValue - invoicingValue;
+      }
 
       // 3) Agrupar por Cliente
       const clientKey = `${orderLine.clientCode} - ${orderLine.clientName}`;
@@ -127,6 +149,10 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          additionPercent: 0,
+          additionValue: 0,
+          discountPercent: 0,
+          discountValue: 0,
           percentValue: 0,
         });
       }
@@ -136,6 +162,11 @@ export class BusinessAuditSalesService {
       currentSalesByClient.totalFatValue += invoicingValue;
       currentSalesByClient.totalTableValue += tableValue;
       currentSalesByClient.totalDiff += difValue;
+      if (difValue > 0) {
+        currentSalesByClient.additionValue += invoicingValue - tableValue;
+      } else {
+        currentSalesByClient.discountValue += tableValue - invoicingValue;
+      }
 
       // 4) Agrupar por Representante
       const representativeKey = `${orderLine.salesRepresentativeCode} - ${orderLine.salesRepresentativeName}`;
@@ -148,6 +179,10 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          additionPercent: 0,
+          additionValue: 0,
+          discountPercent: 0,
+          discountValue: 0,
           percentValue: 0,
         });
       }
@@ -158,71 +193,22 @@ export class BusinessAuditSalesService {
       currentSalesByRepresentative.totalFatValue += invoicingValue;
       currentSalesByRepresentative.totalTableValue += tableValue;
       currentSalesByRepresentative.totalDiff += difValue;
+      if (difValue > 0) {
+        currentSalesByRepresentative.additionValue +=
+          invoicingValue - tableValue;
+      } else {
+        currentSalesByRepresentative.discountValue +=
+          tableValue - invoicingValue;
+      }
     }
 
-    // calcular totais globais de cada agrupamento
-    const invoiceTotals = Array.from(salesByInvoice.values()).reduce(
-      (tot, i) => {
-        tot.count += i.salesCount;
-        tot.totalFatValue += i.totalFatValue;
-        tot.totalTableValue += i.totalTableValue;
-        tot.totalDiff += i.totalDiff;
-        return tot;
-      },
-      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
+    // Totals p/ agrupamento
+    const invoiceTotals = this.getSalesAuditTotals(salesByInvoice);
+    const productTotals = this.getSalesAuditTotals(salesByProduct);
+    const clientTotals = this.getSalesAuditTotals(salesByClient);
+    const representativeTotals = this.getSalesAuditTotals(
+      salesByRepresentative,
     );
-
-    const productTotals = Array.from(salesByProduct.values()).reduce(
-      (tot, i) => {
-        tot.count += i.salesCount;
-        tot.totalFatValue += i.totalFatValue;
-        tot.totalTableValue += i.totalTableValue;
-        tot.totalDiff += i.totalDiff;
-        return tot;
-      },
-      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
-    );
-
-    salesByProduct.forEach((p) => {
-      p.percentValue = productTotals.totalFatValue
-        ? p.totalFatValue / productTotals.totalFatValue
-        : 0;
-    });
-
-    const clientTotals = Array.from(salesByClient.values()).reduce(
-      (acc, i) => {
-        acc.count += i.salesCount;
-        acc.totalFatValue += i.totalFatValue;
-        acc.totalTableValue += i.totalTableValue;
-        acc.totalDiff += i.totalDiff;
-        return acc;
-      },
-      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
-    );
-
-    salesByClient.forEach((p) => {
-      p.percentValue = clientTotals.totalFatValue
-        ? p.totalFatValue / clientTotals.totalFatValue
-        : 0;
-    });
-
-    const representativeTotals = Array.from(
-      salesByRepresentative.values(),
-    ).reduce(
-      (tot, i) => {
-        tot.count += i.salesCount;
-        tot.totalFatValue += i.totalFatValue;
-        tot.totalTableValue += i.totalTableValue;
-        tot.totalDiff += i.totalDiff;
-        return tot;
-      },
-      { count: 0, totalFatValue: 0, totalTableValue: 0, totalDiff: 0 },
-    );
-    salesByRepresentative.forEach((p) => {
-      p.percentValue = representativeTotals.totalFatValue
-        ? p.totalFatValue / representativeTotals.totalFatValue
-        : 0;
-    });
 
     return new GetBusinessAuditSalesDataResponseDto({
       salesByInvoice: {
@@ -334,82 +320,78 @@ export class BusinessAuditSalesService {
 
     const result = await qb.getRawMany();
 
-    return result.map((i) => {
-      const orderLine = new OrderLine();
+    const data: GetOrderLineItem[] = [];
 
-      // todos os campos do alias `so`
-      orderLine.id = i.so_id;
-      orderLine.billingDate = i.so_billing_date;
-      orderLine.issueDate = i.so_issue_date;
-      orderLine.companyCode = i.so_company_code;
-      orderLine.companyName = i.sc_name; // <-- pega de sc.name
-      orderLine.orderId = i.so_order_id;
-      orderLine.situation = i.so_situation;
-      orderLine.market = i.so_market;
-      orderLine.paymentTerm = i.so_payment_term;
-      orderLine.clientCode = i.so_client_code;
-      orderLine.clientName = i.so_client_name;
-      orderLine.salesRepresentativeCode = i.so_sales_representative_code;
-      orderLine.salesRepresentativeName = i.so_sales_representative_name;
-      orderLine.category = i.so_category;
-      orderLine.productLineCode = i.so_product_line_code;
-      orderLine.productLineName = i.so_product_line_name;
-      orderLine.productCode = i.so_product_code;
-      orderLine.productName = i.so_product_name;
-      orderLine.quantity = i.so_quantity;
-      orderLine.weightInKg = i.so_weight_in_kg;
-      orderLine.currency = i.so_currency;
-      orderLine.costValue = i.so_cost_value;
-      orderLine.discountPromotionValue = i.so_discount_promotion_value;
-      orderLine.saleUnitValue = i.so_sale_unit_value;
-      orderLine.referenceTableUnitValue = i.so_reference_table_unit_value;
-      orderLine.totalValue = i.so_total_value;
-      orderLine.receivableTitleValue = i.so_receivable_title_value;
-      orderLine.referenceTableId = i.so_reference_table_id;
-      orderLine.referenceTableDescription = i.so_reference_table_description;
-      orderLine.freightCompanyId = i.so_freight_company_id;
-      orderLine.freightCompanyName = i.so_freight_company_name;
-      orderLine.description = i.so_description;
-      orderLine.receivableTitleId = i.so_receivable_title_id;
-      orderLine.receivableTitleNumber = i.so_receivable_title_number;
-      orderLine.receivableTitleObservation = i.so_receivable_title_observation;
-      orderLine.accountGroupCode = i.so_account_group_code;
-      orderLine.accountGroupName = i.so_account_group_name;
-      orderLine.accountCode = i.so_account_code;
-      orderLine.accountName = i.so_account_name;
-      orderLine.nfId = i.so_nf_id;
-      orderLine.nfNumber = i.so_nf_number;
-      orderLine.cfopCode = i.so_cfop_code;
-      orderLine.cfopDescription = i.so_cfop_description;
-      orderLine.createdAt = i.so_created_at;
+    for (const item of result) {
+      const payload: GetOrderLineItem = {
+        id: item.so_id,
+        billingDate: item.so_billing_date,
+        issueDate: item.so_issue_date,
+        companyCode: item.so_company_code,
+        companyName: item.sc_name, // <-- pega de sc.nam,
+        orderId: item.so_order_id,
+        situation: item.so_situation,
+        market: item.so_market,
+        paymentTerm: item.so_payment_term,
+        clientCode: item.so_client_code,
+        clientName: item.so_client_name,
+        salesRepresentativeCode: item.so_sales_representative_code,
+        salesRepresentativeName: item.so_sales_representative_name,
+        category: item.so_category,
+        productLineCode: item.so_product_line_code,
+        productLineName: item.so_product_line_name,
+        productCode: item.so_product_code,
+        productName: item.so_product_name,
+        quantity: item.so_quantity,
+        weightInKg: item.so_weight_in_kg,
+        currency: item.so_currency,
+        costValue: item.so_cost_value,
+        discountPromotionValue: item.so_discount_promotion_value,
+        saleUnitValue: item.so_sale_unit_value,
+        referenceTableUnitValue: item.so_reference_table_unit_value,
+        totalValue: item.so_total_value,
+        receivableTitleValue: item.so_receivable_title_value,
+        referenceTableId: item.so_reference_table_id,
+        referenceTableDescription: item.so_reference_table_description,
+        freightCompanyId: item.so_freight_company_id,
+        freightCompanyName: item.so_freight_company_name,
+        description: item.so_description,
+        receivableTitleId: item.so_receivable_title_id,
+        receivableTitleNumber: item.so_receivable_title_number,
+        receivableTitleObservation: item.so_receivable_title_observation,
+        accountGroupCode: item.so_account_group_code,
+        accountGroupName: item.so_account_group_name,
+        accountCode: item.so_account_code,
+        accountName: item.so_account_name,
+        nfId: item.so_nf_id,
+        nfNumber: item.so_nf_number,
+        cfopCode: item.so_cfop_code,
+        cfopDescription: item.so_cfop_description,
+        createdAt: item.so_created_at,
+        additionPercent: 0,
+        discountPercent: 0,
+      };
+      const invoicingValue = Number(payload.totalValue ?? 0);
+      const tableValue = Number(
+        payload.referenceTableUnitValue * payload.weightInKg,
+      );
+      const difValue = invoicingValue - tableValue;
 
-      return orderLine;
-    });
+      if (difValue > 0) {
+        payload.additionPercent = NumberUtils.nb4(
+          invoicingValue / tableValue - 1,
+        );
+      } else {
+        payload.discountPercent = NumberUtils.nb4(
+          1 - invoicingValue / tableValue,
+        );
+      }
+      data.push(payload);
+    }
+    return data;
   }
 
-  async getClients({
-    startDate,
-    endDate,
-    productCode,
-    clientCode,
-    salesRepresentativeCode,
-    priceConsideration,
-    nfNumber,
-    nfId,
-    market,
-    companyCodes,
-  }: {
-    startDate?: Date;
-    endDate?: Date;
-    productCode?: string;
-    clientCode?: string;
-    priceConsideration?: OrderPriceConsiderationEnum;
-    salesRepresentativeCode?: string;
-    nfNumber?: string;
-    nfId?: string;
-    market?: MarketEnum;
-    companyCodes?: string[];
-  }) {
+  async getClients() {
     const qb = this.datasource
       .getRepository(OrderLine)
       .createQueryBuilder('so')
@@ -441,29 +423,7 @@ export class BusinessAuditSalesService {
     );
   }
 
-  async getRepresentatives({
-    startDate,
-    endDate,
-    productCode,
-    clientCode,
-    salesRepresentativeCode,
-    priceConsideration,
-    nfNumber,
-    nfId,
-    market,
-    companyCodes,
-  }: {
-    startDate?: Date;
-    endDate?: Date;
-    productCode?: string;
-    clientCode?: string;
-    priceConsideration?: OrderPriceConsiderationEnum;
-    salesRepresentativeCode?: string;
-    nfNumber?: string;
-    nfId?: string;
-    market?: MarketEnum;
-    companyCodes?: string[];
-  }) {
+  async getRepresentatives() {
     const qb = this.datasource
       .getRepository(OrderLine)
       .createQueryBuilder('so')
@@ -498,5 +458,55 @@ export class BusinessAuditSalesService {
         'pt-br',
       ),
     );
+  }
+
+  // aux
+  private getSalesAuditTotals(
+    map: Map<
+      string,
+      InvoiceAgg | ProductAgg | ClientAgg | SalesRepresentativeAgg
+    >,
+  ) {
+    const arrayData = Array.from(map.values());
+
+    // calculo de totals da capa
+    const totals: GetBusinessAuditSalesDataTotals = arrayData.reduce(
+      (acc, i) => {
+        acc.count += i.salesCount;
+        acc.totalFatValue += i.totalFatValue;
+        acc.totalTableValue += i.totalTableValue;
+        acc.totalDiff += i.totalDiff;
+        acc.totalAdditionValue += i.additionValue;
+        acc.totalDiscountValue += i.discountValue;
+        return acc;
+      },
+      {
+        count: 0,
+        totalFatValue: 0,
+        totalTableValue: 0,
+        totalDiff: 0,
+        totalAdditionValue: 0,
+        totalDiscountValue: 0,
+      },
+    );
+
+    // calculo de percentuais
+    map.forEach((p) => {
+      if (p.totalDiff > 0) {
+        p.additionPercent = NumberUtils.nb4(
+          p.totalFatValue / p.totalTableValue - 1,
+        );
+      } else {
+        p.discountPercent = NumberUtils.nb4(
+          1 - p.totalFatValue / p.totalTableValue,
+        );
+      }
+
+      p.percentValue = totals.totalFatValue
+        ? p.totalFatValue / totals.totalFatValue
+        : 0;
+    });
+
+    return totals;
   }
 }

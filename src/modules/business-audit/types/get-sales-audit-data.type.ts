@@ -16,10 +16,15 @@ export type InvoiceAgg = {
   market?: MarketEnum;
   currency?: string;
   salesCount: number;
+  totalKg: number;
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
-  totalKg: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
+  percentValue: number;
 };
 
 export type ProductAgg = {
@@ -30,6 +35,10 @@ export type ProductAgg = {
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
   percentValue: number;
 };
 
@@ -41,6 +50,10 @@ export type ClientAgg = {
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
   percentValue: number;
 };
 
@@ -52,5 +65,17 @@ export type SalesRepresentativeAgg = {
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
   percentValue: number;
+};
+export type GetBusinessAuditSalesDataTotals = {
+  count: number;
+  totalFatValue: number;
+  totalTableValue: number;
+  totalDiff: number;
+  totalAdditionValue: number;
+  totalDiscountValue: number;
 };
