@@ -19,10 +19,17 @@ import { DateUtils } from '@/modules/utils/services/date.utils';
 import { HttpService } from '@nestjs/axios';
 import { EnvService } from '@/config/env/env.service';
 import { DEFAULT_AXIOS_TIMEOUT } from '@/core/constants/default-axios-timeout';
-import { ExportSalesInvoicesReportDto } from '../dtos/request/export-human-resources-hours-report.dto';
+import { ExportSalesInvoicesReportDto } from '../dtos/request/sales-invoices-export-report-request.dto';
 import { Response } from 'express';
 import { SalesInvoicesReportService } from '../services/sales-invoices-report.service';
+import { SalesInvoicesGetAnalyticalDataRequestDto } from '../dtos/request/sales-invoices-get-analytical-data-request.dto';
+import { SWAGGER_API_SECURITY } from '@/core/constants/swagger-security';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiControllerDoc } from '@/core/decorators/api-doc.decorator';
 
+@ApiTags('Faturamento')
+@ApiBearerAuth(SWAGGER_API_SECURITY.BEARER_AUTH)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('sales/invoice')
 export class SalesInvoicesController {
   constructor(
@@ -33,7 +40,12 @@ export class SalesInvoicesController {
     private readonly salesInvoicesReportService: SalesInvoicesReportService,
   ) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiControllerDoc({
+    summary: 'Faturamento: Ultima atualização',
+    successStatus: HttpStatus.OK,
+    successDescription:
+      'Retorna a data e hora da ultima atualização dos dados de faturamento.',
+  })
   @Get('/last-update')
   @HttpCode(HttpStatus.OK)
   async getLastUpdatedAt() {
@@ -54,14 +66,15 @@ export class SalesInvoicesController {
     };
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiControllerDoc({
+    summary: 'Filtro: Lista de CFOPs',
+    successStatus: HttpStatus.OK,
+    successDescription:
+      'Retorna uma lista de cfops para servir como filtro ao front-end',
+  })
   @Get('/filters/cfops')
   @HttpCode(HttpStatus.OK)
-  async getCfops(
-    @Query('companyCode') companyCode: string,
-    @Query('startDate') startDate: Date,
-    @Query('endDate') endDate: Date,
-  ) {
+  async getCfops() {
     const qb = this.dataSource
       .createQueryBuilder()
       .select([
@@ -73,15 +86,15 @@ export class SalesInvoicesController {
       .where('1=1')
       .orderBy('si.cfop_code', 'ASC');
 
-    if (companyCode) {
-      qb.andWhere('si.company_code = :companyCode', { companyCode });
-    }
-    if (startDate) {
-      qb.andWhere('si.date >= :startDate', { startDate });
-    }
-    if (endDate) {
-      qb.andWhere('si.date <= :endDate', { endDate });
-    }
+    // if (companyCode) {
+    //   qb.andWhere('si.company_code = :companyCode', { companyCode });
+    // }
+    // if (startDate) {
+    //   qb.andWhere('si.date >= :startDate', { startDate });
+    // }
+    // if (endDate) {
+    //   qb.andWhere('si.date <= :endDate', { endDate });
+    // }
 
     const results = await qb.getRawMany<{
       cfop_code: string;
@@ -95,7 +108,12 @@ export class SalesInvoicesController {
     }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiControllerDoc({
+    summary: 'Filtro: Lista de Clientes',
+    successStatus: HttpStatus.OK,
+    successDescription:
+      'Retorna uma lista de clientes para servir como filtro ao front-end',
+  })
   @Get('/filters/clients')
   @HttpCode(HttpStatus.OK)
   async getClients(
@@ -133,7 +151,12 @@ export class SalesInvoicesController {
     }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiControllerDoc({
+    summary: 'Filtro: Situação NF',
+    successStatus: HttpStatus.OK,
+    successDescription:
+      'Retorna uma lista de situações possiveis para uma NF para servir como filtro ao front-end',
+  })
   @Get('/filters/nf-situations')
   @HttpCode(HttpStatus.OK)
   async getNfSituations(
@@ -148,15 +171,15 @@ export class SalesInvoicesController {
       .distinct(true)
       .where('1=1');
 
-    if (companyCode) {
-      qb.andWhere('si.company_code = :companyCode', { companyCode });
-    }
-    if (startDate) {
-      qb.andWhere('si.date >= :startDate', { startDate });
-    }
-    if (endDate) {
-      qb.andWhere('si.date <= :endDate', { endDate });
-    }
+    // if (companyCode) {
+    //   qb.andWhere('si.company_code = :companyCode', { companyCode });
+    // }
+    // if (startDate) {
+    //   qb.andWhere('si.date >= :startDate', { startDate });
+    // }
+    // if (endDate) {
+    //   qb.andWhere('si.date <= :endDate', { endDate });
+    // }
 
     const results = await qb.getRawMany<{
       nf_situation: string;
@@ -169,7 +192,6 @@ export class SalesInvoicesController {
     }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('resumed')
   @HttpCode(HttpStatus.OK)
   async getResumedData(
@@ -178,32 +200,20 @@ export class SalesInvoicesController {
     @Query('endDate') endDate: Date,
   ) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiControllerDoc({
+    summary: 'Faturamento: Listagem Analitica',
+    successStatus: HttpStatus.OK,
+    successDescription:
+      'Retorna uma listagem analitica das NFs de faturamento.',
+  })
   @Get('analytical')
   @HttpCode(HttpStatus.OK)
   async getAnalyticalData(
-    @Query('companyCode') companyCode: string,
-    @Query('startDate') startDate?: Date,
-    @Query('endDate') endDate?: Date,
-    @Query('clientCode') clientCode?: string,
-    @Query('cfopCodes') cfopCodes?: string,
-    @Query('nfType') nfType?: InvoicesNfTypesEnum,
-    @Query('nfNumber') nfNumber?: string,
-    @Query('nfSituations') nfSituations?: string,
+    @Query() requestDto: SalesInvoicesGetAnalyticalDataRequestDto,
   ) {
-    return await this.salesInvoicesService.getAnalyticalData({
-      companyCode,
-      clientCode,
-      startDate,
-      endDate,
-      cfopCodes: cfopCodes?.split(','),
-      nfNumber,
-      nfSituations: nfSituations?.split(',') as InvoicesSituationsEnum[],
-      nfType,
-    });
+    return await this.salesInvoicesService.getAnalyticalData(requestDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/sync')
   @HttpCode(HttpStatus.CREATED)
   async syncInvoiceWithServer() {
@@ -213,7 +223,6 @@ export class SalesInvoicesController {
       .concat('/sensatta/sync/invoice');
     const reqData = {};
     const reqConfig = { timeout: 200 * 1000 };
-    console.log({ reqUrl });
 
     try {
       await post(reqUrl, reqData, reqConfig);
@@ -222,7 +231,6 @@ export class SalesInvoicesController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/export-xlsx')
   @HttpCode(HttpStatus.OK)
   async exportXLSX(

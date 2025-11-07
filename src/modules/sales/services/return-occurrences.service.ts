@@ -5,7 +5,7 @@ import {
   GetReturnOccurrenceItem,
 } from '../types/get-invoices.type';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
-import { GetReturnOccurrencesAnalyticalDataRequestDto } from '../dtos/request/get-return-occurrences-analytical-data-request.dto';
+import { GetReturnOccurrencesAnalyticalDataRequestDto } from '../dtos/request/return-occurrences-get-analytical-data-request.dto';
 
 @Injectable()
 export class ReturnOccurrencesService {
