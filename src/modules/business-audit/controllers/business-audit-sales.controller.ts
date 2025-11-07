@@ -39,13 +39,7 @@ export class BusinessAuditSalesController {
     @Query('market') market?: MarketEnum,
     @Query('companyCodes') companyCodes?: string,
   ) {
-    const results = await this.businessAuditSalesService.getClients({
-      startDate,
-      endDate,
-      market,
-      priceConsideration,
-      companyCodes: companyCodes.split(','),
-    });
+    const results = await this.businessAuditSalesService.getClients();
     return results.map((i) => ({
       key: i.so_client_code,
       label: i.so_client_name,
@@ -64,14 +58,7 @@ export class BusinessAuditSalesController {
     @Query('companyCodes') companyCodes?: string,
   ) {
     // dos dados que ja foram filtrados, pego apenas o set de clientes
-
-    const results = await this.businessAuditSalesService.getRepresentatives({
-      startDate,
-      endDate,
-      market,
-      priceConsideration,
-      companyCodes: companyCodes.split(','),
-    });
+    const results = await this.businessAuditSalesService.getRepresentatives();
     return results.map((i) => ({
       key: i.so_sales_representative_code,
       label: i.so_sales_representative_name,

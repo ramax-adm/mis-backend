@@ -10,16 +10,24 @@ export type InvoiceAgg = {
   cfopDescription?: string;
   clientCode?: string;
   clientName?: string;
+  city?: string;
+  uf?: string;
   representativeCode?: string;
   representativeName?: string;
   paymentTerm?: string;
   market?: MarketEnum;
   currency?: string;
   salesCount: number;
+  totalKg: number;
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
-  totalKg: number;
+  totalDiffPercent: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
+  percentValue: number;
 };
 
 export type ProductAgg = {
@@ -30,6 +38,11 @@ export type ProductAgg = {
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
+  totalDiffPercent: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
   percentValue: number;
 };
 
@@ -41,6 +54,11 @@ export type ClientAgg = {
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
+  totalDiffPercent: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
   percentValue: number;
 };
 
@@ -52,5 +70,19 @@ export type SalesRepresentativeAgg = {
   totalFatValue: number;
   totalTableValue: number;
   totalDiff: number;
+  totalDiffPercent: number;
+  additionPercent: number;
+  additionValue: number;
+  discountPercent: number;
+  discountValue: number;
   percentValue: number;
+};
+export type GetBusinessAuditSalesDataTotals = {
+  count: number;
+  totalKg: number;
+  totalFatValue: number;
+  totalTableValue: number;
+  totalDiff: number;
+  totalAdditionValue: number;
+  totalDiscountValue: number;
 };
