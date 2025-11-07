@@ -78,6 +78,8 @@ export class BusinessAuditSalesService {
           cfopDescription: orderLine.cfopDescription,
           clientCode: orderLine.clientCode,
           clientName: orderLine.clientName,
+          city: orderLine.city,
+          uf: orderLine.uf,
           representativeCode: orderLine.salesRepresentativeCode,
           representativeName: orderLine.salesRepresentativeName,
           paymentTerm: orderLine.paymentTerm,
@@ -87,6 +89,7 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          totalDiffPercent: 0,
           additionPercent: 0,
           additionValue: 0,
           discountPercent: 0,
@@ -119,6 +122,7 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          totalDiffPercent: 0,
           additionPercent: 0,
           additionValue: 0,
           discountPercent: 0,
@@ -149,6 +153,7 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          totalDiffPercent: 0,
           additionPercent: 0,
           additionValue: 0,
           discountPercent: 0,
@@ -179,6 +184,7 @@ export class BusinessAuditSalesService {
           totalFatValue: 0,
           totalTableValue: 0,
           totalDiff: 0,
+          totalDiffPercent: 0,
           additionPercent: 0,
           additionValue: 0,
           discountPercent: 0,
@@ -261,6 +267,17 @@ export class BusinessAuditSalesService {
         'sensatta_companies',
         'sc',
         'sc.sensatta_code = so.companyCode',
+      )
+      .leftJoinAndSelect(
+        (subQuery) =>
+          subQuery
+            .select('*')
+            .from('sensatta_clients', 'sc2')
+            .distinctOn(['sc2.sensatta_code'])
+            .orderBy('sc2.sensatta_code', 'ASC')
+            .addOrderBy('sc2.id', 'DESC'),
+        'sc2',
+        'sc2.sensatta_code = so.clientCode',
       );
 
     qb.where('1=1')
@@ -319,7 +336,6 @@ export class BusinessAuditSalesService {
     }
 
     const result = await qb.getRawMany();
-
     const data: GetOrderLineItem[] = [];
 
     for (const item of result) {
@@ -335,6 +351,8 @@ export class BusinessAuditSalesService {
         paymentTerm: item.so_payment_term,
         clientCode: item.so_client_code,
         clientName: item.so_client_name,
+        city: item.city,
+        uf: item.uf,
         salesRepresentativeCode: item.so_sales_representative_code,
         salesRepresentativeName: item.so_sales_representative_name,
         category: item.so_category,
@@ -368,6 +386,10 @@ export class BusinessAuditSalesService {
         cfopCode: item.so_cfop_code,
         cfopDescription: item.so_cfop_description,
         createdAt: item.so_created_at,
+        invoicingValue: 0,
+        tableValue: 0,
+        dif: 0,
+        difPercent: 0,
         additionPercent: 0,
         discountPercent: 0,
       };
@@ -376,7 +398,12 @@ export class BusinessAuditSalesService {
         payload.referenceTableUnitValue * payload.weightInKg,
       );
       const difValue = invoicingValue - tableValue;
+      const difPercent = NumberUtils.nb4(difValue / tableValue);
 
+      payload.invoicingValue = invoicingValue;
+      payload.tableValue = tableValue;
+      payload.dif = difValue;
+      payload.difPercent = difPercent;
       if (difValue > 0) {
         payload.additionPercent = NumberUtils.nb4(
           invoicingValue / tableValue - 1,
@@ -473,6 +500,7 @@ export class BusinessAuditSalesService {
     const totals: GetBusinessAuditSalesDataTotals = arrayData.reduce(
       (acc, i) => {
         acc.count += i.salesCount;
+        acc.totalKg += i.totalKg;
         acc.totalFatValue += i.totalFatValue;
         acc.totalTableValue += i.totalTableValue;
         acc.totalDiff += i.totalDiff;
@@ -482,6 +510,7 @@ export class BusinessAuditSalesService {
       },
       {
         count: 0,
+        totalKg: 0,
         totalFatValue: 0,
         totalTableValue: 0,
         totalDiff: 0,
@@ -501,6 +530,10 @@ export class BusinessAuditSalesService {
           1 - p.totalFatValue / p.totalTableValue,
         );
       }
+
+      p.totalDiffPercent = NumberUtils.nb4(
+        p.totalDiff / (p.totalTableValue ?? 0),
+      );
 
       p.percentValue = totals.totalFatValue
         ? p.totalFatValue / totals.totalFatValue
