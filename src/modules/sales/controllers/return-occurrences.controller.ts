@@ -25,7 +25,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ReturnOccurrencesService } from '../services/return-occurrences.service';
-import { GetReturnOccurrencesAnalyticalDataRequestDto } from '../dtos/request/get-return-occurrences-analytical-data-request.dto';
+import { GetReturnOccurrencesAnalyticalDataRequestDto } from '../dtos/request/return-occurrences-get-analytical-data-request.dto';
 import { ApiControllerDoc } from '@/core/decorators/api-doc.decorator';
 import { SWAGGER_API_SECURITY } from '@/core/constants/swagger-security';
 import { ReturnOccurrence } from '../entities/return-occurrence.entity';

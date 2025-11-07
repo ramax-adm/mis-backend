@@ -4,6 +4,7 @@ import { InvoicesNfTypesEnum } from '../enums/invoices-nf-types.enum';
 import { InvoicesSituationsEnum } from '../enums/invoices-situations.enum';
 import { GetInvoicesItem } from '../types/get-invoices.type';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
+import { SalesInvoicesGetAnalyticalDataRequestDto } from '../dtos/request/sales-invoices-get-analytical-data-request.dto';
 
 @Injectable()
 export class SalesInvoicesService {
@@ -21,7 +22,7 @@ export class SalesInvoicesService {
         and si.nf_situation = :nfSituation
    */
   async getAnalyticalData({
-    companyCode,
+    companyCodes,
     startDate,
     endDate,
     clientCode,
@@ -29,18 +30,9 @@ export class SalesInvoicesService {
     nfType,
     nfNumber,
     nfSituations,
-  }: {
-    companyCode: string;
-    startDate: Date;
-    endDate: Date;
-    clientCode: string;
-    cfopCodes: string[];
-    nfType: InvoicesNfTypesEnum;
-    nfNumber: string;
-    nfSituations: InvoicesSituationsEnum[];
-  }) {
+  }: SalesInvoicesGetAnalyticalDataRequestDto) {
     const data = await this.getInvoices({
-      companyCode,
+      companyCodes,
       startDate,
       endDate,
       clientCode,
@@ -77,7 +69,7 @@ export class SalesInvoicesService {
   }
 
   private async getInvoices({
-    companyCode,
+    companyCodes,
     startDate,
     endDate,
     clientCode,
@@ -86,7 +78,7 @@ export class SalesInvoicesService {
     nfNumber,
     nfSituations,
   }: {
-    companyCode: string;
+    companyCodes: string[];
     startDate?: Date;
     endDate?: Date;
     clientCode?: string;
@@ -105,7 +97,7 @@ export class SalesInvoicesService {
         'si.company_code = sc.sensatta_code',
       )
       .where('1=1')
-      .andWhere('si.company_code = :companyCode', { companyCode });
+      .andWhere('si.company_code IN (:...companyCodes)', { companyCodes });
 
     if (nfType) {
       qb.andWhere('si.nf_type = :nfType', { nfType });
@@ -158,13 +150,15 @@ export class SalesInvoicesService {
       unit_price?: number;
       total_price?: number;
       created_at?: Date; // ou `Date` se for convertido
-      nf_situation: string;
+      nf_situation?: string;
+      nf_document_type?: string;
     }>();
 
     return results.map((i) => ({
       id: i.id,
       date: i.date,
       nfSituation: i.nf_situation,
+      nfDocumentType: i.nf_document_type,
       nfType: i.nf_type,
       clientTypeCode: i.client_type_code,
       clientTypeName: i.client_type_name,
