@@ -8,6 +8,7 @@ import { AccountReceivableVisualizationEnum } from '../enums/account-receivable-
 import { DateUtils } from '@/modules/utils/services/date.utils';
 import { AccountReceivableBucketSituationEnum } from '../enums/account-receivable-bucket-situation.enum';
 import { GetAccountsReceivableDataItem } from '../types/get-accounts-receivable-item.type';
+import { AccountsReceivableGetResumeDataRequestDto } from '../dtos/request/accounts-receivable-get-resume-data-request.dto';
 
 @Injectable()
 export class AccountsReceivableService {
@@ -145,6 +146,14 @@ export class AccountsReceivableService {
     return response;
   }
 
+  async getResumeData(requestDto: AccountsReceivableGetResumeDataRequestDto) {
+    /* o que interessa: titulos vencidos, titulos com valor aberto, perda de titulos */
+    // bucket vencido p/ situsção
+    // bucket vencer p/ situsção
+    // titulos p/ status
+    // titulos aberto p/ cliente
+  }
+
   async getAnalyticalData(
     requestDto: AccountsReceivableGetAnalyticalDataRequestDto,
   ) {
@@ -172,7 +181,7 @@ export class AccountsReceivableService {
   }
 
   // aux
-  getBucketSituation(baseDate: Date, dueDate: Date) {
+  private getBucketSituation(baseDate: Date, dueDate: Date) {
     const differenceInDays = DateUtils.getDifferenceInDays(baseDate, dueDate);
 
     let situation;
