@@ -4,7 +4,7 @@ import {
   NumFormats,
 } from '@/core/services/excel-reader.service';
 import { DateUtils } from '../../utils/services/date.utils';
-import { ExportSalesInvoicesReportDto } from '../dtos/request/export-human-resources-hours-report.dto';
+import { ExportSalesInvoicesReportDto } from '../dtos/request/sales-invoices-export-report-request.dto';
 import { SalesInvoicesService } from './sales-invoices.service';
 import { GetAnalyticalSalesInvoicesReportDto } from '../dtos/response/get-analytical-sales-invoices-response.dto';
 import { InvoicesSituationsEnum } from '../enums/invoices-situations.enum';
@@ -77,7 +77,7 @@ export class SalesInvoicesReportService {
       filters: {
         startDate,
         endDate,
-        companyCode,
+        companyCodes,
         cfopCodes,
         clientCode,
         nfNumber,
@@ -86,11 +86,9 @@ export class SalesInvoicesReportService {
       },
     } = dto;
 
-    const isMainFiltersChoosed = !!startDate && !!endDate && !!companyCode;
+    const isMainFiltersChoosed = !!startDate && !!endDate;
     if (!isMainFiltersChoosed) {
-      throw new BadRequestException(
-        'Escolha os filtros: Empresa, Dt. inicio, Dt. fim',
-      );
+      throw new BadRequestException('Escolha os filtros: Dt. inicio, Dt. fim');
     }
 
     this.excelReader.create();
@@ -98,7 +96,7 @@ export class SalesInvoicesReportService {
     const { data } = await this.salesInvoicesService.getAnalyticalData({
       startDate,
       endDate,
-      companyCode,
+      companyCodes: companyCodes?.split(','),
       cfopCodes: cfopCodes?.split(','),
       clientCode,
       nfNumber,
