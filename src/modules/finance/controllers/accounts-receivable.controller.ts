@@ -67,7 +67,6 @@ export class AccountsReceivableController {
   @Get('/filters/clients')
   @HttpCode(HttpStatus.OK)
   async getClients(
-    @Query('companyCode') companyCode?: string,
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date,
   ) {
@@ -79,9 +78,6 @@ export class AccountsReceivableController {
       .where('1=1')
       .orderBy('ar.client_name', 'ASC');
 
-    if (companyCode) {
-      qb.andWhere('ar.company_code = :companyCode', { companyCode });
-    }
     if (startDate) {
       qb.andWhere('ar.issue_date >= :startDate', { startDate });
     }
