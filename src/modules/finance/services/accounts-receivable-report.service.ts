@@ -76,7 +76,7 @@ export class AccountsReceivableReportService {
       filters: {
         startDate,
         endDate,
-        companyCode,
+        companyCodes,
         clientCode,
         bucketSituations,
         key,
@@ -85,11 +85,9 @@ export class AccountsReceivableReportService {
       },
     } = dto;
 
-    const isMainFiltersChoosed = !!startDate && !!endDate && !!companyCode;
+    const isMainFiltersChoosed = !!startDate && !!endDate;
     if (!isMainFiltersChoosed) {
-      throw new BadRequestException(
-        'Escolha os filtros: Empresa, Dt. inicio, Dt. fim',
-      );
+      throw new BadRequestException('Escolha os filtros: Dt. inicio, Dt. fim');
     }
 
     this.excelReader.create();
@@ -97,8 +95,8 @@ export class AccountsReceivableReportService {
     const { data } = await this.accountsReceivableService.getAnalyticalData({
       startDate,
       endDate,
-      companyCode,
-      bucketSituations: bucketSituations.split(
+      companyCodes: companyCodes?.split(','),
+      bucketSituations: bucketSituations?.split(
         ',',
       ) as AccountReceivableBucketSituationEnum[],
       clientCode,
