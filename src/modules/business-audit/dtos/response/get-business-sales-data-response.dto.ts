@@ -1,17 +1,11 @@
 import { GetCattlePurchaseFreightsItem } from '../../types/get-freights.type';
 import {
   ClientAgg,
+  GetBusinessAuditSalesDataTotals,
   InvoiceAgg,
   ProductAgg,
   SalesRepresentativeAgg,
 } from '../../types/get-sales-audit-data.type';
-
-type GetBusinessAuditSalesDataTotals = {
-  count: number;
-  totalFatValue: number;
-  totalTableValue: number;
-  totalDiff: number;
-};
 
 export class GetBusinessAuditSalesDataResponseDto {
   salesByInvoice: {

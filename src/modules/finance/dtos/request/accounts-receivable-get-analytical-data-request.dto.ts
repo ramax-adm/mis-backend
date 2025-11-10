@@ -22,9 +22,10 @@ export class AccountsReceivableGetAnalyticalDataRequestDto {
   endDate: Date;
 
   @ApiPropertyOptional()
-  @IsString()
+  @Transform(({ value }) => value?.split(','))
+  @IsArray()
   @IsOptional()
-  companyCode?: string;
+  companyCodes?: string[];
 
   @ApiPropertyOptional()
   @IsString()

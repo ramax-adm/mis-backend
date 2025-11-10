@@ -17,7 +17,7 @@ export class AccountsReceivableService {
   async getData({
     startDate,
     endDate,
-    companyCode,
+    companyCodes,
     clientCode,
     key,
     status,
@@ -27,7 +27,7 @@ export class AccountsReceivableService {
     // baseDate: Date;
     startDate: Date;
     endDate: Date;
-    companyCode?: string;
+    companyCodes?: string[];
     clientCode?: string;
     key?: string;
     status?: AccountReceivableStatusEnum;
@@ -37,7 +37,7 @@ export class AccountsReceivableService {
     console.log({
       startDate,
       endDate,
-      companyCode,
+      companyCodes,
       clientCode,
       key,
       status,
@@ -61,8 +61,8 @@ export class AccountsReceivableService {
     if (endDate) {
       qb.andWhere('ar.issue_date <= :endDate', { endDate });
     }
-    if (companyCode) {
-      qb.andWhere('ar.company_code = :companyCode', { companyCode });
+    if (companyCodes) {
+      qb.andWhere('ar.company_code IN (:...companyCodes)', { companyCodes });
     }
     if (clientCode) {
       qb.andWhere('ar.client_code = :clientCode', { clientCode });
@@ -184,8 +184,7 @@ export class AccountsReceivableService {
   private getBucketSituation(baseDate: Date, dueDate: Date) {
     const differenceInDays = DateUtils.getDifferenceInDays(baseDate, dueDate);
 
-    let situation;
-
+    let situation: AccountReceivableBucketSituationEnum;
     if (differenceInDays > 0) {
       if (differenceInDays <= 30) {
         situation = AccountReceivableBucketSituationEnum.A_VENCER_0_30;
