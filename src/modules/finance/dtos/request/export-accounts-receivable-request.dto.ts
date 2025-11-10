@@ -6,7 +6,7 @@ export class ExportAccountsReceivablesReportDto {
   filters: {
     startDate: Date;
     endDate: Date;
-    companyCode?: string;
+    companyCodes?: string;
     clientCode?: string;
     key?: string;
     status?: AccountReceivableStatusEnum;
