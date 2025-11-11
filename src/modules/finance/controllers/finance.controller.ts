@@ -27,7 +27,6 @@ import { AccountsReceivableReportService } from '../services/accounts-receivable
 @Controller('finance')
 export class FinanceController {
   constructor(
-    private readonly dataSource: DataSource,
     private readonly accountsReceivableReportService: AccountsReceivableReportService,
   ) {}
 

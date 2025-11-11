@@ -8,6 +8,14 @@ import { AccountReceivableVisualizationEnum } from '../enums/account-receivable-
 import { DateUtils } from '@/modules/utils/services/date.utils';
 import { AccountReceivableBucketSituationEnum } from '../enums/account-receivable-bucket-situation.enum';
 import { GetAccountsReceivableDataItem } from '../types/get-accounts-receivable-item.type';
+import { AccountsReceivableGetResumeDataRequestDto } from '../dtos/request/accounts-receivable-get-resume-data-request.dto';
+import { AccountsReceivableGetResumeDataResponse } from '../dtos/response/accounts-receivable-get-resume-data-response.dto';
+import {
+  AccountReceivableLossByClientAgg,
+  AccountReceivableOpenValueByClientAgg,
+  AccountReceivableResumeAgg,
+} from '../types/get-accounts-receivable-resume-data.type';
+import { AccountsReceivableGetAnalyticalDataResponse } from '../dtos/response/accounts-receivable-get-analytical-data-response.dto';
 
 @Injectable()
 export class AccountsReceivableService {
@@ -33,17 +41,6 @@ export class AccountsReceivableService {
     visualizationType?: AccountReceivableVisualizationEnum;
     bucketSituations?: AccountReceivableBucketSituationEnum[];
   }): Promise<GetAccountsReceivableDataItem[]> {
-    console.log({
-      startDate,
-      endDate,
-      companyCodes,
-      clientCode,
-      key,
-      status,
-      visualizationType,
-      bucketSituations,
-    });
-
     const qb = this.datasource
       .getRepository(AccountReceivable)
       .createQueryBuilder('ar')
@@ -126,33 +123,305 @@ export class AccountsReceivableService {
       accountReceivable.sensattaApprovedBy = i.ar_sensatta_approved_by;
       accountReceivable.observation = i.ar_observation;
       accountReceivable.createdAt = i.ar_created_at;
+      Object.assign(accountReceivable, {
+        companyName: i.sc_name,
+      });
 
       const { situation: currentBucketSituation, differenceInDays } =
         this.getBucketSituation(i.ar_base_date, i.ar_due_date);
 
-      if (!bucketSituations.includes(currentBucketSituation)) {
+      if (!bucketSituations?.includes(currentBucketSituation)) {
         continue;
       }
-
       Object.assign(accountReceivable, {
-        companyName: i.sc_name,
         differenceInDays,
         bucketSituation: currentBucketSituation,
       });
+
       response.push(accountReceivable as GetAccountsReceivableDataItem);
     }
 
     return response;
   }
 
+  /* o que interessa: titulos vencidos, titulos com valor aberto, perda de titulos */
+  // bucket vencido p/ situsção
+  /**
+   * totais:{
+   * quantidade: number,
+   * valor: number
+   * valorAberto: number
+   * }
+   *
+   * ==========================================================
+   * ANALISES GERAIS
+   * listagemPorSituacao: map<situacao,array<accountReceivable>
+   * listagemPorEmpresa: map<empresa,array<accountReceivable>
+   * listagemPorCliente: map<cliente,array<accountReceivable>
+   *
+   * mapPorCliente: map<cliente,{
+   * quantidade: number,
+   * valor: number
+   * valorAberto: number
+   * %:number
+   * % do total: number
+   * }>
+   *
+   * mapPorEmpresa: map<empresa,{
+   * quantidade: number,
+   * valor: number
+   * valorAberto: number
+   * %:number
+   * % do total: number
+   * }>
+   *
+   * mapPorSituacao: map<situacao,{
+   * quantidade: number,
+   * valor: number
+   * valorAberto: number
+   * %:number
+   * % do total: number
+   * }>
+   *
+   * ==========================================================
+   * ANALISES P/ CLIENTE
+   * mapValorAbertoPorCliente: map<cliente, {
+   * quantidade: number,
+   * valor: number
+   * valorAbertoAVencer: number
+   * valorAbertoAVencido: number
+   * %:number
+   * }>
+   *
+   * mapTitulosPerdaCliente: map<cliente, {
+   * quantidade: number,
+   * valor: number
+   * %:number
+   * >
+   */
+
+  async getResumeData(requestDto: AccountsReceivableGetResumeDataRequestDto) {
+    // 1️⃣ Buscar dados usando o método já existente
+    const BUCKET_SITUATIONS_ALL = [
+      AccountReceivableBucketSituationEnum.VENCIDOS_0_30,
+      AccountReceivableBucketSituationEnum.VENCIDOS_31_60,
+      AccountReceivableBucketSituationEnum.VENCIDOS_61_90,
+      AccountReceivableBucketSituationEnum.VENCIDOS_91_180,
+      AccountReceivableBucketSituationEnum.VENCIDOS_181_360,
+      AccountReceivableBucketSituationEnum.VENCIDOS_MAIOR_360,
+      AccountReceivableBucketSituationEnum.A_VENCER_0_30,
+      AccountReceivableBucketSituationEnum.A_VENCER_31_60,
+      AccountReceivableBucketSituationEnum.A_VENCER_61_90,
+      AccountReceivableBucketSituationEnum.A_VENCER_91_180,
+      AccountReceivableBucketSituationEnum.A_VENCER_181_360,
+      AccountReceivableBucketSituationEnum.A_VENCER_MAIOR_360,
+    ];
+    const data = await this.getData({
+      ...requestDto,
+      bucketSituations: BUCKET_SITUATIONS_ALL,
+    });
+
+    // 3️⃣ Totais gerais
+    const totals = this.getTotals(data);
+
+    // ===============================
+    // ANALISES GERAIS
+    // ===============================
+    const listByStatus = new Map<string, GetAccountsReceivableDataItem[]>();
+    const listByBucketSituation = new Map<
+      string,
+      GetAccountsReceivableDataItem[]
+    >(BUCKET_SITUATIONS_ALL.map((i) => [i, []]));
+    const listByCompany = new Map<string, GetAccountsReceivableDataItem[]>();
+    const listByClient = new Map<string, GetAccountsReceivableDataItem[]>();
+
+    const mapByStatus = new Map<string, AccountReceivableResumeAgg>();
+    const mapByBucketSituation = new Map<string, AccountReceivableResumeAgg>(
+      BUCKET_SITUATIONS_ALL.map((i) => [
+        i,
+        { quantity: 0, value: 0, openValue: 0, percent: 0, totalPercent: 0 },
+      ]),
+    );
+    const mapByCompany = new Map<string, AccountReceivableResumeAgg>();
+    const mapByClient = new Map<string, AccountReceivableResumeAgg>();
+
+    for (const item of data) {
+      const status = `${item.status}`;
+      const situation = `${item.bucketSituation}`;
+      const company = `${item.companyCode} - ${item.companyName}`;
+      const client = `${item.clientCode} - ${item.clientName}`;
+
+      if (!listByStatus.has(status)) listByStatus.set(status, []);
+      if (!listByBucketSituation.has(situation))
+        listByBucketSituation.set(situation, []);
+      if (!listByCompany.has(company)) listByCompany.set(company, []);
+      if (!listByClient.has(client)) listByClient.set(client, []);
+
+      listByStatus.get(status).push(item);
+      listByBucketSituation.get(situation).push(item);
+      listByCompany.get(company).push(item);
+      listByClient.get(client).push(item);
+
+      if (!mapByStatus.has(status))
+        mapByStatus.set(status, {
+          quantity: 0,
+          value: 0,
+          openValue: 0,
+          percent: 0,
+          totalPercent: 0,
+        });
+      if (!mapByCompany.has(company))
+        mapByCompany.set(company, {
+          quantity: 0,
+          value: 0,
+          openValue: 0,
+          percent: 0,
+          totalPercent: 0,
+        });
+      if (!mapByBucketSituation.has(situation))
+        mapByBucketSituation.set(situation, {
+          quantity: 0,
+          value: 0,
+          openValue: 0,
+          percent: 0,
+          totalPercent: 0,
+        });
+      if (!mapByClient.has(client))
+        mapByClient.set(client, {
+          quantity: 0,
+          value: 0,
+          openValue: 0,
+          percent: 0,
+          totalPercent: 0,
+        });
+
+      const previousStatusMap = mapByStatus.get(status);
+      previousStatusMap.quantity += 1;
+      previousStatusMap.value += item.value || 0;
+      previousStatusMap.openValue += item.openValue || 0;
+
+      const previousBucketSituationMap = mapByBucketSituation.get(situation);
+      previousBucketSituationMap.quantity += 1;
+      previousBucketSituationMap.value += item.value || 0;
+      previousBucketSituationMap.openValue += item.openValue || 0;
+
+      const previousCompanyMap = mapByCompany.get(company);
+      previousCompanyMap.quantity += 1;
+      previousCompanyMap.value += item.value || 0;
+      previousCompanyMap.openValue += item.openValue || 0;
+      const previousClientMap = mapByClient.get(client);
+      previousClientMap.quantity += 1;
+      previousClientMap.value += item.value || 0;
+      previousClientMap.openValue += item.openValue || 0;
+    }
+
+    mapByStatus.forEach((value) => {
+      value.percent = NumberUtils.nb4(value.value / totals.value);
+    });
+    mapByBucketSituation.forEach((value) => {
+      value.percent = NumberUtils.nb4(value.value / totals.value);
+    });
+    mapByCompany.forEach((value) => {
+      value.percent = NumberUtils.nb4(value.value / totals.value);
+    });
+    mapByClient.forEach((value) => {
+      value.percent = NumberUtils.nb4(value.value / totals.value);
+    });
+
+    // ===============================
+    // ANALISES POR CLIENTE
+    // ===============================
+    const mapOpenValueByClient = new Map<
+      string,
+      AccountReceivableOpenValueByClientAgg
+    >();
+    const mapLossByClient = new Map<string, AccountReceivableLossByClientAgg>();
+
+    // open titles
+    const openTitles = data.filter((i) => i.openValue && i.openValue > 0);
+    for (const item of openTitles) {
+      const client = `${item.clientCode} - ${item.clientName}`;
+      const openToExpire =
+        item.status === AccountReceivableStatusEnum.A_VENCER
+          ? item.openValue
+          : 0;
+      const openExpired =
+        item.status === AccountReceivableStatusEnum.VENCIDO
+          ? item.openValue
+          : 0;
+
+      if (!mapOpenValueByClient.has(client)) {
+        const group = {
+          quantity: 0,
+          value: 0,
+          openValueToExpire: 0,
+          openValueExpired: 0,
+          percentage: 0,
+        };
+        mapOpenValueByClient.set(client, group);
+      }
+
+      const previousMap = mapOpenValueByClient.get(client);
+      previousMap.quantity += 1;
+      previousMap.value += item.value || 0;
+      previousMap.openValueToExpire += openToExpire || 0;
+      previousMap.openValueExpired += openExpired || 0;
+    }
+
+    // loss titles
+    const lossTitles = data.filter((i) => i.lossRecognitionDate);
+    for (const item of lossTitles) {
+      const client = `${item.clientCode} - ${item.clientName}`;
+      const group = {
+        quantity: 0,
+        value: 0,
+        percentage: 0,
+      };
+      if (!mapLossByClient.has(client)) mapLossByClient.set(client, group);
+
+      const previousMap = mapLossByClient.get(client);
+      previousMap.quantity += 1;
+      previousMap.value += item.value || 0;
+    }
+
+    mapOpenValueByClient.forEach((value) => {
+      value.percentage = NumberUtils.nb4(value.value / totals.value);
+    });
+    mapLossByClient.forEach((value) => {
+      value.percentage = NumberUtils.nb4(value.value / totals.value);
+    });
+
+    return new AccountsReceivableGetResumeDataResponse({
+      totals,
+      listByStatus: Object.fromEntries(listByStatus),
+      listByBucketSituation: Object.fromEntries(listByBucketSituation),
+      listByCompany: Object.fromEntries(listByCompany),
+      listByClient: Object.fromEntries(listByClient),
+      accountReceivableByClient: Object.fromEntries(mapByClient),
+      accountReceivableByCompany: Object.fromEntries(mapByCompany),
+      accountReceivableByStatus: Object.fromEntries(mapByStatus),
+      accountReceivableByBucketSituation:
+        Object.fromEntries(mapByBucketSituation),
+      openValueByClient: Object.fromEntries(mapOpenValueByClient),
+      lossByClient: Object.fromEntries(mapLossByClient),
+    });
+  }
+
   async getAnalyticalData(
     requestDto: AccountsReceivableGetAnalyticalDataRequestDto,
   ) {
-    // data & totals
     const data = await this.getData(requestDto);
+    const totals = this.getTotals(data);
 
-    // Total
-    const totals = data.reduce(
+    return new AccountsReceivableGetAnalyticalDataResponse({
+      data,
+      totals,
+    });
+  }
+
+  // aux
+  private getTotals(data: GetAccountsReceivableDataItem[]) {
+    return data.reduce(
       (acc, item) => ({
         quantity: acc.quantity + 1,
         value: NumberUtils.nb2(acc.value + item.value),
@@ -164,15 +433,9 @@ export class AccountsReceivableService {
         openValue: 0,
       },
     );
-
-    return {
-      data,
-      totals,
-    };
   }
 
-  // aux
-  getBucketSituation(baseDate: Date, dueDate: Date) {
+  private getBucketSituation(baseDate: Date, dueDate: Date) {
     const differenceInDays = DateUtils.getDifferenceInDays(baseDate, dueDate);
 
     let situation: AccountReceivableBucketSituationEnum;

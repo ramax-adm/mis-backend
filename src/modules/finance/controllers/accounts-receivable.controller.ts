@@ -21,8 +21,7 @@ import { ApiControllerDoc } from '@/core/decorators/api-doc.decorator';
 import { DataSource } from 'typeorm';
 import { DateUtils } from '@/modules/utils/services/date.utils';
 import { AccountReceivable } from '../entities/account-receivable.entity';
-import { Response } from 'express';
-import { ExportAccountsReceivablesReportDto } from '../dtos/request/export-accounts-receivable-request.dto';
+import { AccountsReceivableGetResumeDataRequestDto } from '../dtos/request/accounts-receivable-get-resume-data-request.dto';
 
 @ApiTags('Financeiro')
 @ApiBearerAuth(SWAGGER_API_SECURITY.BEARER_AUTH)
@@ -108,5 +107,18 @@ export class AccountsReceivableController {
     @Query() requestDto: AccountsReceivableGetAnalyticalDataRequestDto,
   ) {
     return await this.accountsReceivableService.getAnalyticalData(requestDto);
+  }
+
+  @ApiControllerDoc({
+    summary: 'Titulos a Receber: Resumo dos dados',
+    successStatus: HttpStatus.OK,
+    successDescription: 'Retorna o resumo dos titulos a receber.',
+  })
+  @Get('resume')
+  @HttpCode(HttpStatus.OK)
+  async getResumeData(
+    @Query() requestDto: AccountsReceivableGetResumeDataRequestDto,
+  ) {
+    return await this.accountsReceivableService.getResumeData(requestDto);
   }
 }
