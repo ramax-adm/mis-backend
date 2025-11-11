@@ -1,18 +1,8 @@
-import {
-  IsArray,
-  IsDateString,
-  IsEnum,
-  IsOptional,
-  IsString,
-} from 'class-validator';
-import { AccountReceivableStatusEnum } from '../../enums/account-receivable-status.enum';
+import { IsArray, IsDateString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AccountReceivableVisualizationEnum } from '../../enums/account-receivable-visualization.enum';
-import { AccountReceivableBucketSituationEnum } from '../../enums/account-receivable-bucket-situation.enum';
 import { Transform } from 'class-transformer';
 
 export class AccountsReceivableGetResumeDataRequestDto {
-  // baseDate: Date;
   @ApiProperty()
   @IsDateString()
   startDate: Date;
@@ -21,8 +11,9 @@ export class AccountsReceivableGetResumeDataRequestDto {
   @IsDateString()
   endDate: Date;
 
-  @ApiPropertyOptional()
-  @IsString()
+  @ApiPropertyOptional({ type: 'string' })
+  @Transform(({ value }) => value?.split(','))
+  @IsArray()
   @IsOptional()
-  companyCode?: string;
+  companyCodes?: string[];
 }
