@@ -21,7 +21,7 @@ export class AccountsReceivableGetAnalyticalDataRequestDto {
   @IsDateString()
   endDate: Date;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: 'string' })
   @Transform(({ value }) => value?.split(','))
   @IsArray()
   @IsOptional()
@@ -47,7 +47,7 @@ export class AccountsReceivableGetAnalyticalDataRequestDto {
   @IsOptional()
   visualizationType?: AccountReceivableVisualizationEnum;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: 'string' })
   @Transform(({ value }) => value?.split(','))
   @IsArray()
   @IsOptional()
