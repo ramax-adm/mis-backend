@@ -4,6 +4,7 @@ export class GetStockIncomingBatchesAnalyticalDataResponseDto {
     {
       totals: {
         weightInKg: number;
+        totalPrice: number;
         expiredWeightInKg: number;
         byExpireRange: Record<string, number>;
       };
@@ -14,10 +15,12 @@ export class GetStockIncomingBatchesAnalyticalDataResponseDto {
       productLineName: string;
       productCode: string;
       productName: string;
+      basePriceCar: number;
     }
   >;
   totals: {
     weightInKg: number;
+    totalPrice: number;
     expiredWeightInKg: number;
     byExpireRange: Record<string, number>;
   };
