@@ -9,9 +9,11 @@ export type GetIncomingBatchesItemRaw = {
   production_date: Date;
   slaughter_date: Date;
   due_date: Date;
+  base_price_car: number;
   box_amount: number;
   quantity: number;
   weight_in_kg: number;
+  total_price: number;
 };
 
 export type GetIncomingBatchesItem = {
@@ -25,7 +27,9 @@ export type GetIncomingBatchesItem = {
   productionDate: Date;
   slaughterDate: Date;
   dueDate: Date;
+  basePriceCar: number;
   boxAmount: number;
   quantity: number;
   weightInKg: number;
+  totalPrice: number;
 };

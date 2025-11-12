@@ -1,6 +1,7 @@
 export class GetStockIncomingBatchesResumedDataResponseDto {
   totals: {
     weightInKg: number;
+    totalPrice: number;
     expiredWeightInKg: number;
     byExpireRange: Record<string, number>;
     byCompany: Record<string, number>;
@@ -12,6 +13,7 @@ export class GetStockIncomingBatchesResumedDataResponseDto {
         byExpireRange: Record<string, number>;
         byCompany: Record<string, number>;
         weightInKg: number;
+        totalPrice: number;
         expiredWeightInKg: number;
       };
       market: string;
@@ -19,6 +21,7 @@ export class GetStockIncomingBatchesResumedDataResponseDto {
       productLineName: string;
       productCode: string;
       productName: string;
+      basePriceCar: number | null;
     }
   >;
 }

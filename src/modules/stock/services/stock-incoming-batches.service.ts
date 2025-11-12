@@ -43,6 +43,11 @@ export class StockIncomingBatchesService {
         'sc',
         'sw.company_code = sc.sensatta_code',
       )
+      .leftJoin(
+        'sensatta_reference_prices',
+        'srp',
+        `srp.main_table_number = sc.price_table_number_car AND srp.product_id = sp.sensatta_id`,
+      )
       .where('1=1')
       .andWhere('sc.is_considered_on_stock = :trueVal', { trueVal: true })
       .andWhere('sw.is_active = :trueVal', { trueVal: true })
@@ -57,9 +62,11 @@ export class StockIncomingBatchesService {
         'sib.production_date AS production_date',
         'sib.slaughter_date AS slaughter_date',
         'sib.due_date AS due_date',
+        'srp.price as base_price_car',
         'SUM(sib.box_amount) AS box_amount',
         'SUM(sib.quantity) AS quantity',
         'SUM(sib.weight_in_kg) AS weight_in_kg',
+        'SUM(sib.weight_in_kg * srp.price) as total_price',
       ])
       .groupBy('sc.sensatta_code')
       .addGroupBy('sc.name')
@@ -71,6 +78,7 @@ export class StockIncomingBatchesService {
       .addGroupBy('sib.production_date')
       .addGroupBy('sib.slaughter_date')
       .addGroupBy('sib.due_date')
+      .addGroupBy('srp.price')
       .orderBy('spl.sensatta_code::int', 'ASC')
       .addOrderBy('sp.sensatta_code::int', 'ASC');
 
@@ -101,9 +109,11 @@ export class StockIncomingBatchesService {
       productionDate: i.production_date,
       slaughterDate: i.slaughter_date,
       dueDate: i.due_date,
+      basePriceCar: i.base_price_car,
       boxAmount: i.box_amount,
       quantity: i.quantity,
       weightInKg: i.weight_in_kg,
+      totalPrice: i.total_price,
     }));
   }
 
@@ -187,9 +197,11 @@ export class StockIncomingBatchesService {
         productLineName: string;
         productCode: string;
         productName: string;
+        basePriceCar: number;
         totals: {
           weightInKg: number;
           expiredWeightInKg: number;
+          totalPrice: number;
           byExpireRange: Map<string, number>;
           byCompany: Map<string, number>;
         };
@@ -222,9 +234,11 @@ export class StockIncomingBatchesService {
           productLineName: batch.productLineName,
           productCode: batch.productCode,
           productName: batch.productName,
+          basePriceCar: batch.basePriceCar,
           totals: {
             weightInKg: 0,
             expiredWeightInKg: 0,
+            totalPrice: 0,
             byExpireRange,
             byCompany,
           },
@@ -235,6 +249,7 @@ export class StockIncomingBatchesService {
 
       // Soma peso total
       previousMap.totals.weightInKg += batch.weightInKg;
+      previousMap.totals.totalPrice += batch.totalPrice;
 
       // Por empresa
       const companyKey = `${batch.companyCode} - ${batch.companyName}`;
@@ -245,7 +260,6 @@ export class StockIncomingBatchesService {
 
       // Por faixa de expiração
       // Soma peso expirado
-
       if (currentDaysToExpires < 0) {
         previousMap.totals.expiredWeightInKg += batch.weightInKg;
       } else {
@@ -292,6 +306,7 @@ export class StockIncomingBatchesService {
 
     const totals = {
       weightInKg: 0,
+      totalPrice: 0,
       expiredWeightInKg: 0,
       byExpireRange: new Map<string, number>(
         expireRangeKeys.map((k) => [k.key, 0]),
@@ -307,6 +322,7 @@ export class StockIncomingBatchesService {
 
       // soma peso total
       totals.weightInKg += batch.weightInKg;
+      totals.totalPrice += batch.totalPrice;
 
       // soma por empresa
       const companyKey = `${batch.companyCode} - ${batch.companyName}`;
@@ -342,6 +358,7 @@ export class StockIncomingBatchesService {
 
     return {
       weightInKg: totals.weightInKg,
+      totalPrice: totals.totalPrice,
       expiredWeightInKg: totals.expiredWeightInKg,
       byExpireRange: Object.fromEntries(
         expireRangeKeys.map(({ key }) => [
@@ -365,8 +382,10 @@ export class StockIncomingBatchesService {
         productLineName: string;
         productCode: string;
         productName: string;
+        basePriceCar: number;
         totals: {
           weightInKg: number;
+          totalPrice: number;
           expiredWeightInKg: number;
           byExpireRange: Map<string, number>;
         };
@@ -397,8 +416,10 @@ export class StockIncomingBatchesService {
           productLineName: batch.productLineName,
           productCode: batch.productCode,
           productName: batch.productName,
+          basePriceCar: batch.basePriceCar,
           totals: {
             weightInKg: 0,
+            totalPrice: 0,
             expiredWeightInKg: 0,
             byExpireRange,
           },
@@ -409,6 +430,7 @@ export class StockIncomingBatchesService {
 
       // Soma peso total
       previousMap.totals.weightInKg += batch.weightInKg;
+      previousMap.totals.totalPrice += batch.totalPrice;
 
       // Por faixa de expiração
       // Soma peso expirado
@@ -455,6 +477,7 @@ export class StockIncomingBatchesService {
     const expireRangeKeys = this.getExpireKeys(batches);
     const totals = {
       weightInKg: 0,
+      totalPrice: 0,
       expiredWeightInKg: 0,
       byExpireRange: new Map<string, number>(
         expireRangeKeys.map((k) => [k.key, 0]),
@@ -469,6 +492,7 @@ export class StockIncomingBatchesService {
 
       // soma peso total
       totals.weightInKg += batch.weightInKg;
+      totals.totalPrice += batch.totalPrice;
 
       // soma por faixa de expiração
       // soma peso expirado
@@ -497,6 +521,7 @@ export class StockIncomingBatchesService {
 
     return {
       weightInKg: totals.weightInKg,
+      totalPrice: totals.totalPrice,
       expiredWeightInKg: totals.expiredWeightInKg,
       byExpireRange: Object.fromEntries(
         expireRangeKeys.map(({ key }) => [
@@ -517,8 +542,10 @@ export class StockIncomingBatchesService {
         productLineName: string;
         productCode: string;
         productName: string;
+        basePriceCar: number;
         totals: {
           weightInKg: number;
+          totalPrice: number;
           expiredWeightInKg: number;
           byExpireRange: Map<string, number>;
           byCompany: Map<
@@ -573,8 +600,10 @@ export class StockIncomingBatchesService {
           productLineName: batch.productLineName,
           productCode: batch.productCode,
           productName: batch.productName,
+          basePriceCar: batch.basePriceCar,
           totals: {
             weightInKg: 0,
+            totalPrice: 0,
             expiredWeightInKg: 0,
             byExpireRange,
             byCompany,
@@ -586,6 +615,7 @@ export class StockIncomingBatchesService {
 
       // Soma peso total
       previousMap.totals.weightInKg += batch.weightInKg;
+      previousMap.totals.totalPrice += batch.totalPrice;
 
       // Por empresa
       const companyTotals = previousMap.totals.byCompany.get(companyKey)!;
