@@ -12,6 +12,7 @@ import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { GetBusinessSalesOrderLinesResponseDto } from '../dtos/response/get-business-sales-order-lines-response.dto';
 import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
+import { GetOrderLineItem } from '../types/get-order-line.type';
 
 @Injectable()
 export class BusinessAuditSalesReportService {
@@ -41,11 +42,13 @@ export class BusinessAuditSalesReportService {
       ['H1', 'Cod CFOP'],
       ['I1', 'CFOP'],
       ['J1', 'Cliente'],
-      ['K1', 'Representante'],
-      ['L1', 'Prazo'],
-      ['M1', '$ Faturamento'],
-      ['N1', '$ Tabela'],
-      ['O1', '$ Desc'],
+      ['K1', 'Cidade'],
+      ['L1', 'UF'],
+      ['M1', 'Representante'],
+      ['N1', 'Prazo'],
+      ['O1', '$ Faturamento'],
+      ['P1', '$ Tabela'],
+      ['Q1', '$ Desc'],
     ];
 
     return headers;
@@ -64,19 +67,21 @@ export class BusinessAuditSalesReportService {
       ['I1', 'CFOP'],
       ['J1', 'Cod. Cliente'],
       ['K1', 'Cliente'],
-      ['L1', 'Cod. Representante'],
-      ['M1', 'Representante'],
-      ['N1', 'Prazo'],
-      ['O1', 'Cod. Produto'],
-      ['P1', 'Produto'],
-      ['Q1', 'Qtd.'],
-      ['R1', 'Peso KG'],
-      ['S1', 'Moeda'],
-      ['T1', 'Preço Un.'],
-      ['U1', 'Preço Tabela Un.'],
-      ['V1', 'Valor Total NF'],
-      ['W1', 'Valor Total Tabela'],
-      ['X1', 'Desc.'],
+      ['L1', 'Cidade'],
+      ['M1', 'UF'],
+      ['N1', 'Cod. Representante'],
+      ['O1', 'Representante'],
+      ['P1', 'Prazo'],
+      ['Q1', 'Cod. Produto'],
+      ['R1', 'Produto'],
+      ['S1', 'Qtd.'],
+      ['T1', 'Peso KG'],
+      ['U1', 'Moeda'],
+      ['V1', 'Preço Un.'],
+      ['W1', 'Preço Tabela Un.'],
+      ['X1', 'Valor Total NF'],
+      ['Y1', 'Valor Total Tabela'],
+      ['Z1', 'Desc.'],
     ];
 
     return headers;
@@ -103,18 +108,20 @@ export class BusinessAuditSalesReportService {
         [`H${row(index)}`, item.cfopCode],
         [`I${row(index)}`, item.cfopDescription],
         [`J${row(index)}`, item.clientName],
-        [`K${row(index)}`, item.representativeName],
-        [`L${row(index)}`, item.paymentTerm],
-        [`M${row(index)}`, NumberUtils.nb2(item.totalFatValue)],
-        [`N${row(index)}`, NumberUtils.nb2(item.totalTableValue)],
-        [`O${row(index)}`, NumberUtils.nb2(item.totalDiff)],
+        [`K${row(index)}`, item.city],
+        [`L${row(index)}`, item.uf],
+        [`M${row(index)}`, item.representativeName],
+        [`N${row(index)}`, item.paymentTerm],
+        [`O${row(index)}`, NumberUtils.nb2(item.totalFatValue)],
+        [`P${row(index)}`, NumberUtils.nb2(item.totalTableValue)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.totalDiff)],
       );
     });
 
     return values;
   }
   getOrderLinesValues(
-    dto: OrderLine[],
+    dto: GetOrderLineItem[],
   ): [string, any, NumFormats | undefined][] {
     const values = [];
 
@@ -135,19 +142,21 @@ export class BusinessAuditSalesReportService {
         [`I${row(index)}`, item.cfopDescription],
         [`J${row(index)}`, item.clientCode],
         [`K${row(index)}`, item.clientName],
-        [`L${row(index)}`, item.salesRepresentativeCode],
-        [`M${row(index)}`, item.salesRepresentativeName],
-        [`N${row(index)}`, item.paymentTerm],
-        [`O${row(index)}`, item.productCode],
-        [`P${row(index)}`, item.productName],
-        [`Q${row(index)}`, NumberUtils.nb2(item.quantity ?? 0)],
-        [`R${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
-        [`S${row(index)}`, item.currency],
-        [`T${row(index)}`, NumberUtils.nb2(item.saleUnitValue ?? 0)],
-        [`U${row(index)}`, NumberUtils.nb2(item.referenceTableUnitValue ?? 0)],
-        [`V${row(index)}`, NumberUtils.nb2(item.totalValue ?? 0)],
-        [`W${row(index)}`, NumberUtils.nb2(totalTableValue)],
-        [`X${row(index)}`, NumberUtils.nb2(item.totalValue - totalTableValue)],
+        [`L${row(index)}`, item.city],
+        [`M${row(index)}`, item.uf],
+        [`N${row(index)}`, item.salesRepresentativeCode],
+        [`O${row(index)}`, item.salesRepresentativeName],
+        [`P${row(index)}`, item.paymentTerm],
+        [`Q${row(index)}`, item.productCode],
+        [`R${row(index)}`, item.productName],
+        [`S${row(index)}`, NumberUtils.nb2(item.quantity ?? 0)],
+        [`T${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
+        [`U${row(index)}`, item.currency],
+        [`V${row(index)}`, NumberUtils.nb2(item.saleUnitValue ?? 0)],
+        [`W${row(index)}`, NumberUtils.nb2(item.referenceTableUnitValue ?? 0)],
+        [`X${row(index)}`, NumberUtils.nb2(item.totalValue ?? 0)],
+        [`Y${row(index)}`, NumberUtils.nb2(totalTableValue)],
+        [`Z${row(index)}`, NumberUtils.nb2(item.totalValue - totalTableValue)],
       );
     });
 
