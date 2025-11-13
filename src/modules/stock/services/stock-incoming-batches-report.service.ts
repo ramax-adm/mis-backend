@@ -31,8 +31,8 @@ export class StockIncomingBatchesReportService {
     headers.push(['D2', 'Cod. Produto']);
     headers.push(['E2', 'Produto']);
     headers.push(['F2', 'Total KG']);
-    headers.push(['G2', 'Preço Base CAR']);
-    headers.push(['H2', 'Preço Total']);
+    headers.push(['G2', '$/KG']);
+    headers.push(['H2', '$ Total']);
 
     // por vencimento
     const byExpireKeysSet = new Set<string>();
@@ -88,8 +88,8 @@ export class StockIncomingBatchesReportService {
     headers.push(['F2', 'Cod. Produto']);
     headers.push(['G2', 'Produto']);
     headers.push(['H2', 'Total KG']);
-    headers.push(['I2', 'Preço Base CAR']);
-    headers.push(['J2', 'Preço Total']);
+    headers.push(['I2', '$/KG']);
+    headers.push(['J2', '$ Total']);
 
     // por vencimento
     const byExpireKeysSet = new Set<string>();
@@ -256,8 +256,8 @@ export class StockIncomingBatchesReportService {
       ['C2', 'Linha'],
       ['D2', 'Cod. Produto'],
       ['E2', 'Produto'],
-      ['F2', '$ Preço Base CAR'],
-      ['G2', '$ Preço Total'],
+      ['F2', '$/KG'],
+      ['G2', '$ Total'],
     ];
     headers.push(...baseHeaders);
 
