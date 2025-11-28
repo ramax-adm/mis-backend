@@ -85,6 +85,18 @@ export class AccountReceivable {
   @Column({ name: 'accounting_account_name', type: 'varchar', nullable: true })
   accountingAccountName?: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  type?: string;
+
+  @Column({ name: 'origin_type', type: 'varchar', nullable: true })
+  originType?: string;
+
+  @Column({ name: 'billing_type_id', type: 'varchar', nullable: true })
+  billingTypeId?: string;
+
+  @Column({ name: 'billing_type', type: 'varchar', nullable: true })
+  billingType?: string;
+
   @Column({ name: 'person_type', type: 'varchar', nullable: true })
   personType?: string;
 

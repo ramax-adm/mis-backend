@@ -63,7 +63,7 @@ export class InventoryController {
     const qb = this.dataSource
       .createQueryBuilder()
       .select(['sii.created_at'])
-      .from(InventoryItem, 'sii')
+      .from(Inventory, 'sii')
       .where('1=1')
       .limit(1);
 

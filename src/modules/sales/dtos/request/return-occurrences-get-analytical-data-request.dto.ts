@@ -5,7 +5,8 @@ import { IsOptional } from 'class-validator';
 export class GetReturnOccurrencesAnalyticalDataRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
-  companyCode?: string;
+  @Transform(({ value }) => value?.split(','))
+  companyCodes?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -33,6 +34,6 @@ export class GetReturnOccurrencesAnalyticalDataRequestDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => (value ? value.split(',') : null))
+  @Transform(({ value }) => value?.split(','))
   occurrenceCauses?: string[];
 }
