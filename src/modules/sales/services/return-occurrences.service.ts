@@ -6,6 +6,8 @@ import {
 } from '../types/get-invoices.type';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { GetReturnOccurrencesAnalyticalDataRequestDto } from '../dtos/request/return-occurrences-get-analytical-data-request.dto';
+import { ReturnOccurrencesGetAnalyticalDataResponseDto } from '../dtos/response/return-occurrences-get-analytical-data-response.dto';
+import { ReturnOccurrenceReturnTypeEnum } from '@/modules/business-audit/enums/return-types.enum';
 
 @Injectable()
 export class ReturnOccurrencesService {
@@ -14,7 +16,7 @@ export class ReturnOccurrencesService {
   // TODO
 
   async getAnalyticalData({
-    companyCode,
+    companyCodes,
     startDate,
     endDate,
     clientCode,
@@ -24,7 +26,7 @@ export class ReturnOccurrencesService {
     returnType,
   }: GetReturnOccurrencesAnalyticalDataRequestDto) {
     const data = await this.getReturnOccurrences({
-      companyCode,
+      companyCodes,
       startDate,
       endDate,
       clientCode,
@@ -39,7 +41,7 @@ export class ReturnOccurrencesService {
 
     const totals = data.reduce(
       (acc, item) => ({
-        count: acc.count,
+        count: acc.count + 1,
         fatValue: NumberUtils.nb2(acc.fatValue + item.invoiceValue),
         returnValue: NumberUtils.nb2(acc.returnValue + item.returnValue),
         returnWeightInKg: NumberUtils.nb2(
@@ -50,7 +52,7 @@ export class ReturnOccurrencesService {
         ),
       }),
       {
-        count: occurrenceNumberSet.size,
+        count: 0,
         fatValue: 0,
         returnValue: 0,
         returnWeightInKg: 0,
@@ -58,11 +60,11 @@ export class ReturnOccurrencesService {
       },
     );
 
-    return { totals, data };
+    return new ReturnOccurrencesGetAnalyticalDataResponseDto({ totals, data });
   }
 
   private async getReturnOccurrences({
-    companyCode,
+    companyCodes,
     startDate,
     endDate,
     clientCode,
@@ -71,7 +73,7 @@ export class ReturnOccurrencesService {
     occurrenceNumber,
     returnType,
   }: {
-    companyCode: string;
+    companyCodes: string[];
     startDate: Date;
     endDate: Date;
     clientCode?: string;
@@ -89,8 +91,7 @@ export class ReturnOccurrencesService {
         'sc',
         'ro.company_code = sc.sensatta_code',
       )
-      .where('1=1')
-      .andWhere('ro.company_code = :companyCode', { companyCode });
+      .where('1=1');
 
     if (startDate) {
       qb.andWhere('ro.date >= :startDate', { startDate });
@@ -110,20 +111,28 @@ export class ReturnOccurrencesService {
       });
     }
 
-    if (occurrenceCauses) {
-      qb.andWhere('ro.occurrence_cause IN (:...occurrenceCauses)', {
-        occurrenceCauses,
-      });
-    }
-
     if (occurrenceNumber) {
       qb.andWhere('ro.occurrence_number = :occurrenceNumber', {
         occurrenceNumber,
       });
     }
 
+    if (companyCodes) {
+      qb.andWhere('ro.companyCode IN (:...companyCodes)', { companyCodes });
+    }
     if (returnType) {
-      qb.andWhere('ro.return_type = returnType', { returnType });
+      const returnTypeMap = {
+        [ReturnOccurrenceReturnTypeEnum.FULL]: 'Integral',
+        [ReturnOccurrenceReturnTypeEnum.PARTIAL]: 'Parcial',
+      };
+      qb.andWhere('ro.returnType ILIKE :returnType', {
+        returnType: `%${returnTypeMap[returnType]}%`,
+      });
+    }
+    if (occurrenceCauses) {
+      qb.andWhere('ro.occurrenceCause IN (:...occurrenceCauses)', {
+        occurrenceCauses,
+      });
     }
 
     const results = await qb.getRawMany<{
