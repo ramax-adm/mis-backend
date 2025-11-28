@@ -186,6 +186,8 @@ export class ReturnOccurrencesController {
   async getAnalyticalData(
     @Query() requestQuery: GetReturnOccurrencesAnalyticalDataRequestDto,
   ) {
+    console.log({ requestQuery });
+
     return await this.returnOccurrencesService.getAnalyticalData(requestQuery);
   }
 
