@@ -19,6 +19,9 @@ export interface GetAnalyticalCattlePurchaseResponseInput {
   purchasePrice: number;
   commissionPrice: number;
   totalValue: number;
+  arrobaPrice: number;
+  headPrice: number;
+  kgPrice: number;
 }
 
 export class GetAnalyticalCattlePurchaseResponseDto {
@@ -38,6 +41,9 @@ export class GetAnalyticalCattlePurchaseResponseDto {
   purchasePrice: number;
   commissionPrice: number;
   totalValue: number;
+  arrobaPrice: number;
+  headPrice: number;
+  kgPrice: number;
 
   constructor(data: GetAnalyticalCattlePurchaseResponseInput) {
     Object.assign(this, {
@@ -57,6 +63,9 @@ export class GetAnalyticalCattlePurchaseResponseDto {
       purchasePrice: data.purchasePrice,
       commissionPrice: data.commissionPrice,
       totalValue: data.totalValue,
+      arrobaPrice: data.arrobaPrice,
+      headPrice: data.headPrice,
+      kgPrice: data.kgPrice,
     });
   }
 
@@ -83,6 +92,9 @@ export class GetAnalyticalCattlePurchaseResponseDto {
       purchasePrice: NumberUtils.toLocaleString(this.purchasePrice, 2),
       commissionPrice: NumberUtils.toLocaleString(this.commissionPrice, 2),
       totalValue: NumberUtils.toLocaleString(this.totalValue, 2),
+      arrobaPrice: NumberUtils.toLocaleString(this.arrobaPrice, 2),
+      headPrice: NumberUtils.toLocaleString(this.headPrice, 2),
+      kgPrice: NumberUtils.toLocaleString(this.kgPrice, 2),
     };
   }
 }

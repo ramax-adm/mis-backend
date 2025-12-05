@@ -10,6 +10,10 @@ import {
 import { GetCattlePurchaseLastUpdatedAtResponseDto } from '../dtos/get-cattle-purchase-last-updated-at-response.dto';
 import { CattlePurchase } from '@/modules/purchases/entities/cattle-purchase.entity';
 import { GetAnalyticalCattlePurchaseResponseDto } from '../dtos/get-analytical-cattle-purchase-response.dto';
+import {
+  GetCattlePurchase,
+  GetCattlePurchaseRaw,
+} from '../types/get-cattle-purchase.type';
 
 @Injectable()
 export class CattlePurchaseService {
@@ -40,34 +44,87 @@ export class CattlePurchaseService {
     cattleClassification?: string;
     startDate?: Date;
     endDate?: Date;
-  }) {
-    const where: FindOptionsWhere<CattlePurchase> = { companyCode };
+  }): Promise<GetCattlePurchase[]> {
+    const qb = this.dataSource
+      .getRepository(CattlePurchase)
+      .createQueryBuilder('scp')
+      .select([
+        'scp',
+        `(scp.total_value / NULLIF(scp.cattle_quantity, 0)) AS head_price`,
+        `((scp.total_value / NULLIF(scp.cattle_quantity, 0)) / NULLIF(scp.cattle_weight_in_arroba, 0)) AS arroba_price`,
+        `(((scp.total_value / NULLIF(scp.cattle_quantity, 0)) / NULLIF(scp.cattle_weight_in_arroba, 0)) / 15) AS kg_price`,
+      ])
+      .where('scp.companyCode = :companyCode', { companyCode });
 
-    if (cattleOwnerName.length > 0) {
-      where.cattleOwnerName = ILike(`%${cattleOwnerName}%`);
+    // ---------------------------
+    // FILTROS DINÂMICOS
+    // ---------------------------
+    if (cattleOwnerName?.length) {
+      qb.andWhere('scp.cattleOwnerName ILIKE :owner', {
+        owner: `%${cattleOwnerName}%`,
+      });
     }
 
-    if (cattleAdvisorName.length > 0) {
-      where.cattleAdvisorName = ILike(`%${cattleAdvisorName}%`);
+    if (cattleAdvisorName?.length) {
+      qb.andWhere('scp.cattleAdvisorName ILIKE :advisor', {
+        advisor: `%${cattleAdvisorName}%`,
+      });
     }
-    if (cattleClassification.length > 0) {
-      where.cattleClassification = ILike(`%${cattleClassification}%`);
+
+    if (cattleClassification?.length) {
+      qb.andWhere('scp.cattleClassification ILIKE :classification', {
+        classification: `%${cattleClassification}%`,
+      });
     }
 
     if (startDate && endDate) {
-      where.slaughterDate = Between(startDate, endDate);
+      qb.andWhere('scp.slaughterDate BETWEEN :start AND :end', {
+        start: startDate,
+        end: endDate,
+      });
     } else if (startDate) {
-      where.slaughterDate = MoreThanOrEqual(startDate);
+      qb.andWhere('scp.slaughterDate >= :start', {
+        start: startDate,
+      });
     } else if (endDate) {
-      where.slaughterDate = LessThanOrEqual(endDate);
+      qb.andWhere('scp.slaughterDate <= :end', {
+        end: endDate,
+      });
     }
 
-    return await this.dataSource.manager.find<CattlePurchase>(CattlePurchase, {
-      where,
-      order: {
-        slaughterDate: 'ASC',
-      },
-    });
+    qb.orderBy('scp.slaughterDate', 'ASC');
+
+    // 👇 Mantém exatamente o mesmo retorno do find anterior
+    const result = await qb.getRawMany<GetCattlePurchaseRaw>();
+    console.log({ data: result[0] });
+
+    return result.map((i) => ({
+      id: i.scp_id,
+      sensattaId: i.scp_sensatta_id,
+      slaughterDate: i.scp_slaughter_date,
+      balanceWeightInKg: i.scp_balance_weight_in_kg,
+      cattleAdvisorCode: i.scp_cattle_advisor_code,
+      cattleAdvisorName: i.scp_cattle_advisor_name,
+      cattleClassification: i.scp_cattle_classification,
+      cattleOwnerCode: i.scp_cattle_owner_code,
+      cattleOwnerName: i.scp_cattle_owner_name,
+      cattleQuantity: i.scp_cattle_quantity,
+      cattleWeightInArroba: i.scp_cattle_weight_in_arroba,
+      commissionPrice: i.scp_commission_price,
+      companyCode: i.scp_company_code,
+      companyName: i.scp_company_name,
+      createdAt: i.scp_created_at,
+      freightPrice: i.scp_freight_price,
+      funruralPrice: i.scp_funrural_price,
+      arrobaPrice: i.arroba_price,
+      headPrice: i.head_price,
+      kgPrice: i.kg_price,
+      paymentTerm: i.scp_payment_term,
+      purchaseLiquidPrice: i.scp_purchase_liquid_price,
+      purchasePrice: i.scp_purchase_price,
+      totalValue: i.scp_total_value,
+      weighingType: i.scp_weighing_type,
+    }));
   }
 
   async getAnalyticalData({
@@ -142,6 +199,10 @@ export class CattlePurchaseService {
         purchasePrice: number;
         commissionPrice: number;
         totalValue: number;
+        arrobaPrice: number;
+        headPrice: number;
+        kgPrice: number;
+        count: number;
       }
     >();
 
@@ -156,27 +217,20 @@ export class CattlePurchaseService {
         cattleAdvisorCode: item.cattleAdvisorCode,
         cattleAdvisorName: item.cattleAdvisorName,
         weightInArroba: item.cattleWeightInArroba * item.cattleQuantity,
-
         cattleQuantity: item.cattleQuantity,
         freightPrice: item.freightPrice,
         purchasePrice: item.purchasePrice,
         commissionPrice: item.commissionPrice,
         totalValue: item.totalValue,
+        arrobaPrice: item.arrobaPrice,
+        headPrice: item.headPrice,
+        kgPrice: item.kgPrice,
+        count: 1,
       };
 
       if (!map.has(key)) {
         map.set(key, group);
         continue;
-      }
-
-      if (item.sensattaId === '14696') {
-        console.log('oc', item.sensattaId);
-        console.log('weightInArroba', item.cattleWeightInArroba);
-        console.log(
-          'weightInArroba formula',
-          item.cattleWeightInArroba * item.cattleQuantity,
-        );
-        console.log('cattleQuantity', item.cattleQuantity);
       }
 
       const previousMap = map.get(key)!;
@@ -187,6 +241,10 @@ export class CattlePurchaseService {
       previousMap.purchasePrice += item.purchasePrice;
       previousMap.commissionPrice += item.commissionPrice;
       previousMap.totalValue += item.totalValue;
+      previousMap.arrobaPrice += item.arrobaPrice;
+      previousMap.headPrice += item.headPrice;
+      previousMap.kgPrice += item.kgPrice;
+      previousMap.count += 1;
     }
     return Object.fromEntries(map);
   }

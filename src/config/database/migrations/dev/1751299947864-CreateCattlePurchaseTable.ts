@@ -19,7 +19,7 @@ export class CreateCattlePurchaseTable1751299947864
             "cattle_advisor_name" character varying, 
             "cattle_quantity" integer, 
             "cattle_classification" character varying, 
-            "cattle_weight_in_arroba" character varying, 
+            "cattle_weight_in_arroba" real, 
             "payment_term" integer, 
             "freight_price" real, 
             "purchase_price" real, 

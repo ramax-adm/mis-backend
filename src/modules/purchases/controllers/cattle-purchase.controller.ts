@@ -131,6 +131,10 @@ export class CattlePurchaseController {
         purchaseValue: acc.purchaseValue + item.purchasePrice,
         commissionValue: acc.commissionValue + item.commissionPrice,
         finalValue: acc.finalValue + item.totalValue,
+        arrobaPrice: acc.arrobaPrice + item.arrobaPrice,
+        headPrice: acc.headPrice + item.headPrice,
+        kgPrice: acc.kgPrice + item.kgPrice,
+        count: acc.count + 1,
       }),
       {
         cattleQuantity: 0,
@@ -139,18 +143,32 @@ export class CattlePurchaseController {
         purchaseValue: 0,
         commissionValue: 0,
         finalValue: 0,
+        arrobaPrice: 0,
+        headPrice: 0,
+        kgPrice: 0,
+        count: 0,
       },
     );
+
+    // media
+    totals.headPrice = totals.headPrice / totals.count;
+    totals.arrobaPrice = totals.arrobaPrice / totals.count;
+    totals.kgPrice = totals.kgPrice / totals.count;
+
     return {
       parsedData: response.map((item) => item.toJSON()),
       originalData: response.map((item) => item),
       totals: {
         cattleQuantity: NumberUtils.toLocaleString(totals.cattleQuantity),
         weightInArroba: NumberUtils.toLocaleString(totals.weightInArroba),
-        freightValue: NumberUtils.toLocaleString(totals.freightValue, 2),
-        purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue, 2),
-        commissionValue: NumberUtils.toLocaleString(totals.commissionValue, 2),
-        finalValue: NumberUtils.toLocaleString(totals.finalValue, 2),
+        freightValue: NumberUtils.toLocaleString(totals.freightValue),
+        purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue),
+        commissionValue: NumberUtils.toLocaleString(totals.commissionValue),
+        finalValue: NumberUtils.toLocaleString(totals.finalValue),
+        arrobaPrice: NumberUtils.toLocaleString(totals.arrobaPrice, 2),
+        headPrice: NumberUtils.toLocaleString(totals.headPrice, 2),
+        kgPrice: NumberUtils.toLocaleString(totals.kgPrice, 2),
+        count: totals.count,
       },
     };
   }
@@ -182,6 +200,10 @@ export class CattlePurchaseController {
       purchaseValue: 0,
       commissionValue: 0,
       finalValue: 0,
+      arrobaPrice: 0,
+      headPrice: 0,
+      kgPrice: 0,
+      count: 0,
     };
 
     for (const value of Object.values(response)) {
@@ -191,17 +213,30 @@ export class CattlePurchaseController {
       totals.purchaseValue += value.purchasePrice;
       totals.commissionValue += value.commissionPrice;
       totals.finalValue += value.totalValue;
+      totals.arrobaPrice += value.arrobaPrice;
+      totals.headPrice += value.headPrice;
+      totals.kgPrice += value.kgPrice;
+      totals.count += value.count;
     }
+
+    // media
+    totals.arrobaPrice = totals.arrobaPrice / totals.count;
+    totals.headPrice = totals.headPrice / totals.count;
+    totals.kgPrice = totals.kgPrice / totals.count;
 
     return {
       data: response,
       totals: {
         cattleQuantity: NumberUtils.toLocaleString(totals.cattleQuantity),
         weightInArroba: NumberUtils.toLocaleString(totals.weightInArroba),
-        freightValue: NumberUtils.toLocaleString(totals.freightValue, 2),
-        purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue, 2),
-        commissionValue: NumberUtils.toLocaleString(totals.commissionValue, 2),
-        finalValue: NumberUtils.toLocaleString(totals.finalValue, 2),
+        freightValue: NumberUtils.toLocaleString(totals.freightValue),
+        purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue),
+        commissionValue: NumberUtils.toLocaleString(totals.commissionValue),
+        finalValue: NumberUtils.toLocaleString(totals.finalValue),
+        arrobaPrice: NumberUtils.toLocaleString(totals.arrobaPrice, 2),
+        headPrice: NumberUtils.toLocaleString(totals.headPrice, 2),
+        kgPrice: NumberUtils.toLocaleString(totals.kgPrice, 2),
+        count: totals.count,
       },
     };
   }

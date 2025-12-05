@@ -25,20 +25,12 @@ import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 @Controller('business-audit/sales')
 export class BusinessAuditSalesController {
   constructor(
-    private readonly dataSource: DataSource,
     private readonly businessAuditSalesService: BusinessAuditSalesService,
   ) {}
 
   @Get('filters/clients')
   @HttpCode(HttpStatus.OK)
-  async getClients(
-    @Query('startDate') startDate?: Date,
-    @Query('endDate') endDate?: Date,
-    @Query('priceConsideration')
-    priceConsideration?: OrderPriceConsiderationEnum,
-    @Query('market') market?: MarketEnum,
-    @Query('companyCodes') companyCodes?: string,
-  ) {
+  async getClients() {
     const results = await this.businessAuditSalesService.getClients();
     return results.map((i) => ({
       key: i.so_client_code,
@@ -49,14 +41,7 @@ export class BusinessAuditSalesController {
 
   @Get('filters/sales-representatives')
   @HttpCode(HttpStatus.OK)
-  async getSalesRepresentatives(
-    @Query('startDate') startDate?: Date,
-    @Query('endDate') endDate?: Date,
-    @Query('priceConsideration')
-    priceConsideration?: OrderPriceConsiderationEnum,
-    @Query('market') market?: MarketEnum,
-    @Query('companyCodes') companyCodes?: string,
-  ) {
+  async getSalesRepresentatives() {
     // dos dados que ja foram filtrados, pego apenas o set de clientes
     const results = await this.businessAuditSalesService.getRepresentatives();
     return results.map((i) => ({
@@ -74,6 +59,7 @@ export class BusinessAuditSalesController {
     @Query('priceConsideration')
     priceConsideration?: OrderPriceConsiderationEnum,
     @Query('market') market?: MarketEnum,
+    @Query('nfNumber') nfNumber?: string,
     @Query('companyCodes') companyCodes?: string,
     @Query('clientCodes') clientCodes?: string,
     @Query('salesRepresentativeCodes') salesRepresentativeCodes?: string,
@@ -83,6 +69,7 @@ export class BusinessAuditSalesController {
       endDate,
       priceConsideration,
       market,
+      nfNumber,
       companyCodes: companyCodes?.split(','),
       clientCodes: clientCodes?.split(','),
       salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
