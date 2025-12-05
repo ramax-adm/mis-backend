@@ -27,7 +27,7 @@ export class BusinessAuditOverviewService {
 
   // billings by month
   // billings totals
-  private async getBillingsgByMonth(): Promise<ByMonthAgg> {
+  private async getBillingsByMonth(): Promise<ByMonthAgg> {
     const qb = this.datasource
       .getRepository(Invoice)
       .createQueryBuilder('si')
