@@ -234,6 +234,31 @@ export class DateUtils {
     }
   }
 
+  static formatFromIso(
+    value: Date,
+    dateFormat: DateFormat = 'date',
+    timeZone?: string,
+  ): string | null {
+    if (!value) return null;
+    if (!(value instanceof Date)) return null;
+
+    const date = new Date(value.toISOString().split('T')[0]);
+    switch (dateFormat) {
+      case 'date':
+        return formatDate(date, DateFormats.DATE_BR, { timeZone });
+      case 'date-minified':
+        return formatDate(date, DateFormats.DATE_BR_MINIFIED, { timeZone });
+      case 'international-date':
+        return formatDate(date, DateFormats.DATE_US, { timeZone });
+      case 'datetime':
+        return formatDate(date, DateFormats.DATETIME_BR, { timeZone });
+      case 'monthly-br-date':
+        return formatDate(date, DateFormats.MONTHLY_DATE, { timeZone });
+      default:
+        throw new Error('Formato de data inválido.');
+    }
+  }
+
   static toDate(date?: Date | string): Date {
     if (!date) return new Date();
 

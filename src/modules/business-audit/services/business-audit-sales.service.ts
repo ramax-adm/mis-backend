@@ -26,6 +26,7 @@ export class BusinessAuditSalesService {
     endDate,
     priceConsideration,
     market,
+    nfNumber,
     companyCodes,
     clientCodes,
     salesRepresentativeCodes,
@@ -34,19 +35,23 @@ export class BusinessAuditSalesService {
     endDate?: Date;
     priceConsideration?: OrderPriceConsiderationEnum;
     market?: MarketEnum;
+    nfNumber?: string;
     companyCodes?: string[];
     clientCodes?: string[];
     salesRepresentativeCodes?: string[];
   }) {
+    const startTime = new Date().getTime();
     const orderLines = await this.getOrdersLines({
       startDate,
       endDate,
       priceConsideration,
       market,
+      nfNumber,
       companyCodes,
       clientCodes,
       salesRepresentativeCodes,
     });
+    console.log(`orderLines time ${new Date().getTime() - startTime}ms`);
 
     // const orderLines = orderLinesInDatabase.filter((o) =>
     //   CONSIDERED_CFOPS.includes(o.cfopCode),
@@ -74,6 +79,7 @@ export class BusinessAuditSalesService {
           date: orderLine.billingDate,
           nfNumber: orderLine.nfNumber,
           orderNumber: orderLine.orderId,
+          orderCategory: orderLine.category,
           cfopCode: orderLine.cfopCode,
           cfopDescription: orderLine.cfopDescription,
           clientCode: orderLine.clientCode,
@@ -208,6 +214,8 @@ export class BusinessAuditSalesService {
       }
     }
 
+    console.log(`agg time ${new Date().getTime() - startTime}ms`);
+
     // Totals p/ agrupamento
     const invoiceTotals = this.getSalesAuditTotals(salesByInvoice);
     const productTotals = this.getSalesAuditTotals(salesByProduct);
@@ -215,6 +223,8 @@ export class BusinessAuditSalesService {
     const representativeTotals = this.getSalesAuditTotals(
       salesByRepresentative,
     );
+
+    console.log(`totals time ${new Date().getTime() - startTime}ms`);
 
     return new GetBusinessAuditSalesDataResponseDto({
       salesByInvoice: {
@@ -336,6 +346,8 @@ export class BusinessAuditSalesService {
     }
 
     const result = await qb.getRawMany();
+    console.log('get raw many');
+
     const data: GetOrderLineItem[] = [];
 
     for (const item of result) {
@@ -514,9 +526,14 @@ export class BusinessAuditSalesService {
         totalFatValue: 0,
         totalTableValue: 0,
         totalDiff: 0,
+        totalDiffPercent: 0,
         totalAdditionValue: 0,
         totalDiscountValue: 0,
       },
+    );
+
+    totals.totalDiffPercent = NumberUtils.nb4(
+      totals.totalDiff / (totals.totalTableValue || 1),
     );
 
     // calculo de percentuais
