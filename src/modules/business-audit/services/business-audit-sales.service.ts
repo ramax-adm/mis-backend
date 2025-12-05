@@ -279,6 +279,11 @@ export class BusinessAuditSalesService {
         'sc.sensatta_code = so.companyCode',
       )
       .leftJoinAndSelect(
+        'sensatta_invoices',
+        'sinv',
+        'sinv.nf_id = so.nf_id AND sinv.product_code = so.productCode',
+      )
+      .leftJoinAndSelect(
         (subQuery) =>
           subQuery
             .select('*')
@@ -347,6 +352,7 @@ export class BusinessAuditSalesService {
 
     const result = await qb.getRawMany();
     console.log('get raw many');
+    console.log('result', result[0]);
 
     const data: GetOrderLineItem[] = [];
 
@@ -373,13 +379,13 @@ export class BusinessAuditSalesService {
         productCode: item.so_product_code,
         productName: item.so_product_name,
         quantity: item.so_quantity,
-        weightInKg: item.so_weight_in_kg,
+        weightInKg: item.sinv_weight_in_kg,
         currency: item.so_currency,
         costValue: item.so_cost_value,
         discountPromotionValue: item.so_discount_promotion_value,
         saleUnitValue: item.so_sale_unit_value,
         referenceTableUnitValue: item.so_reference_table_unit_value,
-        totalValue: item.so_total_value,
+        totalValue: item.sinv_total_price,
         receivableTitleValue: item.so_receivable_title_value,
         referenceTableId: item.so_reference_table_id,
         referenceTableDescription: item.so_reference_table_description,

@@ -51,6 +51,7 @@ export class BusinessAuditSalesReportService {
       ['Q1', '$ Tabela'],
       ['R1', '$ Dif'],
       ['S1', '% Dif'],
+      ['T1', 'KGs'],
     ];
 
     return headers;
@@ -123,6 +124,7 @@ export class BusinessAuditSalesReportService {
         [`Q${row(index)}`, NumberUtils.nb2(item.totalTableValue)],
         [`R${row(index)}`, NumberUtils.nb2(item.totalDiff)],
         [`S${row(index)}`, NumberUtils.nb4(item.totalDiffPercent) || 0],
+        [`T${row(index)}`, NumberUtils.nb4(item.totalKg)],
       );
     });
 
@@ -166,10 +168,9 @@ export class BusinessAuditSalesReportService {
         [`Y${row(index)}`, NumberUtils.nb2(item.totalValue ?? 0)],
         [`Z${row(index)}`, NumberUtils.nb2(totalTableValue)],
         [`AA${row(index)}`, NumberUtils.nb2(item.totalValue - totalTableValue)],
-
         [
           `AB${row(index)}`,
-          NumberUtils.nb4(1 - item.totalValue / (totalTableValue || 1)),
+          NumberUtils.nb4(item.totalValue / (totalTableValue || 1) - 1),
         ],
       );
     });
