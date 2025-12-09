@@ -77,7 +77,8 @@ export class InventoryService {
       )
       .where('1=1')
       .andWhere('si.company_code = :companyCode', { companyCode })
-      .andWhere('sii.inventory_id = :inventoryId', { inventoryId });
+      .andWhere('sii.inventory_id = :inventoryId', { inventoryId })
+      .orderBy('siit.date', 'ASC');
 
     if (boxNumber) {
       qb.andWhere('sii.box_number ILIKE :boxNumber', {
@@ -165,9 +166,16 @@ export class InventoryService {
 
         // Cria chave incremental event_N
         const eventKey = `event${Object.keys(aggregatedItem.events).length + 1}`;
+
+        if (item.boxNumber == '00011011310092758502') {
+          console.log({
+            item,
+            date: DateUtils.formatFromIso(item.traceabilityDate, 'date'),
+          });
+        }
         const eventValue = [
           item.status ?? '',
-          DateUtils.format(item.traceabilityDate, 'date') ?? '',
+          DateUtils.formatFromIso(item.traceabilityDate, 'date') ?? '',
           ...lines,
         ]
           .filter((v) => !!v)
