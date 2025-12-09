@@ -13,6 +13,7 @@ import { GetBusinessSalesOrderLinesResponseDto } from '../dtos/response/get-busi
 import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { GetOrderLineItem } from '../types/get-order-line.type';
+import { TempHistoricoRefaturamento } from '@/core/entities/temp/temp-historico-refaturamento.entity';
 
 @Injectable()
 export class BusinessAuditSalesReportService {
@@ -21,15 +22,7 @@ export class BusinessAuditSalesReportService {
     private readonly excelReader: ExcelReaderService,
   ) {}
 
-  private getMarket(market: string) {
-    const marketMap = {
-      [MarketEnum.ME]: 'ME',
-      [MarketEnum.MI]: 'MI',
-    };
-
-    return marketMap[market];
-  }
-
+  // GET HEADERS
   getSalesByInvoiceHeaders(): [string, any][] {
     const headers: [string, any][] = [
       ['A1', 'Data Faturamento'],
@@ -92,6 +85,54 @@ export class BusinessAuditSalesReportService {
     return headers;
   }
 
+  /**
+   * VENDA ORIGINAL																					  						
+     Emp	Dt	NF	Cat	Cliente	Produto	KG 1 $ Venda 	 $ Tab 	 $ Fat 	 $tab 	 $ Desc 
+     
+     REFATURAMENTO
+     Dt	NF	Cat	Cliente	KG	 $ Venda 	 $ Fat 	 $tab 	 $ Desc 	 	
+     
+     DIFERENÇAS
+     Dias 	 KG 	 $ Venda 	 Fat 	% Fat	Motivo	OBS
+   */
+
+  getReinvoicingHistoryHeaders() {
+    const headers: [string, any][] = [
+      ['A1', 'Venda Original'],
+      ['A2', 'Emp'],
+      ['B2', 'Dt.'],
+      ['C2', 'NF'],
+      ['D2', 'Categoria'],
+      ['E2', 'Produto'],
+      ['F2', 'KG'],
+      ['G2', '$ Venda Un.'],
+      ['H2', '$ Tab Un.'],
+      ['I2', '$ Fat'],
+      ['J2', '$ Tab'],
+      ['K1', 'Refaturamento'],
+      ['K2', 'Dt.'],
+      ['L2', 'NF'],
+      ['M2', 'Categoria'],
+      ['N2', 'Cliente'],
+      ['O2', 'KG'],
+      ['P2', '$ Venda'],
+      ['Q2', '$ Fat'],
+      ['R2', '$ Tab'],
+      ['S2', '$ Desc'],
+      ['T1', 'Diferenças'],
+      ['T2', 'Dias'],
+      ['U2', 'KG'],
+      ['V2', '$ Venda'],
+      ['W2', '$ Fat'],
+      ['X2', '% Fat'],
+      ['Y2', 'Motivo'],
+      ['Z2', 'Obs'],
+    ];
+
+    return headers;
+  }
+
+  // GET VALUES
   getSalesByInvoiceValues(
     dto: GetBusinessAuditSalesDataResponseDto['salesByInvoice'],
   ): [string, any, NumFormats | undefined][] {
@@ -100,8 +141,6 @@ export class BusinessAuditSalesReportService {
     const row = (i: number) => i + 2;
 
     const data = Object.values(dto.data);
-
-    console.log('date', data[0].date);
 
     data.forEach((item, index) => {
       values.push(
@@ -130,6 +169,7 @@ export class BusinessAuditSalesReportService {
 
     return values;
   }
+
   getOrderLinesValues(
     dto: GetOrderLineItem[],
   ): [string, any, NumFormats | undefined][] {
@@ -140,6 +180,11 @@ export class BusinessAuditSalesReportService {
     dto.forEach((item, index) => {
       const totalTableValue =
         (item.referenceTableUnitValue || 0) * (item.weightInKg || 0);
+
+      const difPercent =
+        totalTableValue === 0
+          ? 0
+          : NumberUtils.nb4(item.totalValue / totalTableValue - 1);
       values.push(
         [`A${row(index)}`, DateUtils.formatFromIso(item.billingDate, 'date')],
         [`B${row(index)}`, item.companyCode],
@@ -168,16 +213,20 @@ export class BusinessAuditSalesReportService {
         [`Y${row(index)}`, NumberUtils.nb2(item.totalValue ?? 0)],
         [`Z${row(index)}`, NumberUtils.nb2(totalTableValue)],
         [`AA${row(index)}`, NumberUtils.nb2(item.totalValue - totalTableValue)],
-        [
-          `AB${row(index)}`,
-          NumberUtils.nb4(item.totalValue / (totalTableValue || 1) - 1),
-        ],
+        [`AB${row(index)}`, NumberUtils.nb4(difPercent)],
       );
     });
 
     return values;
   }
 
+  getReinvoicingHistoryValues() {
+    const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
+
+    const values = [];
+  }
+
+  // PROCESS REPORT
   async exportSalesByInvoice(dto: ExportBusinessAuditReportDto) {
     const {
       filters: {
@@ -253,5 +302,15 @@ export class BusinessAuditSalesReportService {
     });
 
     return await this.excelReader.toFile();
+  }
+
+  // AUX
+  private getMarket(market: string) {
+    const marketMap = {
+      [MarketEnum.ME]: 'ME',
+      [MarketEnum.MI]: 'MI',
+    };
+
+    return marketMap[market];
   }
 }

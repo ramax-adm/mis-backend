@@ -64,8 +64,8 @@ export class Invoice {
   @Column({ name: 'product_name', nullable: true })
   productName?: string;
 
-  @Column({ name: 'box_amount', type: 'int4', nullable: true })
-  boxAmount?: number;
+  @Column({ name: 'quantity', type: 'float4', nullable: true })
+  quantity?: number;
 
   @Column({ name: 'weight_in_kg', type: 'float4', nullable: true })
   weightInKg?: number;
