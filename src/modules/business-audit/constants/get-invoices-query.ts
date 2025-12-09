@@ -21,3 +21,15 @@ left join dev.sensatta_companies sc on sc.sensatta_code = si.company_code
 where 1=1
 and si.nf_type = 'AVULSA'
 `;
+
+type ReinvoicingHistory = {
+  companyCode;
+  date;
+  nfNumber;
+  category;
+  productCode;
+  productName;
+  weightInKg;
+  salePriceUnit;
+  tablePriceUnit;
+};

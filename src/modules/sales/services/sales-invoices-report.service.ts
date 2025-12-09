@@ -62,7 +62,7 @@ export class SalesInvoicesReportService {
         [`K${row(index)}`, item.clientName],
         [`L${row(index)}`, item.productCode],
         [`M${row(index)}`, item.productName],
-        [`N${row(index)}`, item.boxAmount],
+        [`N${row(index)}`, item.quantity],
         [`O${row(index)}`, item.weightInKg],
         [`P${row(index)}`, item.unitPrice],
         [`Q${row(index)}`, item.totalPrice],

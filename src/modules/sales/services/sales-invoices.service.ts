@@ -50,7 +50,7 @@ export class SalesInvoicesService {
       (acc, item) => ({
         quantity: acc.quantity,
         productQuantity: acc.productQuantity + 1,
-        boxAmount: NumberUtils.nb2(acc.boxAmount + item.boxAmount),
+        boxAmount: NumberUtils.nb2(acc.boxAmount + item.quantity),
         weightInKg: NumberUtils.nb2(acc.weightInKg + item.weightInKg),
         unitPrice: NumberUtils.nb2(acc.unitPrice + item.unitPrice),
         totalPrice: NumberUtils.nb2(acc.totalPrice + item.totalPrice),

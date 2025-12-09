@@ -15,6 +15,7 @@ import { OrderPriceConsiderationEnum } from '../enums/order-price-consideretion.
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { GetOrderLineItem } from '../types/get-order-line.type';
+import { TempHistoricoRefaturamento } from '@/core/entities/temp/temp-historico-refaturamento.entity';
 
 @Injectable()
 export class BusinessAuditSalesService {
@@ -416,7 +417,7 @@ export class BusinessAuditSalesService {
         payload.referenceTableUnitValue * payload.weightInKg,
       );
       const difValue = invoicingValue - tableValue;
-      const difPercent = NumberUtils.nb4(difValue / tableValue);
+      const difPercent = NumberUtils.nb4(difValue / (tableValue || 1));
 
       payload.invoicingValue = invoicingValue;
       payload.tableValue = tableValue;
@@ -503,6 +504,13 @@ export class BusinessAuditSalesService {
         'pt-br',
       ),
     );
+  }
+
+  async getReinvoicingHistory() {
+    return await this.datasource
+      .getRepository(TempHistoricoRefaturamento)
+      .createQueryBuilder()
+      .getMany();
   }
 
   // aux

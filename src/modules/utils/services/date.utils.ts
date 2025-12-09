@@ -237,23 +237,28 @@ export class DateUtils {
   static formatFromIso(
     value: Date,
     dateFormat: DateFormat = 'date',
-    timeZone?: string,
   ): string | null {
-    if (!value) return null;
-    if (!(value instanceof Date)) return null;
+    if (!value || !(value instanceof Date)) return null;
 
-    const date = new Date(value.toISOString().split('T')[0]);
+    // ✅ Extrai a data SEM fuso
+    const year = value.getFullYear();
+    const month = value.getMonth(); // 0-11
+    const day = value.getDate();
+
+    // ✅ Reconstrói a data como "data pura" local
+    const date = new Date(year, month, day);
+
     switch (dateFormat) {
       case 'date':
-        return formatDate(date, DateFormats.DATE_BR, { timeZone });
+        return formatDate(date, DateFormats.DATE_BR);
       case 'date-minified':
-        return formatDate(date, DateFormats.DATE_BR_MINIFIED, { timeZone });
+        return formatDate(date, DateFormats.DATE_BR_MINIFIED);
       case 'international-date':
-        return formatDate(date, DateFormats.DATE_US, { timeZone });
+        return formatDate(date, DateFormats.DATE_US);
       case 'datetime':
-        return formatDate(date, DateFormats.DATETIME_BR, { timeZone });
+        return formatDate(date, DateFormats.DATETIME_BR);
       case 'monthly-br-date':
-        return formatDate(date, DateFormats.MONTHLY_DATE, { timeZone });
+        return formatDate(date, DateFormats.MONTHLY_DATE);
       default:
         throw new Error('Formato de data inválido.');
     }
