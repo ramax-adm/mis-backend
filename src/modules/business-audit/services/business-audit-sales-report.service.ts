@@ -14,6 +14,7 @@ import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { GetOrderLineItem } from '../types/get-order-line.type';
 import { TempHistoricoRefaturamento } from '@/core/entities/temp/temp-historico-refaturamento.entity';
+import { GetReinvoicingHistoryItem } from '../types/get-reinvoicing-history.type';
 
 @Injectable()
 export class BusinessAuditSalesReportService {
@@ -119,6 +120,7 @@ export class BusinessAuditSalesReportService {
       ['Q2', '$ Fat'],
       ['R2', '$ Tab'],
       ['S2', '$ Desc'],
+
       ['T1', 'Diferenças'],
       ['T2', 'Dias'],
       ['U2', 'KG'],
@@ -220,10 +222,62 @@ export class BusinessAuditSalesReportService {
     return values;
   }
 
-  getReinvoicingHistoryValues() {
+  getReinvoicingHistoryValues(dto: GetReinvoicingHistoryItem[]) {
+    const values = [];
     const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
 
-    const values = [];
+    dto.forEach((item, index) => {
+      const formatedDate = DateUtils.formatFromIso(item.date, 'date');
+      const formatedReInvoicingDate = DateUtils.formatFromIso(
+        item.reInvoicingDate,
+        'date',
+      );
+
+      const fatDifPercent =
+        item.invoicingValue === 0
+          ? 0
+          : item.reInvoicingValue / item.invoicingValue;
+
+      const difInDays = DateUtils.getDifferenceInDays(
+        item.reInvoicingDate,
+        item.date,
+      );
+
+      values.push(
+        // VENDA ORIGINAL
+        [`A${row(index)}`, item.companyCode],
+        [`B${row(index)}`, formatedDate],
+        [`C${row(index)}`, item.nfNumber],
+        [`D${row(index)}`, item.category],
+        [`E${row(index)}`, item.productName],
+        [`F${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
+        [`G${row(index)}`, NumberUtils.nb2(item.saleUnitPrice ?? 0)],
+        [`H${row(index)}`, NumberUtils.nb2(item.tableUnitPrice ?? 0)],
+        [`I${row(index)}`, NumberUtils.nb2(item.invoicingValue ?? 0)],
+        [`J${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
+
+        // REFATURAMENTO
+        [`K${row(index)}`, formatedReInvoicingDate],
+        [`L${row(index)}`, item.reInvoicingNfNumber],
+        [`M${row(index)}`, item.reInvoicingCategory],
+        [`N${row(index)}`, item.reInvoicingClientName],
+        [`O${row(index)}`, NumberUtils.nb2(item.reInvoicingWeightInKg ?? 0)],
+        [`P${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+        [`R${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
+        [`S${row(index)}`, item.reInvoicingValue - item.invoicingValue],
+
+        // DIFERENÇAS
+        [`T${row(index)}`, difInDays],
+        [`U${row(index)}`, NumberUtils.nb2(item.reInvoicingWeightInKg ?? 0)],
+        [`V${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)], // unidade
+        [`W${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+        [`X${row(index)}`, NumberUtils.nb4(fatDifPercent ?? 0)],
+        [`Y${row(index)}`, item.occurrenceCause],
+      );
+    });
+
+    return values;
   }
 
   // PROCESS REPORT
@@ -267,12 +321,25 @@ export class BusinessAuditSalesReportService {
       salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
     });
 
-    // filtering
+    const reinvoicingHistoryData =
+      await this.businessAuditSalesService.getReinvoicingHistory({
+        startDate,
+        endDate,
+        companyCodes: companyCodes?.split(','),
+        market,
+        priceConsideration,
+        clientCodes: clientCodes?.split(','),
+        salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
+      });
+
     const worksheet = this.excelReader.addWorksheet(
       `Monitoramento - Vendas por NF`,
     );
     const orderLinesWorksheet = this.excelReader.addWorksheet(
       `Monitoramento - Itens NF`,
+    );
+    const reinvoicingHistoryWorksheet = this.excelReader.addWorksheet(
+      `Monitoramento - Fat x Refat`,
     );
 
     const salesByInvoiceHeaders = this.getSalesByInvoiceHeaders();
@@ -298,6 +365,20 @@ export class BusinessAuditSalesReportService {
       this.excelReader.addData(orderLinesWorksheet, cell, value);
       if (numFmt) {
         this.excelReader.addNumFmt(orderLinesWorksheet, cell, numFmt);
+      }
+    });
+
+    const reinvoicingHistoryHeaders = this.getReinvoicingHistoryHeaders();
+    reinvoicingHistoryHeaders.forEach(([cell, value]) => {
+      this.excelReader.addData(reinvoicingHistoryWorksheet, cell, value);
+    });
+    const reinvoicingHistoryValues = this.getReinvoicingHistoryValues(
+      reinvoicingHistoryData,
+    );
+    reinvoicingHistoryValues.forEach(([cell, value, numFmt]) => {
+      this.excelReader.addData(reinvoicingHistoryWorksheet, cell, value);
+      if (numFmt) {
+        this.excelReader.addNumFmt(reinvoicingHistoryWorksheet, cell, numFmt);
       }
     });
 

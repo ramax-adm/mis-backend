@@ -5,8 +5,14 @@ export class TempHistoricoRefaturamento {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'CODIGO_EMPRESA', nullable: true })
+  codigoEmpresa?: string;
+
   @Column({ name: 'PEDIDO_FATURAMENTO', nullable: true })
   pedidoFaturamento?: string;
+
+  @Column({ name: 'ID_NF_FATURAMENTO', nullable: true })
+  idNfFaturamento?: string;
 
   @Column({ name: 'NF_FATURAMENTO', nullable: true })
   nfFaturamento?: string;
@@ -22,6 +28,9 @@ export class TempHistoricoRefaturamento {
 
   @Column({ name: 'PEDIDO_REFATURAMENTO', nullable: true })
   pedidoRefaturamento?: string;
+
+  @Column({ name: 'ID_NF_REFATURAMENTO', nullable: true })
+  idNfRefaturamento?: string;
 
   @Column({ name: 'NF_REFATURAMENTO', nullable: true })
   nfRefaturamento?: string;
