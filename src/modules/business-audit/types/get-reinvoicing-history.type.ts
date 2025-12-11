@@ -68,7 +68,9 @@ export interface GetReinvoicingHistoryItemRaw {
   table_value_reinvoicing?: number;
 
   // -------- Ocorrências (subquery T)
+  occurrence_number: string | null;
   occurrence_cause: string | null;
+  return_type: string | null;
 }
 
 // ======================================================
@@ -102,6 +104,8 @@ export interface GetReinvoicingHistoryItem {
   difSaleUnitPrice: number;
   difValue: number;
   difValuePercent: number;
+  occurrenceNumber: string;
   occurrenceCause: string;
+  returnType: string;
   observation: string;
 }

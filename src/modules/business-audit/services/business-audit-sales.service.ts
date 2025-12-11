@@ -575,6 +575,8 @@ export class BusinessAuditSalesService {
         // =====================================================
         // -------- Ocorrências (subquery T)
         // =====================================================
+        '"T".occurrence_number AS "occurrence_number"',
+        '"T".return_type AS "return_type"',
         '"T".occurrence_cause AS "occurrence_cause"',
       ])
       // ===========================
@@ -607,7 +609,12 @@ export class BusinessAuditSalesService {
         'si2',
         `si2.nf_id = thr."ID_NF_REFATURAMENTO"
          AND si.product_code = si2.product_code`,
-      );
+      )
+      .where('1=1')
+      .andWhere('thr."NF_REFATURAMENTO" is not null ')
+      .orderBy('si.date', 'ASC')
+      .addOrderBy('si.nf_number', 'ASC')
+      .addOrderBy('si.product_code', 'ASC');
 
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
@@ -655,6 +662,7 @@ export class BusinessAuditSalesService {
     const history = await qb.getRawMany<GetReinvoicingHistoryItemRaw>();
     const response: GetReinvoicingHistoryItem[] = [];
 
+    console.log(qb.getSql());
     console.log('history', history[0]);
     console.log('history length', history.length);
 
@@ -704,7 +712,9 @@ export class BusinessAuditSalesService {
         difValue,
         difValuePercent,
 
+        occurrenceNumber: row.occurrence_number,
         occurrenceCause: row.occurrence_cause,
+        returnType: row.return_type,
         observation: '',
       });
     }
