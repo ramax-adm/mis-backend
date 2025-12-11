@@ -16,6 +16,13 @@ import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { GetOrderLineItem } from '../types/get-order-line.type';
 import { TempHistoricoRefaturamento } from '@/core/entities/temp/temp-historico-refaturamento.entity';
+import { Invoice } from '@/modules/sales/entities/invoice.entity';
+import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
+import {
+  GetReinvoicingHistoryItem,
+  GetReinvoicingHistoryItemRaw,
+} from '../types/get-reinvoicing-history.type';
+import { DateUtils } from '@/modules/utils/services/date.utils';
 
 @Injectable()
 export class BusinessAuditSalesService {
@@ -506,11 +513,203 @@ export class BusinessAuditSalesService {
     );
   }
 
-  async getReinvoicingHistory() {
-    return await this.datasource
+  async getReinvoicingHistory({
+    startDate,
+    endDate,
+    priceConsideration,
+    market,
+    nfNumber,
+    companyCodes,
+    clientCodes,
+    salesRepresentativeCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    priceConsideration?: OrderPriceConsiderationEnum;
+    market?: MarketEnum;
+    nfNumber?: string;
+    companyCodes?: string[];
+    clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
+  }): Promise<GetReinvoicingHistoryItem[]> {
+    const qb = this.datasource
       .getRepository(TempHistoricoRefaturamento)
-      .createQueryBuilder()
-      .getMany();
+      .createQueryBuilder('thr')
+      .select([
+        // =====================================================
+        // -------- TempHistoricoRefaturamento (thr)
+        // =====================================================
+        'thr.CODIGO_EMPRESA AS "CODIGO_EMPRESA"',
+        'thr."BO" AS "BO"',
+        'thr."ID_NF_FATURAMENTO" AS "ID_NF_FATURAMENTO"',
+        'thr."ID_NF_REFATURAMENTO" AS "ID_NF_REFATURAMENTO"',
+
+        // =====================================================
+        // -------- Sensatta Invoices (si)
+        // =====================================================
+        'si.date AS "date"',
+        'si.nf_number AS "nf_number"',
+        'si.order_category AS "category"',
+        'si.client_code AS "client_code"',
+        'si.client_name AS "client_name"',
+        'si.product_code AS "product_code"',
+        'si.product_name AS "product_name"',
+        'si.weight_in_kg AS "weight_in_kg"',
+        'si.unit_price AS "sale_unit_price"',
+        //'si.table_unit_price AS "table_unit_price"',
+        'si.total_price AS "invoicing_value"',
+        //'si.table_value AS "table_value"',
+
+        // =====================================================
+        // -------- Sensatta Invoices Refaturamento (si2)
+        // =====================================================
+        'si2.date AS "date_reinvoicing"',
+        'si2.nf_number AS "nf_number_reinvoicing"',
+        'si2.order_category AS "category_reinvoicing"',
+        'si2.client_code AS "client_code_reinvoicing"',
+        'si2.client_name AS "client_name_reinvoicing"',
+        'si2.weight_in_kg AS "weight_in_kg_reinvoicing"',
+        'si2.total_price AS "invoicing_value_reinvoicing"',
+        //'si2.table_value AS "table_value_reinvoicing"',
+
+        // =====================================================
+        // -------- Ocorrências (subquery T)
+        // =====================================================
+        '"T".occurrence_cause AS "occurrence_cause"',
+      ])
+      // ===========================
+      // SUBQUERY OCORRÊNCIAS
+      // ===========================
+      .leftJoin(
+        (subQ) =>
+          subQ
+            .select([
+              'sro.occurrence_number AS occurrence_number',
+              'sro.occurrence_cause AS occurrence_cause',
+              'sro.return_type AS return_type',
+            ])
+            .from(ReturnOccurrence, 'sro')
+            .groupBy('sro.occurrence_number')
+            .addGroupBy('sro.occurrence_cause')
+            .addGroupBy('sro.return_type'),
+        'T',
+        '"T".occurrence_number = thr."BO"',
+      )
+      // ===========================
+      // FATURAMENTO
+      // ===========================
+      .leftJoin(Invoice, 'si', 'si.nf_id = thr."ID_NF_FATURAMENTO"')
+      // ===========================
+      // REFATURAMENTO
+      // ===========================
+      .leftJoin(
+        Invoice,
+        'si2',
+        `si2.nf_id = thr."ID_NF_REFATURAMENTO"
+         AND si.product_code = si2.product_code`,
+      );
+
+    if (startDate) {
+      qb.andWhere('si.date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('si.date <= :endDate', { endDate });
+    }
+    if (clientCodes) {
+      qb.andWhere('si.client_code IN (:...clientCodes)', { clientCodes });
+    }
+    // if (salesRepresentativeCodes) {
+    //   qb.andWhere(
+    //     'si.sales_representative_code IN (:...salesRepresentativeCodes)',
+    //     {
+    //       salesRepresentativeCodes,
+    //     },
+    //   );
+    // }
+    if (nfNumber) {
+      qb.andWhere('thr."NF_FATURAMENTO" = :nfNumber', { nfNumber });
+    }
+    // if (market) {
+    //   qb.andWhere('si.market = :market', { market });
+    // }
+    if (companyCodes) {
+      qb.andWhere('thr."CODIGO_EMPRESA" IN (:...companyCodes)', {
+        companyCodes,
+      });
+    }
+
+    // const [history, orderLines] = await Promise.all([
+    //   qb.getRawMany<GetReinvoicingHistoryItemRaw>(),
+    //   this.getOrdersLines({
+    //     startDate,
+    //     endDate,
+    //     priceConsideration,
+    //     market,
+    //     nfNumber,
+    //     companyCodes,
+    //     clientCodes,
+    //     salesRepresentativeCodes,
+    //   }),
+    // ]);
+
+    const history = await qb.getRawMany<GetReinvoicingHistoryItemRaw>();
+    const response: GetReinvoicingHistoryItem[] = [];
+
+    console.log('history', history[0]);
+    console.log('history length', history.length);
+
+    for (const row of history) {
+      const difValue = row.invoicing_value_reinvoicing - row.invoicing_value;
+      const difWeightInKg = row.weight_in_kg_reinvoicing - row.weight_in_kg;
+      const difSaleUnitPrice = row.sale_unit_price
+        ? row.invoicing_value_reinvoicing / row.weight_in_kg_reinvoicing -
+          row.invoicing_value / row.weight_in_kg
+        : 0;
+
+      const difDays = DateUtils.getDifferenceInDays(
+        row.date,
+        row.date_reinvoicing,
+      );
+      const difValuePercent =
+        row.invoicing_value === 0 ? 0 : (difValue / row.invoicing_value) * 100;
+
+      response.push({
+        companyCode: row.CODIGO_EMPRESA,
+        date: row.date,
+        nfNumber: row.nf_number,
+        category: row.category,
+        clientCode: row.client_code,
+        clientName: row.client_name,
+        productCode: row.product_code,
+        productName: row.product_name,
+        weightInKg: row.weight_in_kg,
+        saleUnitPrice: row.sale_unit_price,
+        tableUnitPrice: row.table_unit_price,
+        invoicingValue: row.invoicing_value,
+        tableValue: row.table_value,
+
+        reInvoicingDate: row.date_reinvoicing,
+        reInvoicingNfNumber: row.nf_number_reinvoicing,
+        reInvoicingCategory: row.category_reinvoicing,
+        reInvoicingClientCode: row.client_code_reinvoicing,
+        reInvoicingClientName: row.client_name_reinvoicing,
+        reInvoicingWeightInKg: row.weight_in_kg_reinvoicing,
+        reInvoicingValue: row.invoicing_value_reinvoicing,
+        reInvoicingTableValue: row.table_value_reinvoicing,
+
+        reInvoicingDif: difValue,
+        difDays,
+        difWeightInKg,
+        difSaleUnitPrice,
+        difValue,
+        difValuePercent,
+
+        occurrenceCause: row.occurrence_cause,
+        observation: '',
+      });
+    }
+
+    return response;
   }
 
   // aux
@@ -546,9 +745,10 @@ export class BusinessAuditSalesService {
       },
     );
 
-    totals.totalDiffPercent = NumberUtils.nb4(
-      totals.totalDiff / (totals.totalTableValue || 1),
-    );
+    totals.totalDiffPercent =
+      totals.totalTableValue === 0
+        ? 0
+        : NumberUtils.nb4(totals.totalDiff / totals.totalTableValue);
 
     // calculo de percentuais
     map.forEach((p) => {
@@ -562,9 +762,10 @@ export class BusinessAuditSalesService {
         );
       }
 
-      p.totalDiffPercent = NumberUtils.nb4(
-        p.totalDiff / (p.totalTableValue ?? 0),
-      );
+      p.totalDiffPercent =
+        p.totalTableValue === 0
+          ? 0
+          : NumberUtils.nb4(p.totalDiff / p.totalTableValue);
 
       p.percentValue = totals.totalFatValue
         ? p.totalFatValue / totals.totalFatValue
