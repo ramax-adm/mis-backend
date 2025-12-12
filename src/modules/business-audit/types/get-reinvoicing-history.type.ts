@@ -64,6 +64,7 @@ export interface GetReinvoicingHistoryItemRaw {
   client_code_reinvoicing: string;
   client_name_reinvoicing: string;
   weight_in_kg_reinvoicing: number;
+  unit_price_reinvoicing: number;
   invoicing_value_reinvoicing: number;
   table_value_reinvoicing?: number;
 
@@ -96,6 +97,7 @@ export interface GetReinvoicingHistoryItem {
   reInvoicingClientCode: string;
   reInvoicingClientName: string;
   reInvoicingWeightInKg: number;
+  reInvoicingUnitPrice: number;
   reInvoicingValue: number;
   reInvoicingTableValue: number;
   reInvoicingDif: number;

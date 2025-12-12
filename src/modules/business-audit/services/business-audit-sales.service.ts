@@ -556,9 +556,9 @@ export class BusinessAuditSalesService {
         'si.product_name AS "product_name"',
         'si.weight_in_kg AS "weight_in_kg"',
         'si.unit_price AS "sale_unit_price"',
-        //'si.table_unit_price AS "table_unit_price"',
+        'so.reference_table_unit_value AS "table_unit_price"',
         'si.total_price AS "invoicing_value"',
-        //'si.table_value AS "table_value"',
+        'so.reference_table_unit_value * si.weight_in_kg AS "table_value"',
 
         // =====================================================
         // -------- Sensatta Invoices Refaturamento (si2)
@@ -569,8 +569,9 @@ export class BusinessAuditSalesService {
         'si2.client_code AS "client_code_reinvoicing"',
         'si2.client_name AS "client_name_reinvoicing"',
         'si2.weight_in_kg AS "weight_in_kg_reinvoicing"',
+        'si2.unit_price AS "unit_price_reinvoicing"',
         'si2.total_price AS "invoicing_value_reinvoicing"',
-        //'si2.table_value AS "table_value_reinvoicing"',
+        'so2.reference_table_unit_value * si2.weight_in_kg AS "table_value_reinvoicing"',
 
         // =====================================================
         // -------- Ocorrências (subquery T)
@@ -594,6 +595,7 @@ export class BusinessAuditSalesService {
             .groupBy('sro.occurrence_number')
             .addGroupBy('sro.occurrence_cause')
             .addGroupBy('sro.return_type'),
+
         'T',
         '"T".occurrence_number = thr."BO"',
       )
@@ -601,6 +603,11 @@ export class BusinessAuditSalesService {
       // FATURAMENTO
       // ===========================
       .leftJoin(Invoice, 'si', 'si.nf_id = thr."ID_NF_FATURAMENTO"')
+      .leftJoin(
+        OrderLine,
+        'so',
+        'so.nf_id = si.nf_id AND so.product_code = si.product_code',
+      )
       // ===========================
       // REFATURAMENTO
       // ===========================
@@ -609,6 +616,11 @@ export class BusinessAuditSalesService {
         'si2',
         `si2.nf_id = thr."ID_NF_REFATURAMENTO"
          AND si.product_code = si2.product_code`,
+      )
+      .leftJoin(
+        OrderLine,
+        'so2',
+        'so2.nf_id = si2.nf_id AND so2.product_code = si2.product_code',
       )
       .where('1=1')
       .andWhere('thr."NF_REFATURAMENTO" is not null ')
@@ -667,20 +679,27 @@ export class BusinessAuditSalesService {
     console.log('history length', history.length);
 
     for (const row of history) {
-      const difValue = row.invoicing_value_reinvoicing - row.invoicing_value;
       const difWeightInKg = row.weight_in_kg_reinvoicing - row.weight_in_kg;
-      const difSaleUnitPrice = row.sale_unit_price
-        ? row.invoicing_value_reinvoicing / row.weight_in_kg_reinvoicing -
-          row.invoicing_value / row.weight_in_kg
+      const difSaleUnitPrice = row.unit_price_reinvoicing
+        ? row.unit_price_reinvoicing - row.sale_unit_price
         : 0;
 
       const difDays = DateUtils.getDifferenceInDays(
         row.date,
         row.date_reinvoicing,
       );
-      const difValuePercent =
-        row.invoicing_value === 0 ? 0 : (difValue / row.invoicing_value) * 100;
 
+      let difValue = 0;
+
+      if (row.return_type === 'Integral') {
+        difValue = row.invoicing_value_reinvoicing - row.invoicing_value;
+      } else {
+        difValue = row.weight_in_kg_reinvoicing * difSaleUnitPrice;
+      }
+
+      const difValuePercent = row.invoicing_value
+        ? NumberUtils.nb4(difValue / row.invoicing_value)
+        : 0;
       response.push({
         companyCode: row.CODIGO_EMPRESA,
         date: row.date,
@@ -702,6 +721,7 @@ export class BusinessAuditSalesService {
         reInvoicingClientCode: row.client_code_reinvoicing,
         reInvoicingClientName: row.client_name_reinvoicing,
         reInvoicingWeightInKg: row.weight_in_kg_reinvoicing,
+        reInvoicingUnitPrice: row.unit_price_reinvoicing,
         reInvoicingValue: row.invoicing_value_reinvoicing,
         reInvoicingTableValue: row.table_value_reinvoicing,
 
