@@ -28,6 +28,7 @@ import { BusinessAuditReturnOccurrencesService } from '../services/business-audi
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
 import { BusinessAuditReturnOccurrencesReportService } from '../services/business-audit-return-occurrences-report.service';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('business-audit')
 export class BusinessAuditController {
   constructor(
@@ -36,14 +37,12 @@ export class BusinessAuditController {
   ) {}
 
   // FILTERS & CONSTANTS
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('constants/considered-cfops')
   @HttpCode(HttpStatus.OK)
   getConsideredCfops() {
     return CONSIDERED_CFOPS;
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('constants/nf-situations')
   @HttpCode(HttpStatus.OK)
   getConsideredNfSituations() {
@@ -51,7 +50,6 @@ export class BusinessAuditController {
   }
 
   // EXPORT
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/export-xlsx/:type')
   @HttpCode(HttpStatus.OK)
   async exportXLSX(

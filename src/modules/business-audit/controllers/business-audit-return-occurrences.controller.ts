@@ -18,6 +18,7 @@ import { DataSource } from 'typeorm';
 import { BusinessAuditReturnOccurrencesService } from '../services/business-audit-return-occurrences.service';
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('business-audit/return-occurrences')
 export class BusinessAuditReturnOccurrencesController {
   constructor(
@@ -25,7 +26,6 @@ export class BusinessAuditReturnOccurrencesController {
     private readonly businessAuditReturnOccurrencesService: BusinessAuditReturnOccurrencesService,
   ) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('filters/causes')
   @HttpCode(HttpStatus.OK)
   async getReturnOccurrencesCauses() {
@@ -42,7 +42,6 @@ export class BusinessAuditReturnOccurrencesController {
     }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('filters/clients')
   @HttpCode(HttpStatus.OK)
   async getClients() {
@@ -64,7 +63,6 @@ export class BusinessAuditReturnOccurrencesController {
       }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('filters/sales-representatives')
   @HttpCode(HttpStatus.OK)
   async getSalesRepresentatives() {
@@ -91,7 +89,6 @@ export class BusinessAuditReturnOccurrencesController {
       }));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   async getReturnOccurrencesAuditData(
