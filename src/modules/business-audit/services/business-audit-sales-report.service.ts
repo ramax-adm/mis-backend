@@ -117,7 +117,7 @@ export class BusinessAuditSalesReportService {
       ['N2', 'Categoria'],
       ['O2', 'Cliente'],
       ['P2', 'KG'],
-      ['Q2', '$ Venda'],
+      ['Q2', '$ Venda Un.'],
       ['R2', '$ Fat'],
       ['S2', '$ Tab'],
       ['T2', '$ Desc'],
@@ -125,7 +125,7 @@ export class BusinessAuditSalesReportService {
       ['U1', 'Diferenças'],
       ['U2', 'Dias'],
       ['V2', 'KG'],
-      ['W2', '$ Venda'],
+      ['W2', '$ Venda Un.'],
       ['X2', '$ Fat'],
       ['Y2', '% Fat'],
       ['Z2', 'B.O'],
@@ -236,16 +236,6 @@ export class BusinessAuditSalesReportService {
         'date',
       );
 
-      const fatDifPercent =
-        item.invoicingValue === 0
-          ? 0
-          : item.reInvoicingValue / item.invoicingValue;
-
-      const difInDays = DateUtils.getDifferenceInDays(
-        item.reInvoicingDate,
-        item.date,
-      );
-
       const reinvoicingClient = item.reInvoicingClientCode
         ? `${item.reInvoicingClientCode} - ${item.reInvoicingClientName}`
         : null;
@@ -270,17 +260,17 @@ export class BusinessAuditSalesReportService {
         [`N${row(index)}`, item.reInvoicingCategory],
         [`O${row(index)}`, reinvoicingClient],
         [`P${row(index)}`, NumberUtils.nb2(item.reInvoicingWeightInKg ?? 0)],
-        [`Q${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
         [`R${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
         [`S${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
         [`T${row(index)}`, item.reInvoicingValue - item.invoicingValue],
 
         // DIFERENÇAS
-        [`U${row(index)}`, difInDays],
-        [`V${row(index)}`, NumberUtils.nb2(item.reInvoicingWeightInKg ?? 0)],
-        [`W${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)], // unidade
-        [`X${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
-        [`Y${row(index)}`, NumberUtils.nb4(fatDifPercent ?? 0)],
+        [`U${row(index)}`, item.difDays],
+        [`V${row(index)}`, NumberUtils.nb2(item.difWeightInKg ?? 0)],
+        [`W${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)], // unidade
+        [`X${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
+        [`Y${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
         [`Z${row(index)}`, item.occurrenceNumber],
         [`AA${row(index)}`, item.returnType],
         [`AB${row(index)}`, item.occurrenceCause],
