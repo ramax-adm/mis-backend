@@ -42,6 +42,7 @@ export interface GetReinvoicingHistoryItemRaw {
   BO: string;
   ID_NF_FATURAMENTO: string;
   ID_NF_REFATURAMENTO: string;
+  NF_REFATURAMENTO: string;
 
   // -------- Sensatta Invoices (si)
   date: Date;
@@ -61,6 +62,8 @@ export interface GetReinvoicingHistoryItemRaw {
   date_reinvoicing: Date;
   nf_number_reinvoicing: string;
   category_reinvoicing: string;
+  product_code_reinvoicing: string;
+  product_name_reinvoicing: string;
   client_code_reinvoicing: string;
   client_name_reinvoicing: string;
   weight_in_kg_reinvoicing: number;
@@ -72,6 +75,10 @@ export interface GetReinvoicingHistoryItemRaw {
   occurrence_number: string | null;
   occurrence_cause: string | null;
   return_type: string | null;
+
+  agg_date_reinvoicing: Date;
+  agg_product_reinvoicing: string;
+  agg_weight_in_kg_reinvoicing: number;
 }
 
 // ======================================================
@@ -94,6 +101,8 @@ export interface GetReinvoicingHistoryItem {
   reInvoicingDate: Date;
   reInvoicingNfNumber: string;
   reInvoicingCategory: string;
+  reInvoicingProductCode: string;
+  reInvoicingProductName: string;
   reInvoicingClientCode: string;
   reInvoicingClientName: string;
   reInvoicingWeightInKg: number;
@@ -110,4 +119,7 @@ export interface GetReinvoicingHistoryItem {
   occurrenceCause: string;
   returnType: string;
   observation: string;
+  aggDateReinvoicing: Date;
+  aggProductReinvoicing: string;
+  aggWeightInKgReinvoicing: number;
 }

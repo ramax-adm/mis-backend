@@ -115,23 +115,24 @@ export class BusinessAuditSalesReportService {
       ['L2', 'Dt.'],
       ['M2', 'NF'],
       ['N2', 'Categoria'],
-      ['O2', 'Cliente'],
-      ['P2', 'KG'],
-      ['Q2', '$ Venda Un.'],
-      ['R2', '$ Fat'],
-      ['S2', '$ Tab'],
-      ['T2', '$ Desc'],
+      ['O2', 'Produto'],
+      ['P2', 'Cliente'],
+      ['Q2', 'KG'],
+      ['R2', '$ Venda Un.'],
+      ['S2', '$ Fat'],
+      ['T2', '$ Tab'],
+      ['U2', '$ Desc'],
 
-      ['U1', 'Diferenças'],
-      ['U2', 'Dias'],
-      ['V2', 'KG'],
-      ['W2', '$ Venda Un.'],
-      ['X2', '$ Fat'],
-      ['Y2', '% Fat'],
-      ['Z2', 'B.O'],
-      ['AA2', 'Tipo BO'],
-      ['AB2', 'Motivo'],
-      ['AC2', 'Obs'],
+      ['V1', 'Diferenças'],
+      ['V2', 'Dias'],
+      ['W2', 'KG'],
+      ['X2', '$ Venda Un.'],
+      ['Y2', '$ Fat'],
+      ['Z2', '% Fat'],
+      ['AA2', 'B.O'],
+      ['AB2', 'Tipo BO'],
+      ['AC2', 'Motivo'],
+      ['AD2', 'Obs'],
     ];
 
     return headers;
@@ -230,15 +231,39 @@ export class BusinessAuditSalesReportService {
     const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
 
     dto.forEach((item, index) => {
+      // constants
       const formatedDate = DateUtils.formatFromIso(item.date, 'date');
-      const formatedReInvoicingDate = DateUtils.formatFromIso(
-        item.reInvoicingDate,
-        'date',
-      );
 
-      const reinvoicingClient = item.reInvoicingClientCode
-        ? `${item.reInvoicingClientCode} - ${item.reInvoicingClientName}`
-        : null;
+      // Mutable variables
+      let reinvoicingDate = null;
+      let reinvoicingProduct = null;
+      let reinvoicingClient = null;
+      let reinvoicingWeightInKg = 0;
+
+      if (item.aggDateReinvoicing) {
+        reinvoicingDate = DateUtils.formatFromIso(
+          item.aggDateReinvoicing,
+          'date',
+        );
+      } else if (item.reInvoicingDate) {
+        reinvoicingDate = DateUtils.formatFromIso(item.reInvoicingDate, 'date');
+      }
+
+      if (item.aggProductReinvoicing) {
+        reinvoicingProduct = `${item.aggProductReinvoicing}; Total KG: ${item.aggWeightInKgReinvoicing}`;
+      } else if (item.reInvoicingProductCode) {
+        reinvoicingProduct = `${item.reInvoicingProductCode} - ${item.reInvoicingProductName}`;
+      }
+
+      if (item.reInvoicingClientCode) {
+        reinvoicingClient = `${item.reInvoicingClientCode} - ${item.reInvoicingClientName}`;
+      }
+
+      if (item.aggWeightInKgReinvoicing) {
+        reinvoicingWeightInKg = item.aggWeightInKgReinvoicing;
+      } else if (item.reInvoicingWeightInKg) {
+        reinvoicingWeightInKg = item.reInvoicingWeightInKg;
+      }
 
       values.push(
         // VENDA ORIGINAL
@@ -255,25 +280,26 @@ export class BusinessAuditSalesReportService {
         [`K${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
 
         // REFATURAMENTO
-        [`L${row(index)}`, formatedReInvoicingDate],
+        [`L${row(index)}`, reinvoicingDate],
         [`M${row(index)}`, item.reInvoicingNfNumber],
         [`N${row(index)}`, item.reInvoicingCategory],
-        [`O${row(index)}`, reinvoicingClient],
-        [`P${row(index)}`, NumberUtils.nb2(item.reInvoicingWeightInKg ?? 0)],
-        [`Q${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
-        [`R${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
-        [`S${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
-        [`T${row(index)}`, item.reInvoicingValue - item.invoicingValue],
+        [`O${row(index)}`, reinvoicingProduct],
+        [`P${row(index)}`, reinvoicingClient],
+        [`Q${row(index)}`, NumberUtils.nb2(reinvoicingWeightInKg)],
+        [`R${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
+        [`S${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+        [`T${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
+        [`U${row(index)}`, item.reInvoicingValue - item.invoicingValue],
 
         // DIFERENÇAS
-        [`U${row(index)}`, item.difDays],
-        [`V${row(index)}`, NumberUtils.nb2(item.difWeightInKg ?? 0)],
-        [`W${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)], // unidade
-        [`X${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
-        [`Y${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
-        [`Z${row(index)}`, item.occurrenceNumber],
-        [`AA${row(index)}`, item.returnType],
-        [`AB${row(index)}`, item.occurrenceCause],
+        [`V${row(index)}`, item.difDays],
+        [`W${row(index)}`, NumberUtils.nb2(item.difWeightInKg ?? 0)],
+        [`X${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)], // unidade
+        [`Y${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
+        [`Z${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
+        [`AA${row(index)}`, item.occurrenceNumber],
+        [`AB${row(index)}`, item.returnType],
+        [`AC${row(index)}`, item.occurrenceCause],
       );
     });
 

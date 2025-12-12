@@ -532,6 +532,27 @@ export class BusinessAuditSalesService {
     clientCodes?: string[];
     salesRepresentativeCodes?: string[];
   }): Promise<GetReinvoicingHistoryItem[]> {
+    const lateralSubQuery = `
+  SELECT
+    si2."date",
+    si2.nf_id,
+    string_agg(
+      si2.product_code || ' - ' || si2.product_name,
+      ' | '
+    ) AS product_reinvoicing,
+    sum(si2.weight_in_kg) AS weight_in_kg_reinvoicing,
+    sum(si2.total_price) AS invoicing_value_reinvoicing
+  FROM dev.sensatta_invoices si2
+  WHERE si2.nf_id = thr."ID_NF_REFATURAMENTO"
+    AND NOT EXISTS (
+      SELECT 1
+      FROM dev.sensatta_invoices si_fat
+      WHERE si_fat.nf_id = thr."ID_NF_FATURAMENTO"
+        AND si_fat.product_code = si2.product_code
+    )
+  GROUP BY si2."date", si2.nf_id
+`;
+
     const qb = this.datasource
       .getRepository(TempHistoricoRefaturamento)
       .createQueryBuilder('thr')
@@ -543,6 +564,7 @@ export class BusinessAuditSalesService {
         'thr."BO" AS "BO"',
         'thr."ID_NF_FATURAMENTO" AS "ID_NF_FATURAMENTO"',
         'thr."ID_NF_REFATURAMENTO" AS "ID_NF_REFATURAMENTO"',
+        'thr."NF_REFATURAMENTO" AS "NF_REFATURAMENTO"',
 
         // =====================================================
         // -------- Sensatta Invoices (si)
@@ -563,15 +585,17 @@ export class BusinessAuditSalesService {
         // =====================================================
         // -------- Sensatta Invoices Refaturamento (si2)
         // =====================================================
-        'si2.date AS "date_reinvoicing"',
-        'si2.nf_number AS "nf_number_reinvoicing"',
-        'si2.order_category AS "category_reinvoicing"',
-        'si2.client_code AS "client_code_reinvoicing"',
-        'si2.client_name AS "client_name_reinvoicing"',
-        'si2.weight_in_kg AS "weight_in_kg_reinvoicing"',
-        'si2.unit_price AS "unit_price_reinvoicing"',
-        'si2.total_price AS "invoicing_value_reinvoicing"',
-        'so2.reference_table_unit_value * si2.weight_in_kg AS "table_value_reinvoicing"',
+        'si2_base.date AS "date_reinvoicing"',
+        'si2_base.nf_number AS "nf_number_reinvoicing"',
+        'si2_base.order_category AS "category_reinvoicing"',
+        'si2_item.product_code AS "product_code_reinvoicing"',
+        'si2_item.product_name AS "product_name_reinvoicing"',
+        'si2_base.client_code AS "client_code_reinvoicing"',
+        'si2_base.client_name AS "client_name_reinvoicing"',
+        'si2_item.weight_in_kg AS "weight_in_kg_reinvoicing"',
+        'si2_item.unit_price AS "unit_price_reinvoicing"',
+        'si2_item.total_price AS "invoicing_value_reinvoicing"',
+        'so2.reference_table_unit_value * si2_item.weight_in_kg AS "table_value_reinvoicing"',
 
         // =====================================================
         // -------- Ocorrências (subquery T)
@@ -579,6 +603,13 @@ export class BusinessAuditSalesService {
         '"T".occurrence_number AS "occurrence_number"',
         '"T".return_type AS "return_type"',
         '"T".occurrence_cause AS "occurrence_cause"',
+
+        // ===========================
+        // REFATURAMENTO (AGREGADO - LATERAL)
+        // ===========================
+        'si2_agg.date AS "agg_date_reinvoicing"',
+        'si2_agg.product_reinvoicing AS "agg_product_reinvoicing"',
+        'si2_agg.weight_in_kg_reinvoicing AS "agg_weight_in_kg_reinvoicing"',
       ])
       // ===========================
       // SUBQUERY OCORRÊNCIAS
@@ -612,16 +643,39 @@ export class BusinessAuditSalesService {
       // REFATURAMENTO
       // ===========================
       .leftJoin(
+        (subQ) =>
+          subQ
+            .select(['DISTINCT ON (i.nf_id) i.*'])
+            .from(Invoice, 'i')
+            .orderBy('i.nf_id')
+            .addOrderBy('i.product_code'), // critério da "primeira"
+        'si2_base',
+        'si2_base.nf_id = thr."ID_NF_REFATURAMENTO"',
+      )
+      .leftJoin(
         Invoice,
-        'si2',
-        `si2.nf_id = thr."ID_NF_REFATURAMENTO"
-         AND si.product_code = si2.product_code`,
+        'si2_item',
+        `si2_item.nf_id = thr."ID_NF_REFATURAMENTO"
+         AND si.product_code = si2_item.product_code`,
       )
       .leftJoin(
         OrderLine,
         'so2',
-        'so2.nf_id = si2.nf_id AND so2.product_code = si2.product_code',
+        'so2.nf_id = si2_item.nf_id AND so2.product_code = si2_item.product_code',
       )
+      // ===========================
+      // REFATURAMENTO (AGREGADO - LATERAL)
+      // ===========================
+      .leftJoin(
+        (qb) => {
+          qb.getQuery = () => `LATERAL (${lateralSubQuery})`;
+          qb.setParameters({});
+          return qb;
+        },
+        'si2_agg',
+        'true',
+      )
+
       .where('1=1')
       .andWhere('thr."NF_REFATURAMENTO" is not null ')
       .orderBy('si.date', 'ASC')
@@ -691,7 +745,9 @@ export class BusinessAuditSalesService {
 
       let difValue = 0;
 
-      if (row.return_type === 'Integral') {
+      // Se a diferença em KG for igual a 0, é uma devolução Integral
+      // Caso contrario é devolução parcial
+      if (NumberUtils.nequal(difWeightInKg, 0)) {
         difValue = row.invoicing_value_reinvoicing - row.invoicing_value;
       } else {
         difValue = row.weight_in_kg_reinvoicing * difSaleUnitPrice;
@@ -718,6 +774,8 @@ export class BusinessAuditSalesService {
         reInvoicingDate: row.date_reinvoicing,
         reInvoicingNfNumber: row.nf_number_reinvoicing,
         reInvoicingCategory: row.category_reinvoicing,
+        reInvoicingProductCode: row.product_code_reinvoicing,
+        reInvoicingProductName: row.product_name_reinvoicing,
         reInvoicingClientCode: row.client_code_reinvoicing,
         reInvoicingClientName: row.client_name_reinvoicing,
         reInvoicingWeightInKg: row.weight_in_kg_reinvoicing,
@@ -736,6 +794,10 @@ export class BusinessAuditSalesService {
         occurrenceCause: row.occurrence_cause,
         returnType: row.return_type,
         observation: '',
+
+        aggDateReinvoicing: row.agg_date_reinvoicing,
+        aggProductReinvoicing: row.agg_product_reinvoicing,
+        aggWeightInKgReinvoicing: row.agg_weight_in_kg_reinvoicing,
       });
     }
 
