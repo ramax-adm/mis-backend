@@ -565,6 +565,7 @@ export class BusinessAuditSalesService {
         'thr."ID_NF_FATURAMENTO" AS "ID_NF_FATURAMENTO"',
         'thr."ID_NF_REFATURAMENTO" AS "ID_NF_REFATURAMENTO"',
         'thr."NF_REFATURAMENTO" AS "NF_REFATURAMENTO"',
+        'thr."SEQUENCIA_REFATURAMENTO" AS "SEQUENCIA_REFATURAMENTO"',
 
         // =====================================================
         // -------- Sensatta Invoices (si)
@@ -603,6 +604,7 @@ export class BusinessAuditSalesService {
         '"T".occurrence_number AS "occurrence_number"',
         '"T".return_type AS "return_type"',
         '"T".occurrence_cause AS "occurrence_cause"',
+        '"T".observation AS "observation"',
 
         // ===========================
         // REFATURAMENTO (AGREGADO - LATERAL)
@@ -621,11 +623,13 @@ export class BusinessAuditSalesService {
               'sro.occurrence_number AS occurrence_number',
               'sro.occurrence_cause AS occurrence_cause',
               'sro.return_type AS return_type',
+              'sro.observation AS observation',
             ])
             .from(ReturnOccurrence, 'sro')
             .groupBy('sro.occurrence_number')
             .addGroupBy('sro.occurrence_cause')
-            .addGroupBy('sro.return_type'),
+            .addGroupBy('sro.return_type')
+            .addGroupBy('sro.observation'),
 
         'T',
         '"T".occurrence_number = thr."BO"',
@@ -680,6 +684,7 @@ export class BusinessAuditSalesService {
       .andWhere('thr."NF_REFATURAMENTO" is not null ')
       .orderBy('si.date', 'ASC')
       .addOrderBy('si.nf_number', 'ASC')
+      .addOrderBy('si2_base.nf_number', 'ASC')
       .addOrderBy('si.product_code', 'ASC');
 
     if (startDate) {
@@ -711,20 +716,6 @@ export class BusinessAuditSalesService {
       });
     }
 
-    // const [history, orderLines] = await Promise.all([
-    //   qb.getRawMany<GetReinvoicingHistoryItemRaw>(),
-    //   this.getOrdersLines({
-    //     startDate,
-    //     endDate,
-    //     priceConsideration,
-    //     market,
-    //     nfNumber,
-    //     companyCodes,
-    //     clientCodes,
-    //     salesRepresentativeCodes,
-    //   }),
-    // ]);
-
     const history = await qb.getRawMany<GetReinvoicingHistoryItemRaw>();
     const response: GetReinvoicingHistoryItem[] = [];
 
@@ -732,7 +723,27 @@ export class BusinessAuditSalesService {
     console.log('history', history[0]);
     console.log('history length', history.length);
 
+    // set => nf_number, weight_in_kg_dif
+    const nfWeightMap = new Map<string, number>();
+
+    history.forEach((row) => {
+      const key = `${row.nf_number}-${row.product_code}`;
+      if (!nfWeightMap.has(key)) nfWeightMap.set(key, 0);
+
+      nfWeightMap.set(key, row.weight_in_kg);
+    });
+
+    console.log('nfWeightMap', nfWeightMap.get(`169-50392`));
     for (const row of history) {
+      /////////////////////////////////////////////////////////////////////
+      // Desconto de peso cumulativo
+      const mapKey = `${row.nf_number}-${row.product_code}`;
+      const map = nfWeightMap.get(mapKey);
+      const difWeightInKgProportional = row.weight_in_kg_reinvoicing - map;
+
+      nfWeightMap.set(mapKey, map - row.weight_in_kg_reinvoicing);
+
+      /////////////////////////////////////////////////////////////////////
       const difWeightInKg = row.weight_in_kg_reinvoicing - row.weight_in_kg;
       const difSaleUnitPrice = row.unit_price_reinvoicing
         ? row.unit_price_reinvoicing - row.sale_unit_price
@@ -753,9 +764,10 @@ export class BusinessAuditSalesService {
         difValue = row.weight_in_kg_reinvoicing * difSaleUnitPrice;
       }
 
-      const difValuePercent = row.invoicing_value
-        ? NumberUtils.nb4(difValue / row.invoicing_value)
+      const difValuePercent = row.invoicing_value_reinvoicing
+        ? NumberUtils.nb4(row.invoicing_value_reinvoicing / row.invoicing_value)
         : 0;
+
       response.push({
         companyCode: row.CODIGO_EMPRESA,
         date: row.date,
@@ -786,14 +798,16 @@ export class BusinessAuditSalesService {
         reInvoicingDif: difValue,
         difDays,
         difWeightInKg,
+        difWeightInKgProportional,
         difSaleUnitPrice,
         difValue,
         difValuePercent,
 
         occurrenceNumber: row.occurrence_number,
         occurrenceCause: row.occurrence_cause,
+        reinvoicingSequence: row.SEQUENCIA_REFATURAMENTO,
         returnType: row.return_type,
-        observation: '',
+        observation: row.observation,
 
         aggDateReinvoicing: row.agg_date_reinvoicing,
         aggProductReinvoicing: row.agg_product_reinvoicing,

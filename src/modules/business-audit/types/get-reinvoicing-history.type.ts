@@ -43,6 +43,7 @@ export interface GetReinvoicingHistoryItemRaw {
   ID_NF_FATURAMENTO: string;
   ID_NF_REFATURAMENTO: string;
   NF_REFATURAMENTO: string;
+  SEQUENCIA_REFATURAMENTO: number;
 
   // -------- Sensatta Invoices (si)
   date: Date;
@@ -75,6 +76,7 @@ export interface GetReinvoicingHistoryItemRaw {
   occurrence_number: string | null;
   occurrence_cause: string | null;
   return_type: string | null;
+  observation: string | null;
 
   agg_date_reinvoicing: Date;
   agg_product_reinvoicing: string;
@@ -112,11 +114,13 @@ export interface GetReinvoicingHistoryItem {
   reInvoicingDif: number;
   difDays: number;
   difWeightInKg: number;
+  difWeightInKgProportional: number;
   difSaleUnitPrice: number;
   difValue: number;
   difValuePercent: number;
   occurrenceNumber: string;
   occurrenceCause: string;
+  reinvoicingSequence: number;
   returnType: string;
   observation: string;
   aggDateReinvoicing: Date;
