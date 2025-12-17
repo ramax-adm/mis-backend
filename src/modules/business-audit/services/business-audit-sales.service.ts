@@ -901,6 +901,7 @@ export class BusinessAuditSalesService {
     response.forEach((item) => {
       const key = `${item.companyCode}-${new Date(item.date).toISOString()}-${item.nfNumber}-${item.productCode}`;
       const isCanceledReinvoicing = item.reInvoicingNfSituation === 'Cancelada';
+      const isNoReivoicing = !item.reInvoicingProductCode;
 
       // NF CANCELADA → SEMPRE ZERA e NÃO CONTA como primeira
       if (isCanceledReinvoicing) {
@@ -921,8 +922,10 @@ export class BusinessAuditSalesService {
       if (!firstProductOccurrenceMap.has(key)) {
         firstProductOccurrenceMap.set(key, true);
         const totalReinvoicedKg = reinvoicingKgSumMap.get(key) ?? 0;
-        item.difWeightInKg = totalReinvoicedKg - item.weightInKg;
-        return;
+        if (!isNoReivoicing) {
+          item.difWeightInKg = totalReinvoicedKg - item.weightInKg;
+          return;
+        }
       }
 
       item.weightInKg = 0;
