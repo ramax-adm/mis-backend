@@ -30,7 +30,7 @@ export class InventoryReportService {
 
     data.forEach((item) => {
       Object.values(item.events).map((value, index) => {
-        const columnIndex = ExcelUtils.getColumnIndex(5 + index);
+        const columnIndex = ExcelUtils.getColumnIndex(6 + index);
         return headers.push([`${columnIndex}1`, `Evento ${index + 1}`]);
       });
     });
@@ -60,7 +60,7 @@ export class InventoryReportService {
       );
 
       Object.values(item.events).map((value, eventIndex) => {
-        const columnIndex = ExcelUtils.getColumnIndex(5 + eventIndex);
+        const columnIndex = ExcelUtils.getColumnIndex(6 + eventIndex);
         return values.push([`${columnIndex}${row(dataIndex)}`, value]);
       });
     });
