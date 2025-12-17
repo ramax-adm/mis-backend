@@ -19,17 +19,17 @@ export class InventoryBalance {
   @Column({ name: 'product_name', nullable: true })
   productName?: string;
 
+  @Column({ name: 'previous_quantity', type: 'float4', nullable: true })
+  previousQuantity?: number;
+
+  @Column({ name: 'previous_weight_in_kg', type: 'float4', nullable: true })
+  previousWeightInKg?: number;
+
   @Column({ name: 'inventory_quantity', type: 'float4', nullable: true })
   inventoryQuantity?: number;
 
   @Column({ name: 'inventory_weight_in_kg', type: 'float4', nullable: true })
   inventoryWeightInKg?: number;
-
-  @Column({ name: 'phisical_quantity', type: 'float4', nullable: true })
-  phisicalQuantity?: number;
-
-  @Column({ name: 'phisical_weight_in_kg', type: 'float4', nullable: true })
-  phisicalWeightInKg?: number;
 
   @CreateDateColumn({
     name: 'created_at',
