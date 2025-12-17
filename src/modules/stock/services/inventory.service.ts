@@ -141,6 +141,9 @@ export class InventoryService {
         inventoryItemsAgg.set(key, {
           inventoryId: item.inventoryId,
           warehouseCode: item.warehouseCode ?? '',
+          sifCode: item.sifCode,
+          productionDate: item.productionDate,
+          dueDate: item.dueDate,
           productCode: item.productCode,
           productName: item.productName,
           boxNumber: item.boxNumber,
