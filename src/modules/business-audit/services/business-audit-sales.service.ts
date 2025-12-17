@@ -575,6 +575,8 @@ export class BusinessAuditSalesService {
         'si.order_category AS "category"',
         'si.client_code AS "client_code"',
         'si.client_name AS "client_name"',
+        'so.sales_representative_code AS "sales_representative_code"',
+        'so.sales_representative_name AS "sales_representative_name"',
         'si.product_code AS "product_code"',
         'si.product_name AS "product_name"',
         'si.weight_in_kg AS "weight_in_kg"',
@@ -588,6 +590,7 @@ export class BusinessAuditSalesService {
         // =====================================================
         'si2_base.date AS "date_reinvoicing"',
         'si2_base.nf_number AS "nf_number_reinvoicing"',
+        'si2_base.nf_situation AS "nf_situation_reinvoicing"',
         'si2_base.order_category AS "category_reinvoicing"',
         'si2_item.product_code AS "product_code_reinvoicing"',
         'si2_item.product_name AS "product_name_reinvoicing"',
@@ -595,6 +598,7 @@ export class BusinessAuditSalesService {
         'si2_base.client_name AS "client_name_reinvoicing"',
         'si2_item.weight_in_kg AS "weight_in_kg_reinvoicing"',
         'si2_item.unit_price AS "unit_price_reinvoicing"',
+        'so2.reference_table_unit_value AS "table_unit_price_reinvoicing"',
         'si2_item.total_price AS "invoicing_value_reinvoicing"',
         'so2.reference_table_unit_value * si2_item.weight_in_kg AS "table_value_reinvoicing"',
 
@@ -681,11 +685,11 @@ export class BusinessAuditSalesService {
       )
 
       .where('1=1')
-      .andWhere('thr."NF_REFATURAMENTO" is not null ')
-      .orderBy('si.date', 'ASC')
-      .addOrderBy('si.nf_number', 'ASC')
-      .addOrderBy('si2_base.nf_number', 'ASC')
-      .addOrderBy('si.product_code', 'ASC');
+      .andWhere('thr."NF_REFATURAMENTO" is not null ');
+    // .orderBy('si.date', 'ASC')
+    // .addOrderBy('si.nf_number', 'ASC')
+    // .addOrderBy('si2_base.nf_number', 'ASC')
+    // .addOrderBy('si.product_code', 'ASC');
 
     if (startDate) {
       qb.andWhere('si.date >= :startDate', { startDate });
@@ -717,56 +721,46 @@ export class BusinessAuditSalesService {
     }
 
     const history = await qb.getRawMany<GetReinvoicingHistoryItemRaw>();
+    const noReinvoicingHistory = history.filter(
+      (i) => !i.product_code_reinvoicing,
+    );
+    const reinvoicingHistory = history.filter(
+      (i) => !!i.product_code_reinvoicing,
+    );
+
     const response: GetReinvoicingHistoryItem[] = [];
 
-    console.log(qb.getSql());
-    console.log('history', history[0]);
-    console.log('history length', history.length);
+    const noReivoicingHistoryMap = new Map<string, GetReinvoicingHistoryItem>();
 
-    // set => nf_number, weight_in_kg_dif
-    const nfWeightMap = new Map<string, number>();
-
-    history.forEach((row) => {
-      const key = `${row.nf_number}-${row.product_code}`;
-      if (!nfWeightMap.has(key)) nfWeightMap.set(key, 0);
-
-      nfWeightMap.set(key, row.weight_in_kg);
-    });
-
-    console.log('nfWeightMap', nfWeightMap.get(`169-50392`));
-    for (const row of history) {
+    for (const row of reinvoicingHistory) {
       /////////////////////////////////////////////////////////////////////
       // Desconto de peso cumulativo
-      const mapKey = `${row.nf_number}-${row.product_code}`;
-      const map = nfWeightMap.get(mapKey);
-      const difWeightInKgProportional = row.weight_in_kg_reinvoicing - map;
+      // const mapKey = `${row.CODIGO_EMPRESA}-${new Date(row.date).toISOString()}-${row.nf_number}-${row.product_code}`;
+      // const map = nfWeightMap.get(mapKey);
+      // const difWeightInKgProportional = row.weight_in_kg_reinvoicing - map;
 
-      nfWeightMap.set(mapKey, map - row.weight_in_kg_reinvoicing);
+      // nfWeightMap.set(mapKey, map - row.weight_in_kg_reinvoicing);
 
       /////////////////////////////////////////////////////////////////////
-      const difWeightInKg = row.weight_in_kg_reinvoicing - row.weight_in_kg;
-      const difSaleUnitPrice = row.unit_price_reinvoicing
-        ? row.unit_price_reinvoicing - row.sale_unit_price
-        : 0;
-
+      // DIFERENCES
       const difDays = DateUtils.getDifferenceInDays(
         row.date,
         row.date_reinvoicing,
       );
-
-      let difValue = 0;
+      const difWeightInKg = row.weight_in_kg_reinvoicing - row.weight_in_kg;
+      const difSaleUnitPrice = row.unit_price_reinvoicing - row.sale_unit_price;
 
       // Se a diferença em KG for igual a 0, é uma devolução Integral
       // Caso contrario é devolução parcial
+      let difValue = 0;
       if (NumberUtils.nequal(difWeightInKg, 0)) {
         difValue = row.invoicing_value_reinvoicing - row.invoicing_value;
       } else {
         difValue = row.weight_in_kg_reinvoicing * difSaleUnitPrice;
       }
-
-      const difValuePercent = row.invoicing_value_reinvoicing
-        ? NumberUtils.nb4(row.invoicing_value_reinvoicing / row.invoicing_value)
-        : 0;
+      const difValuePercent = NumberUtils.nb4(
+        row.invoicing_value_reinvoicing / row.invoicing_value,
+      );
 
       response.push({
         companyCode: row.CODIGO_EMPRESA,
@@ -781,10 +775,13 @@ export class BusinessAuditSalesService {
         saleUnitPrice: row.sale_unit_price,
         tableUnitPrice: row.table_unit_price,
         invoicingValue: row.invoicing_value,
+        salesRepresentativeCode: row.sales_representative_code,
+        salesRepresentativeName: row.sales_representative_name,
         tableValue: row.table_value,
 
         reInvoicingDate: row.date_reinvoicing,
         reInvoicingNfNumber: row.nf_number_reinvoicing,
+        reInvoicingNfSituation: row.nf_situation_reinvoicing,
         reInvoicingCategory: row.category_reinvoicing,
         reInvoicingProductCode: row.product_code_reinvoicing,
         reInvoicingProductName: row.product_name_reinvoicing,
@@ -792,13 +789,14 @@ export class BusinessAuditSalesService {
         reInvoicingClientName: row.client_name_reinvoicing,
         reInvoicingWeightInKg: row.weight_in_kg_reinvoicing,
         reInvoicingUnitPrice: row.unit_price_reinvoicing,
+        reInvoicingTableUnitPrice: row.table_unit_price_reinvoicing,
         reInvoicingValue: row.invoicing_value_reinvoicing,
         reInvoicingTableValue: row.table_value_reinvoicing,
 
         reInvoicingDif: difValue,
         difDays,
         difWeightInKg,
-        difWeightInKgProportional,
+        difWeightInKgProportional: 0,
         difSaleUnitPrice,
         difValue,
         difValuePercent,
@@ -815,7 +813,144 @@ export class BusinessAuditSalesService {
       });
     }
 
-    return response;
+    // Produtos sem refaturamento
+    // Produtos sem refaturamento (deduplicados)
+    noReinvoicingHistory
+      .filter(
+        (item) =>
+          !reinvoicingHistory.find(
+            (i) =>
+              i.nf_number === item.nf_number &&
+              i.product_code === item.product_code,
+          ),
+      )
+      .forEach((row) => {
+        const key = `${row.CODIGO_EMPRESA}-${new Date(row.date).toISOString()}-${row.nf_number}-${row.product_code}`;
+
+        if (!noReivoicingHistoryMap.has(key)) {
+          noReivoicingHistoryMap.set(key, {
+            companyCode: row.CODIGO_EMPRESA,
+            date: row.date,
+            nfNumber: row.nf_number,
+            category: row.category,
+            clientCode: row.client_code,
+            clientName: row.client_name,
+            productCode: row.product_code,
+            productName: row.product_name,
+            weightInKg: row.weight_in_kg,
+            saleUnitPrice: row.sale_unit_price,
+            tableUnitPrice: row.table_unit_price,
+            invoicingValue: row.invoicing_value,
+            salesRepresentativeCode: row.sales_representative_code,
+            salesRepresentativeName: row.sales_representative_name,
+            tableValue: row.table_value,
+
+            reInvoicingDate: row.date_reinvoicing,
+            reInvoicingNfNumber: row.nf_number_reinvoicing,
+            reInvoicingNfSituation: row.nf_situation_reinvoicing,
+            reInvoicingCategory: row.category_reinvoicing,
+            reInvoicingProductCode: '',
+            reInvoicingProductName: '',
+            reInvoicingClientCode: '',
+            reInvoicingClientName: '',
+            reInvoicingWeightInKg: 0,
+            reInvoicingUnitPrice: 0,
+            reInvoicingTableUnitPrice: 0,
+            reInvoicingValue: 0,
+            reInvoicingTableValue: 0,
+            reInvoicingDif: 0,
+            difDays: 0,
+            difWeightInKg: 0,
+            difWeightInKgProportional: 0,
+            difSaleUnitPrice: 0,
+            difValue: 0,
+            difValuePercent: 0,
+
+            occurrenceNumber: row.occurrence_number,
+            occurrenceCause: row.occurrence_cause,
+            reinvoicingSequence: row.SEQUENCIA_REFATURAMENTO,
+            returnType: row.return_type,
+            observation: row.observation,
+
+            aggDateReinvoicing: row.agg_date_reinvoicing,
+            aggProductReinvoicing: row.agg_product_reinvoicing,
+            aggWeightInKgReinvoicing: row.agg_weight_in_kg_reinvoicing,
+          });
+        }
+      });
+
+    noReivoicingHistoryMap.forEach((item) => {
+      response.push(item);
+    });
+
+    // soma total de KG refaturado por NF + produto
+    const reinvoicingKgSumMap = new Map<string, number>();
+
+    response.forEach((item) => {
+      if (item.reInvoicingNfSituation === 'Cancelada') return;
+
+      const key = `${item.companyCode}-${new Date(item.date).toISOString()}-${item.nfNumber}-${item.productCode}`;
+
+      const current = reinvoicingKgSumMap.get(key) ?? 0;
+      reinvoicingKgSumMap.set(key, current + (item.reInvoicingWeightInKg ?? 0));
+    });
+    console.log(reinvoicingKgSumMap);
+
+    /** TESTE */
+    const firstProductOccurrenceMap = new Map<string, boolean>();
+    response.forEach((item) => {
+      const key = `${item.companyCode}-${new Date(item.date).toISOString()}-${item.nfNumber}-${item.productCode}`;
+      const isCanceledReinvoicing = item.reInvoicingNfSituation === 'Cancelada';
+
+      // NF CANCELADA → SEMPRE ZERA e NÃO CONTA como primeira
+      if (isCanceledReinvoicing) {
+        item.weightInKg = 0;
+        item.invoicingValue = 0;
+        item.tableValue = 0;
+        item.saleUnitPrice = 0;
+        item.tableUnitPrice = 0;
+        item.difDays = 0;
+        item.difSaleUnitPrice = 0;
+        item.difValue = 0;
+        item.difValuePercent = 0;
+        item.difWeightInKg = 0;
+
+        return;
+      }
+
+      if (!firstProductOccurrenceMap.has(key)) {
+        firstProductOccurrenceMap.set(key, true);
+        const totalReinvoicedKg = reinvoicingKgSumMap.get(key) ?? 0;
+        item.difWeightInKg = totalReinvoicedKg - item.weightInKg;
+        return;
+      }
+
+      item.weightInKg = 0;
+      item.invoicingValue = 0;
+      item.tableValue = 0;
+      item.saleUnitPrice = 0;
+      item.tableUnitPrice = 0;
+      item.difWeightInKg = 0;
+    });
+    /**************************/
+
+    return response.sort((a, b) => {
+      // 1. date
+      const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+
+      // 2. nf_number
+      const nfDiff = Number(a.nfNumber) - Number(b.nfNumber);
+      if (nfDiff !== 0) return nfDiff;
+
+      // 3. nf_number reinvoicing (refaturamento)
+      const nfReinvoicingDiff =
+        Number(a.reInvoicingNfNumber ?? 0) - Number(b.reInvoicingNfNumber ?? 0);
+      if (nfReinvoicingDiff !== 0) return nfReinvoicingDiff;
+
+      // 4. product_code
+      return String(a.productCode).localeCompare(String(b.productCode));
+    });
   }
 
   // aux
