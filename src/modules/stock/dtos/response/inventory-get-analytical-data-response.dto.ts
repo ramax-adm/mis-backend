@@ -17,6 +17,15 @@ export class InventoryAnalyticalDataDto {
   boxNumber: string;
 
   @ApiProperty()
+  sifCode: string;
+
+  @ApiProperty()
+  productionDate: Date;
+
+  @ApiProperty()
+  dueDate: Date;
+
+  @ApiProperty()
   weightInKg: number;
 
   @ApiProperty({

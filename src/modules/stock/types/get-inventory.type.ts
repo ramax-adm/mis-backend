@@ -5,6 +5,9 @@ export type GetInventoryItemsAgg = {
   warehouseCode: string;
   productCode: string;
   productName: string;
+  sifCode: string;
+  productionDate: Date;
+  dueDate: Date;
   boxNumber: string;
   weightInKg: number;
   events: Record<string, string>;

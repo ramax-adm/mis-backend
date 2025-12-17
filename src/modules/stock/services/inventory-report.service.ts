@@ -8,6 +8,7 @@ import { InventoryGetAnalyticalDataResponseDto } from '../dtos/response/inventor
 import { ExcelUtils } from '@/modules/utils/services/excel.utils';
 import { InventoryExportReportRequestDto } from '../dtos/request/inventory-export-report-request.dto';
 import { InventoryGetResumeDataResponseDto } from '../dtos/response/inventory-get-resume-data-response.dto';
+import { DateUtils } from '@/modules/utils/services/date.utils';
 
 @Injectable()
 export class InventoryReportService {
@@ -25,12 +26,15 @@ export class InventoryReportService {
       ['C1', 'Cod. Produto'],
       ['D1', 'Produto'],
       ['E1', 'N° Caixa'],
-      ['F1', 'Peso KG'],
+      ['F1', 'SIF'],
+      ['G1', 'Dt. Produção'],
+      ['H1', 'Dt. Vencimento'],
+      ['I1', 'Peso KG'],
     ];
 
     data.forEach((item) => {
       Object.values(item.events).map((value, index) => {
-        const columnIndex = ExcelUtils.getColumnIndex(6 + index);
+        const columnIndex = ExcelUtils.getColumnIndex(9 + index);
         return headers.push([`${columnIndex}1`, `Evento ${index + 1}`]);
       });
     });
@@ -56,11 +60,14 @@ export class InventoryReportService {
         [`C${row(dataIndex)}`, item.productCode],
         [`D${row(dataIndex)}`, item.productName],
         [`E${row(dataIndex)}`, item.boxNumber],
-        [`F${row(dataIndex)}`, item.weightInKg],
+        [`F${row(dataIndex)}`, item.sifCode],
+        [`G${row(dataIndex)}`, DateUtils.format(item.productionDate, 'date')],
+        [`H${row(dataIndex)}`, DateUtils.format(item.dueDate, 'date')],
+        [`I${row(dataIndex)}`, item.weightInKg],
       );
 
       Object.values(item.events).map((value, eventIndex) => {
-        const columnIndex = ExcelUtils.getColumnIndex(6 + eventIndex);
+        const columnIndex = ExcelUtils.getColumnIndex(9 + eventIndex);
         return values.push([`${columnIndex}${row(dataIndex)}`, value]);
       });
     });
