@@ -51,6 +51,8 @@ export interface GetReinvoicingHistoryItemRaw {
   category: string;
   client_code: string;
   client_name: string;
+  sales_representative_code: string;
+  sales_representative_name: string;
   product_code: string;
   product_name: string;
   weight_in_kg: number;
@@ -62,6 +64,7 @@ export interface GetReinvoicingHistoryItemRaw {
   // -------- Sensatta Invoices Refaturamento (si2)
   date_reinvoicing: Date;
   nf_number_reinvoicing: string;
+  nf_situation_reinvoicing: string;
   category_reinvoicing: string;
   product_code_reinvoicing: string;
   product_name_reinvoicing: string;
@@ -69,6 +72,7 @@ export interface GetReinvoicingHistoryItemRaw {
   client_name_reinvoicing: string;
   weight_in_kg_reinvoicing: number;
   unit_price_reinvoicing: number;
+  table_unit_price_reinvoicing: number;
   invoicing_value_reinvoicing: number;
   table_value_reinvoicing?: number;
 
@@ -93,6 +97,8 @@ export interface GetReinvoicingHistoryItem {
   category: string;
   clientCode: string;
   clientName: string;
+  salesRepresentativeCode: string;
+  salesRepresentativeName: string;
   productCode: string;
   productName: string;
   weightInKg: number;
@@ -102,6 +108,7 @@ export interface GetReinvoicingHistoryItem {
   tableValue: number;
   reInvoicingDate: Date;
   reInvoicingNfNumber: string;
+  reInvoicingNfSituation: string;
   reInvoicingCategory: string;
   reInvoicingProductCode: string;
   reInvoicingProductName: string;
@@ -109,6 +116,7 @@ export interface GetReinvoicingHistoryItem {
   reInvoicingClientName: string;
   reInvoicingWeightInKg: number;
   reInvoicingUnitPrice: number;
+  reInvoicingTableUnitPrice: number;
   reInvoicingValue: number;
   reInvoicingTableValue: number;
   reInvoicingDif: number;

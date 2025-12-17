@@ -88,14 +88,12 @@ export class BusinessAuditSalesReportService {
 
   /**
    * VENDA ORIGINAL																					  						
-     Emp	Dt	NF	Cat	Cliente	Produto	KG 1 $ Venda 	 $ Tab 	 $ Fat 	 $tab 	 $ Desc 
-     
-     REFATURAMENTO
-     Dt	NF	Cat	Cliente	KG	 $ Venda 	 $ Fat 	 $tab 	 $ Desc 	 	
-     
-     DIFERENÇAS
-     Dias 	 KG 	 $ Venda 	 Fat 	% Fat	Motivo	OBS
-   */
+        => Emp	Dt	NF	Cat	Cliente	Produto	KG 1 $ Venda 	 $ Tab 	 $ Fat 	 $tab 	 $ Desc 
+   * REFATURAMENTO
+        => Dt	  NF	Cat	Cliente	KG	 $ Venda 	 $ Fat 	 $tab 	 $ Desc 	 	
+   * DIFERENÇAS
+        => Dias KG 	$ Venda 	 Fat 	% Fat	Motivo	OBS
+   **/
 
   getReinvoicingHistoryHeaders() {
     const headers: [string, any][] = [
@@ -104,38 +102,41 @@ export class BusinessAuditSalesReportService {
       ['B2', 'Dt.'],
       ['C2', 'NF'],
       ['D2', 'Cliente'],
-      ['E2', 'Categoria'],
-      ['F2', 'Produto'],
-      ['G2', 'KG'],
-      ['H2', '$ Venda Un.'],
-      ['I2', '$ Tab Un.'],
-      ['J2', '$ Fat'],
-      ['K2', '$ Tab'],
-      ['L2', '$ Desc'],
+      ['E2', 'Representante'],
+      ['F2', 'Categoria'],
+      ['G2', 'Produto'],
+      ['H2', 'KG'],
+      ['I2', '$ Venda Un.'],
+      ['J2', '$ Tab Un.'],
+      ['K2', '$ Fat'],
+      ['L2', '$ Tab'],
+      ['M2', '$ Desc'],
 
-      ['M1', 'Refaturamento'],
-      ['M2', 'Dt.'],
-      ['N2', 'NF'],
-      ['O2', 'Categoria'],
-      ['P2', 'Produto'],
-      ['Q2', 'Cliente'],
-      ['R2', 'KG'],
-      ['S2', '$ Venda Un.'],
-      ['T2', '$ Fat'],
-      ['U2', '$ Tab'],
-      ['V2', '$ Desc'],
+      ['N1', 'Refaturamento'],
+      ['N2', 'Dt.'],
+      ['O2', 'NF'],
+      ['P2', 'NF Status'],
+      ['Q2', 'Categoria'],
+      ['R2', 'Produto'],
+      ['S2', 'Cliente'],
+      ['T2', 'KG'],
+      ['U2', '$ Venda Un.'],
+      ['V2', '$ Tab Un.'],
+      ['W2', '$ Fat'],
+      ['X2', '$ Tab'],
+      ['Y2', '$ Desc'],
 
-      ['W1', 'Diferenças'],
-      ['W2', 'Dias'],
-      ['X2', 'KG'],
-      ['Y2', '$ Venda Un.'],
-      ['Z2', '$ Fat'],
-      ['AA2', '% Fat'],
-      ['AB2', 'B.O'],
-      ['AC2', 'Tipo BO'],
-      ['AD2', 'N° Refat'],
-      ['AE2', 'Motivo'],
-      ['AF2', 'Obs'],
+      ['Z1', 'Diferenças'],
+      ['Z2', 'Dias'],
+      ['AA2', 'KG'],
+      ['AB2', '$ Venda Un.'],
+      ['AC2', '$ Fat'],
+      ['AD2', '% Fat'],
+      ['AE2', 'B.O'],
+      ['AF2', 'Tipo BO'],
+      ['AG2', 'N° Refat'],
+      ['AH2', 'Motivo'],
+      ['AI2', 'Obs'],
     ];
 
     return headers;
@@ -229,99 +230,100 @@ export class BusinessAuditSalesReportService {
     return values;
   }
 
-  getReinvoicingHistoryValues2(dto: GetReinvoicingHistoryItem[]) {
-    const values = [];
-    const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
+  // getReinvoicingHistoryValues2(dto: GetReinvoicingHistoryItem[]) {
+  //   const values = [];
+  //   const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
 
-    dto.forEach((item, index) => {
-      // constants
-      const formatedDate = DateUtils.formatFromIso(item.date, 'date');
+  //   dto.forEach((item, index) => {
+  //     // constants
+  //     const formatedDate = DateUtils.formatFromIso(item.date, 'date');
 
-      // Mutable variables
-      let reinvoicingDate = null;
-      let reinvoicingProduct = null;
-      let reinvoicingClient = null;
-      let reinvoicingWeightInKg = 0;
+  //     // Mutable variables
+  //     let reinvoicingDate = null;
+  //     let reinvoicingProduct = null;
+  //     let reinvoicingClient = null;
+  //     let reinvoicingWeightInKg = 0;
 
-      if (item.aggDateReinvoicing) {
-        reinvoicingDate = DateUtils.formatFromIso(
-          item.aggDateReinvoicing,
-          'date',
-        );
-      } else if (item.reInvoicingDate) {
-        reinvoicingDate = DateUtils.formatFromIso(item.reInvoicingDate, 'date');
-      }
+  //     if (item.aggDateReinvoicing) {
+  //       reinvoicingDate = DateUtils.formatFromIso(
+  //         item.aggDateReinvoicing,
+  //         'date',
+  //       );
+  //     } else if (item.reInvoicingDate) {
+  //       reinvoicingDate = DateUtils.formatFromIso(item.reInvoicingDate, 'date');
+  //     }
 
-      if (item.aggProductReinvoicing) {
-        reinvoicingProduct = `${item.aggProductReinvoicing}; Total KG: ${item.aggWeightInKgReinvoicing}`;
-      } else if (item.reInvoicingProductCode) {
-        reinvoicingProduct = `${item.reInvoicingProductCode} - ${item.reInvoicingProductName}`;
-      }
+  //     if (item.aggProductReinvoicing) {
+  //       reinvoicingProduct = `${item.aggProductReinvoicing}; Total KG: ${item.aggWeightInKgReinvoicing}`;
+  //     } else if (item.reInvoicingProductCode) {
+  //       reinvoicingProduct = `${item.reInvoicingProductCode} - ${item.reInvoicingProductName}`;
+  //     }
 
-      if (item.reInvoicingClientCode) {
-        reinvoicingClient = `${item.reInvoicingClientCode} - ${item.reInvoicingClientName}`;
-      }
+  //     if (item.reInvoicingClientCode) {
+  //       reinvoicingClient = `${item.reInvoicingClientCode} - ${item.reInvoicingClientName}`;
+  //     }
 
-      if (item.aggWeightInKgReinvoicing) {
-        reinvoicingWeightInKg = item.aggWeightInKgReinvoicing;
-      } else if (item.reInvoicingWeightInKg) {
-        reinvoicingWeightInKg = item.reInvoicingWeightInKg;
-      }
+  //     if (item.aggWeightInKgReinvoicing) {
+  //       reinvoicingWeightInKg = item.aggWeightInKgReinvoicing;
+  //     } else if (item.reInvoicingWeightInKg) {
+  //       reinvoicingWeightInKg = item.reInvoicingWeightInKg;
+  //     }
 
-      values.push(
-        // VENDA ORIGINAL
-        [`A${row(index)}`, item.companyCode],
-        [`B${row(index)}`, formatedDate],
-        [`C${row(index)}`, item.nfNumber],
-        [`D${row(index)}`, `${item.clientCode} - ${item.clientName}`],
-        [`E${row(index)}`, item.category],
-        [`F${row(index)}`, `${item.productCode} - ${item.productName}`],
-        [`G${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
-        [`H${row(index)}`, NumberUtils.nb2(item.saleUnitPrice ?? 0)],
-        [`I${row(index)}`, NumberUtils.nb2(item.tableUnitPrice ?? 0)],
-        [`J${row(index)}`, NumberUtils.nb2(item.invoicingValue ?? 0)],
-        [`K${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
-        [`K${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
-        [`L${row(index)}`, item.invoicingValue - item.tableValue],
+  //     values.push(
+  //       // VENDA ORIGINAL
+  //       [`A${row(index)}`, item.companyCode],
+  //       [`B${row(index)}`, formatedDate],
+  //       [`C${row(index)}`, item.nfNumber],
+  //       [`D${row(index)}`, `${item.clientCode} - ${item.clientName}`],
+  //       [`E${row(index)}`, item.category],
+  //       [`F${row(index)}`, `${item.productCode} - ${item.productName}`],
+  //       [`G${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
+  //       [`H${row(index)}`, NumberUtils.nb2(item.saleUnitPrice ?? 0)],
+  //       [`I${row(index)}`, NumberUtils.nb2(item.tableUnitPrice ?? 0)],
+  //       [`J${row(index)}`, NumberUtils.nb2(item.invoicingValue ?? 0)],
+  //       [`K${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
+  //       [`K${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
+  //       [`L${row(index)}`, item.invoicingValue - item.tableValue],
 
-        // REFATURAMENTO
-        [`M${row(index)}`, reinvoicingDate],
-        [`N${row(index)}`, item.reInvoicingNfNumber],
-        [`O${row(index)}`, item.reInvoicingCategory],
-        [`P${row(index)}`, reinvoicingProduct],
-        [`Q${row(index)}`, reinvoicingClient],
-        [`R${row(index)}`, NumberUtils.nb2(reinvoicingWeightInKg)],
-        [`S${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
-        [`T${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
-        [`U${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
-        [`V${row(index)}`, item.reInvoicingValue - item.reInvoicingTableValue],
+  //       // REFATURAMENTO
+  //       [`M${row(index)}`, reinvoicingDate],
+  //       [`N${row(index)}`, item.reInvoicingNfNumber],
+  //       [`O${row(index)}`, item.reInvoicingCategory],
+  //       [`P${row(index)}`, reinvoicingProduct],
+  //       [`Q${row(index)}`, reinvoicingClient],
+  //       [`R${row(index)}`, NumberUtils.nb2(reinvoicingWeightInKg)],
+  //       [`S${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
+  //       [`T${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+  //       [`U${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
+  //       [`V${row(index)}`, item.reInvoicingValue - item.reInvoicingTableValue],
 
-        // DIFERENÇAS
-        [`W${row(index)}`, item.difDays],
-        [
-          `X${row(index)}`,
-          NumberUtils.nb2(item.difWeightInKgProportional ?? 0),
-        ],
-        [`Y${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)], // unidade
-        [`Z${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
-        [`AA${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
-        [`AB${row(index)}`, item.occurrenceNumber],
-        [`AC${row(index)}`, item.returnType],
-        [`AD${row(index)}`, item.reinvoicingSequence],
-        [`AE${row(index)}`, item.occurrenceCause],
-        [`AF${row(index)}`, item.observation],
-      );
-    });
+  //       // DIFERENÇAS
+  //       [`W${row(index)}`, item.difDays],
+  //       [
+  //         `X${row(index)}`,
+  //         NumberUtils.nb2(item.difWeightInKgProportional ?? 0),
+  //       ],
+  //       [`Y${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)], // unidade
+  //       [`Z${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
+  //       [`AA${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
+  //       [`AB${row(index)}`, item.occurrenceNumber],
+  //       [`AC${row(index)}`, item.returnType],
+  //       [`AD${row(index)}`, item.reinvoicingSequence],
+  //       [`AE${row(index)}`, item.occurrenceCause],
+  //       [`AF${row(index)}`, item.observation],
+  //     );
+  //   });
 
-    return values;
-  }
+  //   return values;
+  // }
 
   getReinvoicingHistoryValues(dto: GetReinvoicingHistoryItem[]) {
+    // aqui só sao feitos transformações para cast do dado
     const values = [];
     const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
 
     dto
-      .filter((item) => item.reInvoicingProductCode)
+      // .filter((item) => item.reInvoicingProductCode)
       .forEach((item, index) => {
         // constants
         const formatedDate = DateUtils.formatFromIso(item.date, 'date');
@@ -366,44 +368,50 @@ export class BusinessAuditSalesReportService {
           [`B${row(index)}`, formatedDate],
           [`C${row(index)}`, item.nfNumber],
           [`D${row(index)}`, `${item.clientCode} - ${item.clientName}`],
-          [`E${row(index)}`, item.category],
-          [`F${row(index)}`, `${item.productCode} - ${item.productName}`],
-          [`G${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
-          [`H${row(index)}`, NumberUtils.nb2(item.saleUnitPrice ?? 0)],
-          [`I${row(index)}`, NumberUtils.nb2(item.tableUnitPrice ?? 0)],
-          [`J${row(index)}`, NumberUtils.nb2(item.invoicingValue ?? 0)],
-          [`K${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
-          [`L${row(index)}`, item.invoicingValue - item.tableValue],
+          [
+            `E${row(index)}`,
+            `${item.salesRepresentativeCode} - ${item.salesRepresentativeName}`,
+          ],
+          [`F${row(index)}`, item.category],
+          [`G${row(index)}`, `${item.productCode} - ${item.productName}`],
+          [`H${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
+          [`I${row(index)}`, NumberUtils.nb2(item.saleUnitPrice ?? 0)],
+          [`J${row(index)}`, NumberUtils.nb2(item.tableUnitPrice ?? 0)],
+          [`K${row(index)}`, NumberUtils.nb2(item.invoicingValue ?? 0)],
+          [`L${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
+          [`M${row(index)}`, item.invoicingValue - item.tableValue],
 
           // REFATURAMENTO
-          [`M${row(index)}`, reinvoicingDate],
-          [`N${row(index)}`, item.reInvoicingNfNumber],
-          [`O${row(index)}`, item.reInvoicingCategory],
-          [`P${row(index)}`, reinvoicingProduct],
-          [`Q${row(index)}`, reinvoicingClient],
-          [`R${row(index)}`, NumberUtils.nb2(reinvoicingWeightInKg)],
-          [`S${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
-          [`T${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
-          [`U${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
+          [`N${row(index)}`, reinvoicingDate],
+          [`O${row(index)}`, item.reInvoicingNfNumber],
+          [`P${row(index)}`, item.reInvoicingNfSituation],
+          [`Q${row(index)}`, item.reInvoicingCategory],
+          [`R${row(index)}`, reinvoicingProduct],
+          [`S${row(index)}`, reinvoicingClient],
+          [`T${row(index)}`, NumberUtils.nb2(reinvoicingWeightInKg)],
+          [`U${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
           [
             `V${row(index)}`,
+            NumberUtils.nb2(item.reInvoicingTableUnitPrice ?? 0),
+          ],
+          [`W${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
+          [`X${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
+          [
+            `Y${row(index)}`,
             item.reInvoicingValue - item.reInvoicingTableValue,
           ],
 
           // DIFERENÇAS
-          [`W${row(index)}`, item.difDays],
-          [
-            `X${row(index)}`,
-            NumberUtils.nb2(item.difWeightInKgProportional ?? 0),
-          ],
-          [`Y${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)], // unidade
-          [`Z${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
-          [`AA${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
-          [`AB${row(index)}`, item.occurrenceNumber],
-          [`AC${row(index)}`, item.returnType],
-          [`AD${row(index)}`, item.reinvoicingSequence],
-          [`AE${row(index)}`, item.occurrenceCause],
-          [`AF${row(index)}`, item.observation],
+          [`Z${row(index)}`, item.difDays],
+          [`AA${row(index)}`, NumberUtils.nb2(item.difWeightInKg ?? 0)],
+          [`AB${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)],
+          [`AC${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
+          [`AD${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
+          [`AE${row(index)}`, item.occurrenceNumber],
+          [`AF${row(index)}`, item.returnType],
+          [`AG${row(index)}`, item.reinvoicingSequence],
+          [`AH${row(index)}`, item.occurrenceCause],
+          [`AI${row(index)}`, item.observation],
         );
       });
 
@@ -471,9 +479,9 @@ export class BusinessAuditSalesReportService {
     const reinvoicingHistoryWorksheet = this.excelReader.addWorksheet(
       `Monitoramento - Fat x Refat`,
     );
-    const reinvoicingHistoryWorksheet2 = this.excelReader.addWorksheet(
-      `Monitoramento - Fat x Refat(2)`,
-    );
+    // const reinvoicingHistoryWorksheet2 = this.excelReader.addWorksheet(
+    //   `Monitoramento - Fat x Refat(2)`,
+    // );
 
     const salesByInvoiceHeaders = this.getSalesByInvoiceHeaders();
     salesByInvoiceHeaders.forEach(([cell, value]) => {
@@ -504,7 +512,7 @@ export class BusinessAuditSalesReportService {
     const reinvoicingHistoryHeaders = this.getReinvoicingHistoryHeaders();
     reinvoicingHistoryHeaders.forEach(([cell, value]) => {
       this.excelReader.addData(reinvoicingHistoryWorksheet, cell, value);
-      this.excelReader.addData(reinvoicingHistoryWorksheet2, cell, value);
+      // this.excelReader.addData(reinvoicingHistoryWorksheet2, cell, value);
     });
 
     const reinvoicingHistoryValues = this.getReinvoicingHistoryValues(
@@ -516,15 +524,15 @@ export class BusinessAuditSalesReportService {
         this.excelReader.addNumFmt(reinvoicingHistoryWorksheet, cell, numFmt);
       }
     });
-    const reinvoicingHistoryValues2 = this.getReinvoicingHistoryValues2(
-      reinvoicingHistoryData,
-    );
-    reinvoicingHistoryValues2.forEach(([cell, value, numFmt]) => {
-      this.excelReader.addData(reinvoicingHistoryWorksheet2, cell, value);
-      if (numFmt) {
-        this.excelReader.addNumFmt(reinvoicingHistoryWorksheet2, cell, numFmt);
-      }
-    });
+    // const reinvoicingHistoryValues2 = this.getReinvoicingHistoryValues2(
+    //   reinvoicingHistoryData,
+    // );
+    // reinvoicingHistoryValues2.forEach(([cell, value, numFmt]) => {
+    //   this.excelReader.addData(reinvoicingHistoryWorksheet2, cell, value);
+    //   if (numFmt) {
+    //     this.excelReader.addNumFmt(reinvoicingHistoryWorksheet2, cell, numFmt);
+    //   }
+    // });
 
     return await this.excelReader.toFile();
   }
