@@ -16,6 +16,12 @@ export class ProductionMovement {
   @Column({ name: 'company_code', comment: 'codigo empresa', nullable: true })
   companyCode?: string; // codigo empresa
 
+  @Column({ name: 'warehouse_code', nullable: true })
+  warehouseCode?: string;
+
+  @Column({ name: 'warehouse_name', nullable: true })
+  warehouseName?: string;
+
   @Column({
     name: 'movement_type',
     comment: 'movimentação (entrada e saida)',
