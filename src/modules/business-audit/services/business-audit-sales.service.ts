@@ -758,9 +758,8 @@ export class BusinessAuditSalesService {
       } else {
         difValue = row.weight_in_kg_reinvoicing * difSaleUnitPrice;
       }
-      const difValuePercent = NumberUtils.nb4(
-        row.invoicing_value_reinvoicing / row.invoicing_value,
-      );
+      const difValuePercent =
+        row.invoicing_value_reinvoicing / row.invoicing_value;
 
       response.push({
         companyCode: row.CODIGO_EMPRESA,
@@ -807,6 +806,13 @@ export class BusinessAuditSalesService {
         returnType: row.return_type,
         observation: row.observation,
 
+        // Peso que ficou originalmente para o cliente 1
+        // Valor faturado que ficou para o cliente 1 VFC1 (invoicing_value_proporcional)
+
+        // Coluna de teste (Teste Valor Faturado Total) = VFC1 + Valor REFAT + ABS(DIF FAT)
+        // weightInKgProportional: 0,
+        invoicingValueProportional: 0,
+        testFinalValue: 0,
         aggDateReinvoicing: row.agg_date_reinvoicing,
         aggProductReinvoicing: row.agg_product_reinvoicing,
         aggWeightInKgReinvoicing: row.agg_weight_in_kg_reinvoicing,
@@ -872,6 +878,10 @@ export class BusinessAuditSalesService {
             returnType: row.return_type,
             observation: row.observation,
 
+            //  weightInKgProportional: 0,
+            invoicingValueProportional: 0,
+            testFinalValue: 0,
+
             aggDateReinvoicing: row.agg_date_reinvoicing,
             aggProductReinvoicing: row.agg_product_reinvoicing,
             aggWeightInKgReinvoicing: row.agg_weight_in_kg_reinvoicing,
@@ -901,6 +911,7 @@ export class BusinessAuditSalesService {
     response.forEach((item) => {
       const key = `${item.companyCode}-${new Date(item.date).toISOString()}-${item.nfNumber}-${item.productCode}`;
       const isCanceledReinvoicing = item.reInvoicingNfSituation === 'Cancelada';
+
       const isNoReivoicing = !item.reInvoicingProductCode;
 
       // NF CANCELADA → SEMPRE ZERA e NÃO CONTA como primeira
@@ -908,8 +919,11 @@ export class BusinessAuditSalesService {
         item.weightInKg = 0;
         item.invoicingValue = 0;
         item.tableValue = 0;
-        item.saleUnitPrice = 0;
-        item.tableUnitPrice = 0;
+        item.reInvoicingWeightInKg = 0;
+        item.reInvoicingValue = 0;
+        item.reInvoicingTableValue = 0;
+        // item.saleUnitPrice = 0;
+        // item.tableUnitPrice = 0;
         item.difDays = 0;
         item.difSaleUnitPrice = 0;
         item.difValue = 0;
@@ -924,6 +938,10 @@ export class BusinessAuditSalesService {
         const totalReinvoicedKg = reinvoicingKgSumMap.get(key) ?? 0;
         if (!isNoReivoicing) {
           item.difWeightInKg = totalReinvoicedKg - item.weightInKg;
+          // item. weightInKgProportional = 0
+          item.invoicingValueProportional =
+            Math.abs(item.difWeightInKg) * item.saleUnitPrice;
+
           return;
         }
       }

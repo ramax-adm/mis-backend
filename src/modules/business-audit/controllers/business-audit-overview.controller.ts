@@ -18,7 +18,7 @@ import { DataSource } from 'typeorm';
 import { SWAGGER_API_SECURITY } from '@/core/constants/swagger-security';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiControllerDoc } from '@/core/decorators/api-doc.decorator';
-
+import { BusinessAuditOverviewService as BusinessAuditOverviewNewService } from '../services/business-audit-overview-new.service';
 @ApiTags('Auditoria: Visão geral')
 @ApiBearerAuth(SWAGGER_API_SECURITY.BEARER_AUTH)
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,6 +26,7 @@ import { ApiControllerDoc } from '@/core/decorators/api-doc.decorator';
 export class BusinessAuditOverviewController {
   constructor(
     private readonly businessAuditOverviewService: BusinessAuditOverviewService,
+    private readonly businessAuditOverviewNewService: BusinessAuditOverviewNewService,
   ) {}
 
   // @Get()
@@ -49,6 +50,19 @@ export class BusinessAuditOverviewController {
   @HttpCode(HttpStatus.OK)
   async getOverviewData() {
     const data = this.businessAuditOverviewService.getData();
+
+    return data;
+  }
+
+  @ApiControllerDoc({
+    summary: '',
+    successStatus: HttpStatus.OK,
+    successDescription: '',
+  })
+  @Get('new')
+  @HttpCode(HttpStatus.OK)
+  async getOverviewNewData() {
+    const data = this.businessAuditOverviewNewService.getData();
 
     return data;
   }
