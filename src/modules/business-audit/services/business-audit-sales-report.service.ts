@@ -96,47 +96,49 @@ export class BusinessAuditSalesReportService {
    **/
 
   getReinvoicingHistoryHeaders() {
+    // V_Emp	V_Dt.	V_NF	V_Cliente	V_Representante	V_Categoria	V_Produto	 V_KG 	 V_$ Venda Un. 	 V_$ Fat 	R_NF	R_Produto	R_Cliente	 R_KG 	 R_$ Venda Un. 	 R_$ Fat 	 D_KG 	 D_$ Venda Un. 	 D_$ Fat 	D_Tipo BO	V_Emp	 PESO C1 	 $V C1 	AL+W-AC	AM=K
+
     const headers: [string, any][] = [
-      ['A1', 'Venda Original'],
-      ['A2', 'Emp'],
-      ['B2', 'Dt.'],
-      ['C2', 'NF'],
-      ['D2', 'Cliente'],
-      ['E2', 'Representante'],
-      ['F2', 'Categoria'],
-      ['G2', 'Produto'],
-      ['H2', 'KG'],
-      ['I2', '$ Venda Un.'],
-      ['J2', '$ Tab Un.'],
-      ['K2', '$ Fat'],
-      ['L2', '$ Tab'],
-      ['M2', '$ Desc'],
+      ['A1', 'V_Emp'],
+      ['B1', 'V_Dt.'],
+      ['C1', 'V_NF'],
+      ['D1', 'V_Cliente'],
+      ['E1', 'V_Representante'],
+      ['F1', 'V_Categoria'],
+      ['G1', 'V_Produto'],
+      ['H1', 'V_KG'],
+      ['I1', 'V_$ Venda Un.'],
+      ['J1', 'V_$ Tab Un.'],
+      ['K1', 'V_$ Fat'],
+      ['L1', 'V_$ Tab'],
+      ['M1', 'V_$ Desc'],
 
-      ['N1', 'Refaturamento'],
-      ['N2', 'Dt.'],
-      ['O2', 'NF'],
-      ['P2', 'NF Status'],
-      ['Q2', 'Categoria'],
-      ['R2', 'Produto'],
-      ['S2', 'Cliente'],
-      ['T2', 'KG'],
-      ['U2', '$ Venda Un.'],
-      ['V2', '$ Tab Un.'],
-      ['W2', '$ Fat'],
-      ['X2', '$ Tab'],
-      ['Y2', '$ Desc'],
+      ['N1', 'R_Dt.'],
+      ['O1', 'R_NF'],
+      ['P1', 'R_NF Status'],
+      ['Q1', 'R_Categoria'],
+      ['R1', 'R_Produto'],
+      ['S1', 'R_Cliente'],
+      ['T1', 'R_KG'],
+      ['U1', 'R_$ Venda Un.'],
+      ['V1', 'R_$ Tab Un.'],
+      ['W1', 'R_$ Fat'],
+      ['X1', 'R_$ Tab'],
+      ['Y1', 'R_$ Desc'],
 
-      ['Z1', 'Diferenças'],
-      ['Z2', 'Dias'],
-      ['AA2', 'KG'],
-      ['AB2', '$ Venda Un.'],
-      ['AC2', '$ Fat'],
-      ['AD2', '% Fat'],
-      ['AE2', 'B.O'],
-      ['AF2', 'Tipo BO'],
-      ['AG2', 'N° Refat'],
-      ['AH2', 'Motivo'],
-      ['AI2', 'Obs'],
+      ['Z1', 'D_Dias'],
+      ['AA1', 'D_KG'],
+      ['AB1', 'D_$ Venda Un.'],
+      ['AC1', 'D_$ Fat'],
+      ['AD1', 'D_% Fat'],
+      ['AE1', 'D_B.O'],
+      ['AF1', 'D_Tipo BO'],
+      ['AG1', 'D_N° Refat'],
+      ['AH1', 'D_Motivo'],
+      ['AI1', 'D_Obs'],
+      ['AJ1', 'T_KG C1'],
+      ['AK1', 'T_$ FAT C1'],
+      ['AL1', 'T_$'],
     ];
 
     return headers;
@@ -320,7 +322,7 @@ export class BusinessAuditSalesReportService {
   getReinvoicingHistoryValues(dto: GetReinvoicingHistoryItem[]) {
     // aqui só sao feitos transformações para cast do dado
     const values = [];
-    const row = (i: number) => i + 3; // começa da linha 3 (linha 1 e 2 = headers)
+    const row = (i: number) => i + 2; // começa da linha 3 (linha 1 e 2 = headers)
 
     dto
       // .filter((item) => item.reInvoicingProductCode)
@@ -374,11 +376,11 @@ export class BusinessAuditSalesReportService {
           ],
           [`F${row(index)}`, item.category],
           [`G${row(index)}`, `${item.productCode} - ${item.productName}`],
-          [`H${row(index)}`, NumberUtils.nb2(item.weightInKg ?? 0)],
-          [`I${row(index)}`, NumberUtils.nb2(item.saleUnitPrice ?? 0)],
-          [`J${row(index)}`, NumberUtils.nb2(item.tableUnitPrice ?? 0)],
-          [`K${row(index)}`, NumberUtils.nb2(item.invoicingValue ?? 0)],
-          [`L${row(index)}`, NumberUtils.nb2(item.tableValue ?? 0)],
+          [`H${row(index)}`, item.weightInKg ?? 0],
+          [`I${row(index)}`, item.saleUnitPrice ?? 0],
+          [`J${row(index)}`, item.tableUnitPrice ?? 0],
+          [`K${row(index)}`, item.invoicingValue ?? 0],
+          [`L${row(index)}`, item.tableValue ?? 0],
           [`M${row(index)}`, item.invoicingValue - item.tableValue],
 
           // REFATURAMENTO
@@ -388,14 +390,11 @@ export class BusinessAuditSalesReportService {
           [`Q${row(index)}`, item.reInvoicingCategory],
           [`R${row(index)}`, reinvoicingProduct],
           [`S${row(index)}`, reinvoicingClient],
-          [`T${row(index)}`, NumberUtils.nb2(reinvoicingWeightInKg)],
-          [`U${row(index)}`, NumberUtils.nb2(item.reInvoicingUnitPrice ?? 0)],
-          [
-            `V${row(index)}`,
-            NumberUtils.nb2(item.reInvoicingTableUnitPrice ?? 0),
-          ],
-          [`W${row(index)}`, NumberUtils.nb2(item.reInvoicingValue ?? 0)],
-          [`X${row(index)}`, NumberUtils.nb2(item.reInvoicingTableValue ?? 0)],
+          [`T${row(index)}`, reinvoicingWeightInKg],
+          [`U${row(index)}`, item.reInvoicingUnitPrice ?? 0],
+          [`V${row(index)}`, item.reInvoicingTableUnitPrice ?? 0],
+          [`W${row(index)}`, item.reInvoicingValue ?? 0],
+          [`X${row(index)}`, item.reInvoicingTableValue ?? 0],
           [
             `Y${row(index)}`,
             item.reInvoicingValue - item.reInvoicingTableValue,
@@ -403,15 +402,23 @@ export class BusinessAuditSalesReportService {
 
           // DIFERENÇAS
           [`Z${row(index)}`, item.difDays],
-          [`AA${row(index)}`, NumberUtils.nb2(item.difWeightInKg ?? 0)],
-          [`AB${row(index)}`, NumberUtils.nb2(item.difSaleUnitPrice ?? 0)],
-          [`AC${row(index)}`, NumberUtils.nb2(item.difValue ?? 0)],
+          [`AA${row(index)}`, item.difWeightInKg ?? 0],
+          [`AB${row(index)}`, item.difSaleUnitPrice ?? 0],
+          [`AC${row(index)}`, item.difValue ?? 0],
           [`AD${row(index)}`, NumberUtils.nb4(item.difValuePercent ?? 0)],
           [`AE${row(index)}`, item.occurrenceNumber],
           [`AF${row(index)}`, item.returnType],
           [`AG${row(index)}`, item.reinvoicingSequence],
           [`AH${row(index)}`, item.occurrenceCause],
           [`AI${row(index)}`, item.observation],
+          [`AJ${row(index)}`, Math.abs(item.difWeightInKg)],
+          [`AK${row(index)}`, item.invoicingValueProportional],
+          [
+            `AL${row(index)}`,
+            item.invoicingValueProportional +
+              item.reInvoicingValue +
+              Math.abs(item.difValue),
+          ],
         );
       });
 

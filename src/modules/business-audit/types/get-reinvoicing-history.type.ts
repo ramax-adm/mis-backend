@@ -131,6 +131,13 @@ export interface GetReinvoicingHistoryItem {
   reinvoicingSequence: number;
   returnType: string;
   observation: string;
+
+  // CAMPOS NOVOS FRANCISCO
+  //  PESO C1 	 $V C1
+  // weightInKgProportional:number
+  invoicingValueProportional: number;
+  testFinalValue: number;
+
   aggDateReinvoicing: Date;
   aggProductReinvoicing: string;
   aggWeightInKgReinvoicing: number;

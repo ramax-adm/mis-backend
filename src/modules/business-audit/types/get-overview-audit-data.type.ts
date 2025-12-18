@@ -7,6 +7,7 @@ export interface BillingsSummary {
 export interface ReturnOccurrencesSummary {
   totals: { value: number; weightInKg: number };
   byMonth: ByMonthAgg;
+  byReturnType: Record<string, { value: number; weightInKg: number }>;
 }
 
 export interface SlaughtersSummary {
@@ -14,7 +15,7 @@ export interface SlaughtersSummary {
   byMonth: ByMonthAgg;
 }
 
-export interface StockSummary {
+export interface StockProductionSummary {
   totals: { quantity: number; weightInKg: number };
   byMonth: ByMonthAgg;
 }
@@ -38,6 +39,7 @@ export type ByMonthAgg = Record<
 export type StatusAgg = Record<
   string,
   {
+    quantity:number
     minOpenDays: number;
     maxOpenDays: number;
     averageOpenDays: number;

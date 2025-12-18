@@ -4,7 +4,7 @@ import {
   BillingsSummary,
   SlaughtersSummary,
   StockAnalysis,
-  StockSummary,
+  StockProductionSummary,
 } from '../../types/get-overview-audit-data.type';
 
 export class GetBusinessAuditOverviewDataResponseDto {
@@ -12,7 +12,7 @@ export class GetBusinessAuditOverviewDataResponseDto {
     billings: BillingsSummary;
     returnOccurrences: ReturnOccurrencesSummary;
     slaughters: SlaughtersSummary;
-    stock: StockSummary;
+    stockProduction: StockProductionSummary;
   };
   analisys: {
     freights: FreightsAnalysis;
