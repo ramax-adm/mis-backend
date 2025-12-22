@@ -284,7 +284,8 @@ export class InventoryService {
           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
         );
 
-        const traceToConsider = sortedTraces.at(1);
+        const traceToConsider =
+          sortedTraces.length === 1 ? sortedTraces.at(0) : sortedTraces.at(1);
         if (!traceToConsider?.operation) {
           continue;
         }
