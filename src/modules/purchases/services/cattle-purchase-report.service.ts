@@ -18,19 +18,25 @@ export class CattlePurchaseReportService {
   getAnalyticalHeaders(): [string, any][] {
     const headers: [string, any][] = [
       ['A1', 'Data'],
-      ['B1', 'Cod. Empresa'],
-      ['C1', 'Empresa'],
-      ['D1', 'Cod. OC'],
-      ['E1', 'Pecuarista'],
-      ['F1', 'Assessor'],
-      ['G1', 'Cbs'],
-      ['H1', 'Classificação'],
-      ['I1', 'Peso @'],
-      ['J1', 'Prazo Pgt'],
-      ['K1', 'Valor Frete R$'],
-      ['L1', 'Valor Comissão R$'],
-      ['M1', 'Valor Compra R$'],
-      ['N1', 'Valor Total R$'],
+      ['B1', 'Cod. OC'],
+      ['C1', 'Cod. Empresa'],
+      ['D1', 'Empresa'],
+      ['E1', 'Cod.Pecuarista'],
+      ['F1', 'Pecuarista'],
+      ['G1', 'Cod. Assessor'],
+      ['H1', 'Assessor'],
+      ['I1', 'Cabeças'],
+      ['J1', 'Classificação'],
+      ['K1', 'Prazo (dias)'],
+      ['L1', 'Peso @'],
+      ['M1', 'Peso KG'],
+      ['N1', 'Valor Frete $'],
+      ['O1', 'Valor Comissão $'],
+      ['P1', 'Valor Compra $'],
+      ['Q1', '$/Cab'],
+      ['R1', '$/@'],
+      ['S1', '$/KG'],
+      ['T1', 'Valor Total $'],
     ];
 
     return headers;
@@ -46,19 +52,25 @@ export class CattlePurchaseReportService {
     dto.forEach((item, index) => {
       values.push(
         [`A${row(index)}`, DateUtils.format(item.slaughterDate, 'date')],
-        [`B${row(index)}`, item.companyCode],
-        [`C${row(index)}`, item.companyName],
-        [`D${row(index)}`, item.purchaseCattleOrderId],
-        [`E${row(index)}`, item.cattleOwnerName],
-        [`F${row(index)}`, item.cattleAdvisorName],
-        [`G${row(index)}`, item.cattleQuantity],
-        [`H${row(index)}`, item.cattleClassification],
-        [`I${row(index)}`, item.cattleWeightInArroba],
-        [`J${row(index)}`, item.paymentTerm],
-        [`K${row(index)}`, item.freightPrice],
-        [`L${row(index)}`, item.commissionPrice],
-        [`M${row(index)}`, item.purchasePrice],
-        [`N${row(index)}`, item.totalValue],
+        [`B${row(index)}`, item.purchaseCattleOrderId],
+        [`C${row(index)}`, item.companyCode],
+        [`D${row(index)}`, item.companyName],
+        [`E${row(index)}`, item.cattleOwnerCode],
+        [`F${row(index)}`, item.cattleOwnerName],
+        [`G${row(index)}`, item.cattleAdvisorCode],
+        [`H${row(index)}`, item.cattleAdvisorName],
+        [`I${row(index)}`, item.cattleQuantity],
+        [`J${row(index)}`, item.cattleClassification],
+        [`K${row(index)}`, item.paymentTerm],
+        [`L${row(index)}`, item.cattleWeightInArroba],
+        [`M${row(index)}`, item.cattleWeightInKg],
+        [`N${row(index)}`, item.freightPrice],
+        [`O${row(index)}`, item.commissionPrice],
+        [`P${row(index)}`, item.purchasePrice],
+        [`Q${row(index)}`, item.headPrice],
+        [`R${row(index)}`, item.arrobaPrice],
+        [`S${row(index)}`, item.kgPrice],
+        [`T${row(index)}`, item.totalValue],
       );
     });
 
@@ -70,14 +82,15 @@ export class CattlePurchaseReportService {
       filters: {
         startDate,
         endDate,
-        companyCode,
+        companyCodes,
         cattleAdvisorName,
         cattleClassification,
         cattleOwnerName,
+        purchaseCattleOrderId,
       },
     } = dto;
 
-    const isMainFiltersChoosed = !!startDate && !!endDate && !!companyCode;
+    const isMainFiltersChoosed = !!startDate && !!endDate;
     if (!isMainFiltersChoosed) {
       throw new BadRequestException(
         'Escolha os filtros: Empresa, Dt. inicio, Dt. fim',
@@ -89,10 +102,11 @@ export class CattlePurchaseReportService {
     const data = await this.cattlePurchaseService.getAnalyticalData({
       startDate,
       endDate,
-      companyCode,
+      companyCodes: companyCodes?.split(','),
       cattleAdvisorName,
       cattleClassification,
       cattleOwnerName,
+      purchaseCattleOrderId,
     });
 
     // filtering
