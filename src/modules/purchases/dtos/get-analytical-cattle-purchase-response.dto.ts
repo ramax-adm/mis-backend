@@ -14,6 +14,7 @@ export interface GetAnalyticalCattlePurchaseResponseInput {
   cattleQuantity: number;
   cattleClassification: string;
   cattleWeightInArroba: number;
+  cattleWeightInKg: number;
   paymentTerm: number;
   freightPrice: number;
   purchasePrice: number;
@@ -36,6 +37,7 @@ export class GetAnalyticalCattlePurchaseResponseDto {
   cattleQuantity: number;
   cattleClassification: string;
   cattleWeightInArroba: number;
+  cattleWeightInKg: number;
   paymentTerm: number;
   freightPrice: number;
   purchasePrice: number;
@@ -58,6 +60,7 @@ export class GetAnalyticalCattlePurchaseResponseDto {
       cattleQuantity: data.cattleQuantity,
       cattleClassification: data.cattleClassification,
       cattleWeightInArroba: data.cattleWeightInArroba,
+      cattleWeightInKg: data.cattleWeightInKg,
       paymentTerm: data.paymentTerm,
       freightPrice: data.freightPrice,
       purchasePrice: data.purchasePrice,
@@ -78,15 +81,22 @@ export class GetAnalyticalCattlePurchaseResponseDto {
     return {
       slaughterDate: DateUtils.format(parsedSlaughterDate, 'date'),
       purchaseCattleOrderId: this.purchaseCattleOrderId,
+      company: `${this.companyCode} - ${this.companyName}`,
+      cattleOwner: `${this.cattleOwnerCode} - ${this.cattleOwnerName}`,
       cattleOwnerCode: this.cattleOwnerCode,
       cattleOwnerName: this.cattleOwnerName,
       companyCode: this.companyCode,
       companyName: this.companyName,
       cattleAdvisorCode: this.cattleAdvisorCode,
       cattleAdvisorName: this.cattleAdvisorName,
+      cattleAdvisor: `${this.cattleAdvisorCode} - ${this.cattleAdvisorName}`,
       cattleQuantity: this.cattleQuantity,
       cattleClassification: this.cattleClassification,
-      cattleWeightInArroba: this.cattleWeightInArroba,
+      cattleWeightInArroba: NumberUtils.toLocaleString(
+        this.cattleWeightInArroba,
+        2,
+      ),
+      cattleWeightInKg: NumberUtils.toLocaleString(this.cattleWeightInKg, 2),
       paymentTerm: this.paymentTerm,
       freightPrice: NumberUtils.toLocaleString(this.freightPrice, 2),
       purchasePrice: NumberUtils.toLocaleString(this.purchasePrice, 2),
