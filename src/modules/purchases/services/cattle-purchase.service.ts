@@ -343,6 +343,7 @@ export class CattlePurchaseService {
       priceDeviation: 0,
       freightPercentOverTotal: 0,
       commissionPercentOverTotal: 0,
+      purchasesCount: 0,
     };
 
     /** BLOCO 1 - CIMA */
@@ -361,6 +362,8 @@ export class CattlePurchaseService {
     // qtd de cabeças p/ dia - OK
     const cattlePurchaseQuantityBySlaughterDateMap: Map<string, number> =
       new Map();
+
+    const cattlePurchasesQuantitySet = new Set();
 
     /** BLOCO 2 - baixo */
     // por classificação de gado
@@ -445,6 +448,8 @@ export class CattlePurchaseService {
       const freightPrice = item.freightPrice;
       const purchasePrice = item.purchasePrice;
       const totalValue = item.totalValue;
+
+      cattlePurchasesQuantitySet.add(item.sensattaId);
 
       if (!cattlePurchaseByCompanyMap.has(companyName)) {
         const group = {
@@ -565,6 +570,7 @@ export class CattlePurchaseService {
     kpis.freightPercentOverTotal = totals.freightValue / totals.finalValue;
     kpis.commissionPercentOverTotal =
       totals.commissionValue / totals.finalValue;
+    kpis.purchasesCount = cattlePurchasesQuantitySet.size;
 
     for (const [, obj] of cattlePurchaseByCompanyMap) {
       obj.percent = obj.totalValue / totals.finalValue;
