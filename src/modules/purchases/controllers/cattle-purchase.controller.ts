@@ -23,6 +23,7 @@ import {
   CATTLE_PURCHASE_CATTLE_CLASSIFICATION,
   CATTLE_PURCHASE_CATTLE_OWNERS,
 } from '@/modules/purchases/constants/purchase';
+import { CattlePurchaseTotals } from '../types/get-cattle-purchase.type';
 
 @Controller('purchase/cattle-purchase')
 export class CattlePurchaseController {
@@ -36,24 +37,46 @@ export class CattlePurchaseController {
   @Get('/resumed')
   @HttpCode(HttpStatus.OK)
   async getResumedData(
-    @Query('companyCode') companyCode: string,
+    @Query('companyCodes') companyCodes: string,
     @Query('startDate') startDate: Date | null = null,
     @Query('endDate') endDate: Date | null = null,
+    @Query('cattleAdvisorName') cattleAdvisorName: string,
+    @Query('cattleClassification') cattleClassification: string,
+    @Query('cattleOwnerName') cattleOwnerName: string,
   ) {
-    const response = await this.cattlePurchaseService.getResumeData({
-      companyCode,
-      startDate,
-      endDate,
-    });
+    const { totals, kpis, ...rest } =
+      await this.cattlePurchaseService.getResumeData({
+        companyCodes: companyCodes?.split(','),
+        startDate,
+        endDate,
+        cattleAdvisorName,
+        cattleClassification,
+        cattleOwnerName,
+      });
 
-    return response;
+    return {
+      ...rest,
+      kpis,
+      totals: {
+        cattleQuantity: NumberUtils.toLocaleString(totals.cattleQuantity),
+        weightInArroba: NumberUtils.toLocaleString(totals.weightInArroba),
+        weightInKg: NumberUtils.toLocaleString(totals.weightInKg),
+        freightValue: NumberUtils.toLocaleString(totals.freightValue),
+        purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue),
+        commissionValue: NumberUtils.toLocaleString(totals.commissionValue),
+        finalValue: NumberUtils.toLocaleString(totals.finalValue),
+        arrobaPrice: NumberUtils.toLocaleString(totals.arrobaPrice, 2),
+        headPrice: NumberUtils.toLocaleString(totals.headPrice, 2),
+        kgPrice: NumberUtils.toLocaleString(totals.kgPrice, 2),
+        count: totals.count,
+      },
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/cattle-owner')
   @HttpCode(HttpStatus.OK)
   async getCattlePurchaseCattleOwner(
-    @Query('companyCode') companyCode: string,
     @Query('startDate') startDate: Date | null = null,
     @Query('endDate') endDate: Date | null = null,
   ) {
@@ -61,7 +84,7 @@ export class CattlePurchaseController {
 
     const data = await this.datasource.query<{ cattle_owner_name: string }[]>(
       query,
-      [companyCode, startDate, endDate],
+      [startDate, endDate],
     );
 
     return data.map((i) => ({ cattleOwnerName: i.cattle_owner_name }));
@@ -71,7 +94,6 @@ export class CattlePurchaseController {
   @Get('/cattle-classification')
   @HttpCode(HttpStatus.OK)
   async getCattlePurchaseCattleClassification(
-    @Query('companyCode') companyCode: string,
     @Query('startDate') startDate: Date | null = null,
     @Query('endDate') endDate: Date | null = null,
   ) {
@@ -79,7 +101,7 @@ export class CattlePurchaseController {
 
     const data = await this.datasource.query<
       { cattle_classification: string }[]
-    >(query, [companyCode, startDate, endDate]);
+    >(query, [startDate, endDate]);
 
     return data.map((i) => ({ cattleClassification: i.cattle_classification }));
   }
@@ -88,7 +110,6 @@ export class CattlePurchaseController {
   @Get('/cattle-advisor')
   @HttpCode(HttpStatus.OK)
   async getCattlePurchaseCattleAdvisor(
-    @Query('companyCode') companyCode: string,
     @Query('startDate') startDate: Date | null = null,
     @Query('endDate') endDate: Date | null = null,
   ) {
@@ -96,7 +117,7 @@ export class CattlePurchaseController {
 
     const data = await this.datasource.query<{ cattle_advisor_name: string }[]>(
       query,
-      [companyCode, startDate, endDate],
+      [startDate, endDate],
     );
 
     return data.map((i) => ({ cattleAdvisorName: i.cattle_advisor_name }));
@@ -106,39 +127,42 @@ export class CattlePurchaseController {
   @Get('/analytical')
   @HttpCode(HttpStatus.OK)
   async getAnalyticalData(
-    @Query('companyCode') companyCode: string,
+    @Query('companyCodes') companyCodes: string,
     @Query('cattleOwnerName') cattleOwnerName: string,
     @Query('cattleAdvisorName') cattleAdvisorName: string,
     @Query('cattleClassification') cattleClassification: string,
+    @Query('purchaseCattleOrderId') purchaseCattleOrderId: string,
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date,
   ) {
     const response = await this.cattlePurchaseService.getAnalyticalData({
-      companyCode,
+      companyCodes: companyCodes?.split(','),
       cattleOwnerName,
       cattleAdvisorName,
       cattleClassification,
+      purchaseCattleOrderId,
       startDate,
       endDate,
     });
 
-    const totals = response.reduce(
+    const totals: CattlePurchaseTotals = response.reduce(
       (acc, item) => ({
         cattleQuantity: acc.cattleQuantity + item.cattleQuantity,
-        weightInArroba:
-          acc.weightInArroba + item.cattleWeightInArroba * item.cattleQuantity,
+        weightInArroba: acc.weightInArroba + item.cattleWeightInArroba,
+        weightInKg: acc.weightInKg + item.cattleWeightInKg,
         freightValue: acc.freightValue + item.freightPrice,
         purchaseValue: acc.purchaseValue + item.purchasePrice,
         commissionValue: acc.commissionValue + item.commissionPrice,
         finalValue: acc.finalValue + item.totalValue,
-        arrobaPrice: acc.arrobaPrice + item.arrobaPrice,
-        headPrice: acc.headPrice + item.headPrice,
-        kgPrice: acc.kgPrice + item.kgPrice,
+        arrobaPrice: 0,
+        headPrice: 0,
+        kgPrice: 0,
         count: acc.count + 1,
       }),
       {
         cattleQuantity: 0,
         weightInArroba: 0,
+        weightInKg: 0,
         freightValue: 0,
         purchaseValue: 0,
         commissionValue: 0,
@@ -151,9 +175,9 @@ export class CattlePurchaseController {
     );
 
     // media
-    totals.headPrice = totals.headPrice / totals.count;
-    totals.arrobaPrice = totals.arrobaPrice / totals.count;
-    totals.kgPrice = totals.kgPrice / totals.count;
+    totals.headPrice = totals.finalValue / totals.cattleQuantity;
+    totals.arrobaPrice = totals.finalValue / totals.weightInArroba;
+    totals.kgPrice = totals.finalValue / totals.weightInArroba / 15;
 
     return {
       parsedData: response.map((item) => item.toJSON()),
@@ -161,6 +185,7 @@ export class CattlePurchaseController {
       totals: {
         cattleQuantity: NumberUtils.toLocaleString(totals.cattleQuantity),
         weightInArroba: NumberUtils.toLocaleString(totals.weightInArroba),
+        weightInKg: NumberUtils.toLocaleString(totals.weightInKg),
         freightValue: NumberUtils.toLocaleString(totals.freightValue),
         purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue),
         commissionValue: NumberUtils.toLocaleString(totals.commissionValue),
@@ -176,26 +201,29 @@ export class CattlePurchaseController {
   @Get('/analytical/aggregated')
   @HttpCode(HttpStatus.OK)
   async getAggregatedAnalyticalData(
-    @Query('companyCode') companyCode: string,
+    @Query('companyCodes') companyCodes: string,
     @Query('cattleAdvisorName') cattleAdvisorName: string,
     @Query('cattleClassification') cattleClassification: string,
     @Query('cattleOwnerName') cattleOwnerName: string,
+    @Query('purchaseCattleOrderId') purchaseCattleOrderId: string,
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date,
   ) {
     const response =
       await this.cattlePurchaseService.getAggregatedAnalyticalData({
-        companyCode,
+        companyCodes: companyCodes?.split(','),
         startDate,
         endDate,
         cattleAdvisorName,
         cattleClassification,
         cattleOwnerName,
+        purchaseCattleOrderId,
       });
 
-    const totals = {
+    const totals: CattlePurchaseTotals = {
       cattleQuantity: 0,
       weightInArroba: 0,
+      weightInKg: 0,
       freightValue: 0,
       purchaseValue: 0,
       commissionValue: 0,
@@ -209,6 +237,7 @@ export class CattlePurchaseController {
     for (const value of Object.values(response)) {
       totals.cattleQuantity += value.cattleQuantity;
       totals.weightInArroba += value.weightInArroba;
+      totals.weightInKg += value.weightInKg;
       totals.freightValue += value.freightPrice;
       totals.purchaseValue += value.purchasePrice;
       totals.commissionValue += value.commissionPrice;
@@ -220,15 +249,16 @@ export class CattlePurchaseController {
     }
 
     // media
-    totals.arrobaPrice = totals.arrobaPrice / totals.count;
-    totals.headPrice = totals.headPrice / totals.count;
-    totals.kgPrice = totals.kgPrice / totals.count;
+    totals.headPrice = totals.finalValue / totals.cattleQuantity;
+    totals.arrobaPrice = totals.finalValue / totals.weightInArroba;
+    totals.kgPrice = totals.finalValue / totals.weightInArroba / 15;
 
     return {
       data: response,
       totals: {
         cattleQuantity: NumberUtils.toLocaleString(totals.cattleQuantity),
         weightInArroba: NumberUtils.toLocaleString(totals.weightInArroba),
+        weightInKg: NumberUtils.toLocaleString(totals.weightInKg),
         freightValue: NumberUtils.toLocaleString(totals.freightValue),
         purchaseValue: NumberUtils.toLocaleString(totals.purchaseValue),
         commissionValue: NumberUtils.toLocaleString(totals.commissionValue),

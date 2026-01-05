@@ -49,6 +49,9 @@ export class CattlePurchase {
   @Column({ name: 'cattle_weight_in_arroba', type: 'float4', nullable: true })
   cattleWeightInArroba: number;
 
+  @Column({ name: 'cattle_weight_in_kg', type: 'float4', nullable: true })
+  cattleWeightInKg: number;
+
   @Column({ name: 'balance_weight_in_kg', type: 'float4', nullable: true })
   balanceWeightInKg: number;
 

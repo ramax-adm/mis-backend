@@ -11,6 +11,8 @@ import { GetCattlePurchaseLastUpdatedAtResponseDto } from '../dtos/get-cattle-pu
 import { CattlePurchase } from '@/modules/purchases/entities/cattle-purchase.entity';
 import { GetAnalyticalCattlePurchaseResponseDto } from '../dtos/get-analytical-cattle-purchase-response.dto';
 import {
+  CattlePurchaseKpis,
+  CattlePurchaseTotals,
   GetCattlePurchase,
   GetCattlePurchaseRaw,
 } from '../types/get-cattle-purchase.type';
@@ -31,17 +33,19 @@ export class CattlePurchaseService {
   }
 
   async getData({
-    companyCode,
+    companyCodes,
     cattleAdvisorName = '',
     cattleOwnerName = '',
     cattleClassification = '',
+    purchaseCattleOrderId = '',
     startDate,
     endDate,
   }: {
-    companyCode: string;
+    companyCodes: string[];
     cattleOwnerName?: string;
     cattleAdvisorName?: string;
     cattleClassification?: string;
+    purchaseCattleOrderId?: string;
     startDate?: Date;
     endDate?: Date;
   }): Promise<GetCattlePurchase[]> {
@@ -54,7 +58,13 @@ export class CattlePurchaseService {
         `((scp.total_value / NULLIF(scp.cattle_quantity, 0)) / NULLIF(scp.cattle_weight_in_arroba, 0)) AS arroba_price`,
         `(((scp.total_value / NULLIF(scp.cattle_quantity, 0)) / NULLIF(scp.cattle_weight_in_arroba, 0)) / 15) AS kg_price`,
       ])
-      .where('scp.companyCode = :companyCode', { companyCode });
+      .leftJoinAndSelect(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = scp.companyCode',
+      )
+      .where('1=1')
+      .andWhere('scp.companyCode IN (:...companyCodes)', { companyCodes });
 
     // ---------------------------
     // FILTROS DINÂMICOS
@@ -77,6 +87,12 @@ export class CattlePurchaseService {
       });
     }
 
+    if (purchaseCattleOrderId?.length) {
+      qb.andWhere('scp.sensattaId ILIKE :purchaseCattleOrderId', {
+        purchaseCattleOrderId: `%${purchaseCattleOrderId}%`,
+      });
+    }
+
     if (startDate && endDate) {
       qb.andWhere('scp.slaughterDate BETWEEN :start AND :end', {
         start: startDate,
@@ -96,57 +112,68 @@ export class CattlePurchaseService {
 
     // 👇 Mantém exatamente o mesmo retorno do find anterior
     const result = await qb.getRawMany<GetCattlePurchaseRaw>();
-    console.log({ data: result[0] });
 
-    return result.map((i) => ({
-      id: i.scp_id,
-      sensattaId: i.scp_sensatta_id,
-      slaughterDate: i.scp_slaughter_date,
-      balanceWeightInKg: i.scp_balance_weight_in_kg,
-      cattleAdvisorCode: i.scp_cattle_advisor_code,
-      cattleAdvisorName: i.scp_cattle_advisor_name,
-      cattleClassification: i.scp_cattle_classification,
-      cattleOwnerCode: i.scp_cattle_owner_code,
-      cattleOwnerName: i.scp_cattle_owner_name,
-      cattleQuantity: i.scp_cattle_quantity,
-      cattleWeightInArroba: i.scp_cattle_weight_in_arroba,
-      commissionPrice: i.scp_commission_price,
-      companyCode: i.scp_company_code,
-      companyName: i.scp_company_name,
-      createdAt: i.scp_created_at,
-      freightPrice: i.scp_freight_price,
-      funruralPrice: i.scp_funrural_price,
-      arrobaPrice: i.arroba_price,
-      headPrice: i.head_price,
-      kgPrice: i.kg_price,
-      paymentTerm: i.scp_payment_term,
-      purchaseLiquidPrice: i.scp_purchase_liquid_price,
-      purchasePrice: i.scp_purchase_price,
-      totalValue: i.scp_total_value,
-      weighingType: i.scp_weighing_type,
-    }));
+    return result.map((i) => {
+      const cattleWeightInArroba =
+        i.scp_cattle_weight_in_arroba * i.scp_cattle_quantity;
+
+      const cattleWeightInKg =
+        i.scp_cattle_weight_in_kg * i.scp_cattle_quantity;
+
+      return {
+        id: i.scp_id,
+        sensattaId: i.scp_sensatta_id,
+        slaughterDate: i.scp_slaughter_date,
+        balanceWeightInKg: i.scp_balance_weight_in_kg,
+        cattleAdvisorCode: i.scp_cattle_advisor_code,
+        cattleAdvisorName: i.scp_cattle_advisor_name,
+        cattleClassification: i.scp_cattle_classification,
+        cattleOwnerCode: i.scp_cattle_owner_code,
+        cattleOwnerName: i.scp_cattle_owner_name,
+        cattleQuantity: i.scp_cattle_quantity,
+        cattleWeightInArroba,
+        cattleWeightInKg,
+        commissionPrice: i.scp_commission_price,
+        companyCode: i.sc_sensatta_code,
+        companyName: i.sc_name,
+        createdAt: i.scp_created_at,
+        freightPrice: i.scp_freight_price,
+        funruralPrice: i.scp_funrural_price,
+        headPrice: i.scp_total_value / i.scp_cattle_quantity,
+        arrobaPrice: i.scp_total_value / cattleWeightInArroba,
+        kgPrice: i.scp_total_value / cattleWeightInArroba / 15,
+        paymentTerm: i.scp_payment_term_in_days,
+        purchaseLiquidPrice: i.scp_purchase_liquid_price,
+        purchasePrice: i.scp_purchase_price,
+        totalValue: i.scp_total_value,
+        weighingType: i.scp_weighing_type,
+      };
+    });
   }
 
   async getAnalyticalData({
-    companyCode,
+    companyCodes,
     cattleAdvisorName = '',
     cattleOwnerName = '',
     cattleClassification = '',
+    purchaseCattleOrderId = '',
     startDate,
     endDate,
   }: {
-    companyCode: string;
+    companyCodes: string[];
     cattleOwnerName?: string;
     cattleAdvisorName?: string;
     cattleClassification?: string;
+    purchaseCattleOrderId?: string;
     startDate?: Date;
     endDate?: Date;
   }) {
     const data = await this.getData({
-      companyCode,
+      companyCodes,
       cattleAdvisorName,
       cattleClassification,
       cattleOwnerName,
+      purchaseCattleOrderId,
       endDate,
       startDate,
     });
@@ -159,26 +186,29 @@ export class CattlePurchaseService {
   }
 
   async getAggregatedAnalyticalData({
-    companyCode,
+    companyCodes,
     cattleAdvisorName,
     cattleClassification,
     cattleOwnerName,
+    purchaseCattleOrderId,
     endDate,
     startDate,
   }: {
-    companyCode: string;
+    companyCodes: string[];
     cattleOwnerName?: string;
     cattleAdvisorName?: string;
     cattleClassification?: string;
+    purchaseCattleOrderId?: string;
     startDate?: Date;
     endDate?: Date;
   }) {
     const entityKey = 'sensattaId' as keyof CattlePurchase;
     const data = await this.getData({
-      companyCode,
+      companyCodes,
       cattleAdvisorName,
       cattleClassification,
       cattleOwnerName,
+      purchaseCattleOrderId,
       endDate,
       startDate,
     });
@@ -194,6 +224,7 @@ export class CattlePurchaseService {
         cattleAdvisorCode: string;
         cattleAdvisorName: string;
         weightInArroba: number;
+        weightInKg: number;
         cattleQuantity: number;
         freightPrice: number;
         purchasePrice: number;
@@ -216,15 +247,16 @@ export class CattlePurchaseService {
         companyName: item.companyName,
         cattleAdvisorCode: item.cattleAdvisorCode,
         cattleAdvisorName: item.cattleAdvisorName,
-        weightInArroba: item.cattleWeightInArroba * item.cattleQuantity,
+        weightInArroba: item.cattleWeightInArroba,
+        weightInKg: item.cattleWeightInKg,
         cattleQuantity: item.cattleQuantity,
         freightPrice: item.freightPrice,
         purchasePrice: item.purchasePrice,
         commissionPrice: item.commissionPrice,
         totalValue: item.totalValue,
-        arrobaPrice: item.arrobaPrice,
-        headPrice: item.headPrice,
-        kgPrice: item.kgPrice,
+        headPrice: 0,
+        arrobaPrice: 0,
+        kgPrice: 0,
         count: 1,
       };
 
@@ -234,46 +266,131 @@ export class CattlePurchaseService {
       }
 
       const previousMap = map.get(key)!;
-      previousMap.weightInArroba +=
-        item.cattleWeightInArroba * item.cattleQuantity;
+      previousMap.weightInArroba += item.cattleWeightInArroba;
+      previousMap.weightInKg += item.cattleWeightInKg;
       previousMap.cattleQuantity += item.cattleQuantity;
       previousMap.freightPrice += item.freightPrice;
       previousMap.purchasePrice += item.purchasePrice;
       previousMap.commissionPrice += item.commissionPrice;
       previousMap.totalValue += item.totalValue;
-      previousMap.arrobaPrice += item.arrobaPrice;
-      previousMap.headPrice += item.headPrice;
-      previousMap.kgPrice += item.kgPrice;
+
       previousMap.count += 1;
+    }
+
+    for (const [, obj] of map) {
+      obj.headPrice += obj.totalValue / obj.cattleQuantity;
+      obj.arrobaPrice += obj.totalValue / obj.weightInArroba;
+      obj.kgPrice += obj.totalValue / obj.weightInArroba / 15;
     }
     return Object.fromEntries(map);
   }
 
+  /**
+   * [08:11, 02/07/2025] Francisco Finpec: monta o dash com gráfico de pizza por assessor.. com %... tipo o da horas extras
+   * [08:12, 02/07/2025] Francisco Finpec: grafico de tempo com qtdde  de cabeças compradas
+   * [08:13, 02/07/2025] Francisco Finpec: tabela com assessor qtdd total de cabeças / qtdd $frete / qtdd $ comissão / qtdd $ compra
+   * tabela com pecuarista;
+   */
   async getResumeData({
-    companyCode,
+    companyCodes,
     endDate,
     startDate,
+    cattleAdvisorName,
+    cattleClassification,
+    cattleOwnerName,
   }: {
-    companyCode: string;
+    companyCodes: string[];
     startDate?: Date;
     endDate?: Date;
+    cattleOwnerName?: string;
+    cattleAdvisorName?: string;
+    cattleClassification?: string;
   }) {
     const data = await this.getData({
-      companyCode,
+      companyCodes,
       endDate,
       startDate,
+      cattleAdvisorName,
+      cattleClassification,
+      cattleOwnerName,
     });
 
-    const totals = {
+    // custo un por cabeça
+    // frete gasto % sobre o total da compra
+    // comissão paga % sobre o total da compra
+    const totals: CattlePurchaseTotals = {
       weightInArroba: 0,
+      weightInKg: 0,
       cattleQuantity: 0,
-      freightPrice: 0,
-      purchasePrice: 0,
-      commissionPrice: 0,
-      totalValue: 0,
+      freightValue: 0,
+      purchaseValue: 0,
+      commissionValue: 0,
+      finalValue: 0,
+      headPrice: 0,
+      arrobaPrice: 0,
+      count: 0,
+      kgPrice: 0,
     };
+
+    /** KPIs */
+    // custo un por cabeça
+    // frete gasto % sobre o total da compra
+    // comissão paga % sobre o total da compra
+    const kpis: CattlePurchaseKpis = {
+      headPrice: 0,
+      arrobaPrice: 0,
+      kgPrice: 0,
+      priceDeviation: 0,
+      freightPercentOverTotal: 0,
+      commissionPercentOverTotal: 0,
+      purchasesCount: 0,
+    };
+
+    /** BLOCO 1 - CIMA */
+    // por empresa
+    const cattlePurchaseByCompanyMap = new Map<
+      string,
+      {
+        companyCode: string;
+        companyName: string;
+        cattleQuantity: number;
+        totalValue: number;
+        percent?: number;
+      }
+    >();
+
+    // qtd de cabeças p/ dia - OK
     const cattlePurchaseQuantityBySlaughterDateMap: Map<string, number> =
       new Map();
+
+    const cattlePurchasesQuantitySet = new Set();
+
+    /** BLOCO 2 - baixo */
+    // por classificação de gado
+    /**
+     * classificacao
+     * med R$ p/ cabeça
+     * med R$/@
+     * med R$/KG
+     * $ compra
+     * $ frete
+     * $ comissao
+     * $ total
+     * % total
+     */
+    const cattlePurchaseByCattleClassificationMap = new Map<
+      string,
+      {
+        cattleQuantity: number;
+        freightPrice: number;
+        purchasePrice: number;
+        commissionPrice: number;
+        totalValue: number;
+        percent?: number;
+      }
+    >();
+
+    // por acessor - OK
     const cattlePurchaseByCattleAdvisorMap: Map<
       string,
       {
@@ -295,6 +412,8 @@ export class CattlePurchaseService {
       totalValue: number;
       percent?: number;
     }[] = [];
+
+    // por pecuarista - OK
     const cattlePurchaseByCattleOwnerMap: Map<
       string,
       {
@@ -319,14 +438,33 @@ export class CattlePurchaseService {
 
     for (const item of data) {
       const dateKey = new Date(item.slaughterDate).toISOString();
-      const cattleAdvisorName = item.cattleAdvisorName;
-      const cattleOwnerName = item.cattleOwnerName;
+      const companyName = item.companyName;
+      const cattleAdvisorKey = `${item.cattleAdvisorCode} - ${item.cattleAdvisorName}`;
+      const cattleOwnerKey = `${item.cattleOwnerCode} - ${item.cattleOwnerName}`;
+      const cattleClassificationKey = item.cattleClassification;
 
       const cattleQuantity = item.cattleQuantity;
       const commissionPrice = item.commissionPrice;
       const freightPrice = item.freightPrice;
       const purchasePrice = item.purchasePrice;
       const totalValue = item.totalValue;
+
+      cattlePurchasesQuantitySet.add(item.sensattaId);
+
+      if (!cattlePurchaseByCompanyMap.has(companyName)) {
+        const group = {
+          companyCode: item.companyCode,
+          companyName: item.companyName,
+          cattleQuantity: 0,
+          totalValue: 0,
+          percent: 0,
+        };
+        cattlePurchaseByCompanyMap.set(companyName, group);
+      }
+      const cattlePurchaseByCompanyGroup =
+        cattlePurchaseByCompanyMap.get(companyName)!;
+      cattlePurchaseByCompanyGroup.cattleQuantity += item.cattleQuantity;
+      cattlePurchaseByCompanyGroup.totalValue += item.totalValue;
 
       if (!cattlePurchaseQuantityBySlaughterDateMap.has(dateKey)) {
         cattlePurchaseQuantityBySlaughterDateMap.set(dateKey, 0);
@@ -338,7 +476,33 @@ export class CattlePurchaseService {
         cattlePurchaseBySlaughterDateGroup + cattleQuantity,
       );
 
-      if (!cattlePurchaseByCattleAdvisorMap.has(cattleAdvisorName)) {
+      if (
+        !cattlePurchaseByCattleClassificationMap.has(cattleClassificationKey)
+      ) {
+        const group = {
+          cattleQuantity: 0,
+          commissionPrice: 0,
+          freightPrice: 0,
+          purchasePrice: 0,
+          totalValue: 0,
+          percent: 0,
+        };
+        cattlePurchaseByCattleClassificationMap.set(
+          cattleClassificationKey,
+          group,
+        );
+      }
+      const cattlePurchaseByCattleClassificationGroup =
+        cattlePurchaseByCattleClassificationMap.get(cattleClassificationKey)!;
+      cattlePurchaseByCattleClassificationGroup.cattleQuantity +=
+        cattleQuantity;
+      cattlePurchaseByCattleClassificationGroup.commissionPrice +=
+        commissionPrice;
+      cattlePurchaseByCattleClassificationGroup.freightPrice += freightPrice;
+      cattlePurchaseByCattleClassificationGroup.purchasePrice += purchasePrice;
+      cattlePurchaseByCattleClassificationGroup.totalValue += totalValue;
+
+      if (!cattlePurchaseByCattleAdvisorMap.has(cattleAdvisorKey)) {
         const group = {
           cattleAdvisorCode: item.cattleAdvisorCode,
           cattleAdvisorName: item.cattleAdvisorName,
@@ -350,17 +514,17 @@ export class CattlePurchaseService {
           percent: 0,
         };
         cattlePurchaseByCattleAdvisor.push(group);
-        cattlePurchaseByCattleAdvisorMap.set(cattleAdvisorName, group);
+        cattlePurchaseByCattleAdvisorMap.set(cattleAdvisorKey, group);
       }
       const cattlePurchaseByCattleAdvisorGroup =
-        cattlePurchaseByCattleAdvisorMap.get(cattleAdvisorName)!;
+        cattlePurchaseByCattleAdvisorMap.get(cattleAdvisorKey)!;
       cattlePurchaseByCattleAdvisorGroup.cattleQuantity += cattleQuantity;
       cattlePurchaseByCattleAdvisorGroup.commissionPrice += commissionPrice;
       cattlePurchaseByCattleAdvisorGroup.freightPrice += freightPrice;
       cattlePurchaseByCattleAdvisorGroup.purchasePrice += purchasePrice;
       cattlePurchaseByCattleAdvisorGroup.totalValue += totalValue;
 
-      if (!cattlePurchaseByCattleOwnerMap.has(cattleOwnerName)) {
+      if (!cattlePurchaseByCattleOwnerMap.has(cattleOwnerKey)) {
         const group = {
           cattleOwnerCode: item.cattleOwnerCode,
           cattleOwnerName: item.cattleOwnerName,
@@ -372,10 +536,10 @@ export class CattlePurchaseService {
           percent: 0,
         };
         cattlePurchaseByCattleOwner.push(group);
-        cattlePurchaseByCattleOwnerMap.set(cattleOwnerName, group);
+        cattlePurchaseByCattleOwnerMap.set(cattleOwnerKey, group);
       }
       const cattlePurchaseByCattleOwnerGroup =
-        cattlePurchaseByCattleOwnerMap.get(cattleOwnerName)!;
+        cattlePurchaseByCattleOwnerMap.get(cattleOwnerKey)!;
       cattlePurchaseByCattleOwnerGroup.cattleQuantity += cattleQuantity;
       cattlePurchaseByCattleOwnerGroup.commissionPrice += commissionPrice;
       cattlePurchaseByCattleOwnerGroup.freightPrice += freightPrice;
@@ -384,26 +548,55 @@ export class CattlePurchaseService {
     }
 
     totals.weightInArroba = data.reduce(
-      (acc, i) => acc + i.cattleWeightInArroba * i.cattleQuantity,
+      (acc, i) => acc + i.cattleWeightInArroba,
       0,
     );
+    totals.weightInKg = data.reduce((acc, i) => acc + i.cattleWeightInKg, 0);
     totals.cattleQuantity = data.reduce((acc, i) => acc + i.cattleQuantity, 0);
-    totals.commissionPrice = data.reduce(
+    totals.commissionValue = data.reduce(
       (acc, i) => acc + i.commissionPrice,
       0,
     );
-    totals.freightPrice = data.reduce((acc, i) => acc + i.freightPrice, 0);
-    totals.purchasePrice = data.reduce((acc, i) => acc + i.purchasePrice, 0);
-    totals.totalValue = data.reduce((acc, i) => acc + i.totalValue, 0);
+    totals.freightValue = data.reduce((acc, i) => acc + i.freightPrice, 0);
+    totals.purchaseValue = data.reduce((acc, i) => acc + i.purchasePrice, 0);
+    totals.finalValue = data.reduce((acc, i) => acc + i.totalValue, 0);
+    totals.headPrice = totals.finalValue / totals.cattleQuantity;
+    totals.arrobaPrice = totals.finalValue / totals.weightInArroba;
+    totals.kgPrice = totals.finalValue / totals.weightInArroba / 15;
+
+    kpis.headPrice = totals.headPrice;
+    kpis.arrobaPrice = totals.finalValue / totals.weightInArroba;
+    kpis.kgPrice = totals.finalValue / totals.weightInArroba / 15;
+    kpis.freightPercentOverTotal = totals.freightValue / totals.finalValue;
+    kpis.commissionPercentOverTotal =
+      totals.commissionValue / totals.finalValue;
+    kpis.purchasesCount = cattlePurchasesQuantitySet.size;
+
+    for (const [, obj] of cattlePurchaseByCompanyMap) {
+      obj.percent = obj.totalValue / totals.finalValue;
+    }
+
+    for (const [, obj] of cattlePurchaseByCattleOwnerMap) {
+      obj.percent = obj.totalValue / totals.finalValue;
+    }
+
+    for (const [, obj] of cattlePurchaseByCattleClassificationMap) {
+      obj.percent = obj.totalValue / totals.finalValue;
+    }
 
     for (const [, obj] of cattlePurchaseByCattleAdvisorMap) {
-      obj.percent = obj.totalValue / totals.totalValue;
+      obj.percent = obj.totalValue / totals.finalValue;
     }
 
     return {
       totals,
+      kpis,
+      cattlePurchaseByCompany: Object.fromEntries(cattlePurchaseByCompanyMap),
       cattlePurchaseQuantityBySlaughterDate: Object.fromEntries(
         cattlePurchaseQuantityBySlaughterDateMap,
+      ),
+      cattlePurchaseByCattleClassification: Object.fromEntries(
+        cattlePurchaseByCattleClassificationMap,
       ),
       cattlePurchaseByCattleAdvisor: Object.fromEntries(
         cattlePurchaseByCattleAdvisorMap,
@@ -414,11 +607,5 @@ export class CattlePurchaseService {
       ),
       cattlePurchaseByCattleOwnerList: cattlePurchaseByCattleOwner,
     };
-    /**
-     * [08:11, 02/07/2025] Francisco Finpec: monta o dash com gráfico de pizza por assessor.. com %... tipo o da horas extras
-     * [08:12, 02/07/2025] Francisco Finpec: grafico de tempo com qtdde  de cabeças compradas
-     * [08:13, 02/07/2025] Francisco Finpec: tabela com assessor qtdd total de cabeças / qtdd $frete / qtdd $ comissão / qtdd $ compra
-     * tabela com pecuarista;
-     */
   }
 }

@@ -32,6 +32,9 @@ export class OrderLine {
   @Column({ nullable: true })
   situation?: string;
 
+  @Column({ name: 'payment_term_code', nullable: true })
+  paymentTermCode?: string;
+
   @Column({ name: 'payment_term', nullable: true })
   paymentTerm?: string;
 
@@ -47,8 +50,14 @@ export class OrderLine {
   @Column({ name: 'sales_representative_name', nullable: true })
   salesRepresentativeName?: string;
 
+  @Column({ name: 'category_code', nullable: true })
+  categoryCode?: string;
+
   @Column({ nullable: true })
   category?: string;
+
+  @Column({ name: 'order_operation', nullable: true })
+  orderOperation?: string;
 
   @Column({ name: 'product_line_code', nullable: true })
   productLineCode?: string;
@@ -96,6 +105,9 @@ export class OrderLine {
   @Column({ name: 'reference_table_id', nullable: true })
   referenceTableId?: string;
 
+  @Column({ name: 'reference_table_number', nullable: true })
+  referenceTableNumber?: string;
+
   @Column({ name: 'reference_table_description', nullable: true })
   referenceTableDescription?: string;
 
@@ -140,6 +152,15 @@ export class OrderLine {
 
   @Column({ name: 'cfop_description', nullable: true })
   cfopDescription?: string;
+
+  @Column({ name: 'sale_region', nullable: true })
+  saleRegion?: string;
+
+  @Column({ name: 'charge_specie_code', nullable: true })
+  chargeSpecieCode?: string;
+
+  @Column({ name: 'charge_specie', nullable: true })
+  chargeSpecie?: string;
 
   @CreateDateColumn({
     name: 'created_at',
