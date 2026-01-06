@@ -110,6 +110,7 @@ export class BusinessAuditSalesService {
           discountValue: 0,
           totalKg: 0,
           percentValue: 0,
+          referenceTableNumber: orderLine.referenceTableNumber,
         });
       }
       const currentSalesByInvoice = salesByInvoice.get(invoiceKey)!;
@@ -396,6 +397,7 @@ export class BusinessAuditSalesService {
         totalValue: item.sinv_total_price,
         receivableTitleValue: item.so_receivable_title_value,
         referenceTableId: item.so_reference_table_id,
+        referenceTableNumber: item.so_reference_table_number,
         referenceTableDescription: item.so_reference_table_description,
         freightCompanyId: item.so_freight_company_id,
         freightCompanyName: item.so_freight_company_name,

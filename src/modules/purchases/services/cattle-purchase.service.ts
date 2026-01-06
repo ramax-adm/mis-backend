@@ -567,9 +567,9 @@ export class CattlePurchaseService {
     kpis.headPrice = totals.headPrice;
     kpis.arrobaPrice = totals.finalValue / totals.weightInArroba;
     kpis.kgPrice = totals.finalValue / totals.weightInArroba / 15;
-    kpis.freightPercentOverTotal = totals.freightValue / totals.finalValue;
+    kpis.freightPercentOverTotal = totals.freightValue / totals.purchaseValue;
     kpis.commissionPercentOverTotal =
-      totals.commissionValue / totals.finalValue;
+      totals.commissionValue / totals.purchaseValue;
     kpis.purchasesCount = cattlePurchasesQuantitySet.size;
 
     for (const [, obj] of cattlePurchaseByCompanyMap) {

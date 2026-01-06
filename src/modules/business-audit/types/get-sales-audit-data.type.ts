@@ -29,6 +29,7 @@ export type InvoiceAgg = {
   discountPercent: number;
   discountValue: number;
   percentValue: number;
+  referenceTableNumber: string;
 };
 
 export type ProductAgg = {
