@@ -133,7 +133,13 @@ export class CattlePurchaseFreightService {
       basePrice: 0,
       tablePrice: 0,
       difPrice: 0,
+      headPrice: 0,
       openDays: 0,
+      additionalPrice: 0,
+      tollPrice: 0,
+      discountPrice: 0,
+      otherPrice: 0,
+      totalPrice: 0,
     };
 
     const quantityClosedByFreightCompany = new Map<
@@ -223,11 +229,18 @@ export class CattlePurchaseFreightService {
         totals.quantityNoFreight++;
         totals.cattleQuantityNoFreights += item.cattle_quantity;
       } else if (status === CattlePurchaseFreightsStatusEnum.CLOSED) {
+        const otherPrice =
+          item.additional_price + item.toll_price + item.discount_price;
         totals.quantityClosed++;
         totals.cattleQuantityClosedFreights += item.cattle_quantity;
         totals.basePrice += item.base_price;
         totals.tablePrice += item.reference_freight_table_price;
         totals.difPrice += item.dif_price;
+        totals.additionalPrice += item.additional_price;
+        totals.tollPrice += item.toll_price;
+        totals.discountPrice += item.discount_price;
+        totals.otherPrice += otherPrice;
+        totals.totalPrice += item.base_price + otherPrice;
       } else if (status === CattlePurchaseFreightsStatusEnum.OPEN) {
         totals.quantityActive++;
         totals.openDays += item.open_days || 0;
@@ -359,6 +372,8 @@ export class CattlePurchaseFreightService {
 
     totals.openDays =
       totals.openDays / data.filter((i) => i.open_days > 0).length || 0;
+    totals.headPrice =
+      totals.totalPrice / (totals.cattleQuantityClosedFreights || 1);
 
     const byStatus = {
       quantityActive: totals.quantityActive,
