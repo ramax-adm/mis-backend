@@ -10,6 +10,8 @@ import { SalesInvoicesReportService } from './services/sales-invoices-report.ser
 import { ExcelReaderService } from '@/core/services/excel-reader.service';
 import { ReturnOccurrencesController } from './controllers/return-occurrences.controller';
 import { ReturnOccurrencesService } from './services/return-occurrences.service';
+import { OrdersController } from './controllers/orders.controller';
+import { OrdersService } from './services/orders.service';
 
 @Module({
   imports: [
@@ -22,7 +24,12 @@ import { ReturnOccurrencesService } from './services/return-occurrences.service'
     SalesInvoicesService,
     SalesInvoicesReportService,
     ReturnOccurrencesService,
+    OrdersService,
   ],
-  controllers: [SalesInvoicesController, ReturnOccurrencesController],
+  controllers: [
+    SalesInvoicesController,
+    ReturnOccurrencesController,
+    OrdersController,
+  ],
 })
 export class SalesModule {}
