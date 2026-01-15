@@ -144,6 +144,17 @@ export class FreightsController {
             ),
             0,
           ),
+          headPrice: NumberUtils.toLocaleString(
+            closedFreights.reduce(
+              (acc, item) => acc + item.negotiatedFreightPrice,
+              0,
+            ) /
+              closedFreights.reduce(
+                (acc, item) => acc + item.cattleQuantity,
+                0,
+              ) || 1,
+            2,
+          ),
           difPrice: NumberUtils.toLocaleString(
             closedFreights.reduce((acc, item) => acc + item.difPrice, 0),
             0,
