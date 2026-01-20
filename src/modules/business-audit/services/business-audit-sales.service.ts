@@ -702,6 +702,7 @@ export class BusinessAuditSalesService {
     }
     if (endDate) {
       qb.andWhere('si.date <= :endDate', { endDate });
+      qb.andWhere('si2_base.date <= :endDate', { endDate }); // nos refaturamentos, n traz caso o refaturamento não esteja no contexto
     }
     if (clientCodes) {
       qb.andWhere('si.client_code IN (:...clientCodes)', { clientCodes });
