@@ -67,7 +67,7 @@ export class BusinessAuditController {
       }
       case BusinessAuditReportTypeEnum.RETURN_OCCURRENCES: {
         result =
-          await this.businessAuditReturnOccurrencesReportService.exportSalesByInvoice(
+          await this.businessAuditReturnOccurrencesReportService.exportReturnOccurrences(
             dto,
           );
         break;

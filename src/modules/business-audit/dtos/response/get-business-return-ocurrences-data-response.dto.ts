@@ -1,4 +1,5 @@
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
+import { OccurrenceAgg } from '../../types/get-return-occurrences-data.type';
 
 export type BusinessAuditReturnOccurrencesDataTotals = {
   count: number;
@@ -33,8 +34,8 @@ export class GetBusinessAuditReturnOccurrencesDataResponseDto {
     data: Record<string, any>;
   };
   occurrencesByType?: Record<string, any>;
-  returnOccurrences: {
-    data: ReturnOccurrence[];
+  occurrences: {
+    data: Record<string, OccurrenceAgg>;
     totals: BusinessAuditReturnOccurrencesDataTotals;
   };
 

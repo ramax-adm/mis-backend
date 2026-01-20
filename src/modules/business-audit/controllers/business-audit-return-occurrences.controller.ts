@@ -112,4 +112,15 @@ export class BusinessAuditReturnOccurrencesController {
       representativeCodes: representativeCodes?.split(','),
     });
   }
+  @Get(':occurrenceNumber')
+  @HttpCode(HttpStatus.OK)
+  async getOneReturnOccurrence(
+    @Param('occurrenceNumber') occurrenceNumber?: string,
+  ) {
+    return await this.businessAuditReturnOccurrencesService.getReturnOccurrences(
+      {
+        occurrenceNumber,
+      },
+    );
+  }
 }

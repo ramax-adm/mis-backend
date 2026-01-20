@@ -1,3 +1,25 @@
+export type OccurrenceAgg = {
+  occurrenceNumber: string;
+  date: Date;
+  invoiceDate: Date;
+  occurrenceCause: string;
+  returnType: string;
+  companyCode: string;
+  companyName: string;
+  invoiceNfNumber: string;
+  returnNfNumber: string;
+  clientCode: string;
+  clientName: string;
+  salesRepresentativeCode: string;
+  salesRepresentativeName: string;
+  returnQuantity: number;
+  invoiceQuantity: number;
+  returnWeightInKg: number;
+  invoiceWeightInKg: number;
+  returnValue: number;
+  invoiceValue: number;
+};
+
 export type OccurrenceByCompanyAgg = {
   count: number;
   quantity: number;
