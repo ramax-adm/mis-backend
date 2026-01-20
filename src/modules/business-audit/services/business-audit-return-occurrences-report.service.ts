@@ -14,6 +14,8 @@ import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { BusinessAuditReturnOccurrencesService } from './business-audit-return-occurrences.service';
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
+import { GetBusinessAuditReturnOccurrencesDataResponseDto } from '../dtos/response/get-business-return-ocurrences-data-response.dto';
+import { OccurrenceAgg } from '../types/get-return-occurrences-data.type';
 
 @Injectable()
 export class BusinessAuditReturnOccurrencesReportService {
@@ -44,12 +46,42 @@ export class BusinessAuditReturnOccurrencesReportService {
       ['I1', 'Cliente'],
       ['J1', 'Cod. Representante'],
       ['K1', 'Representante'],
-      ['L1', 'Qtd Itens Faturamento'],
-      ['M1', 'Qtd Itens Devolução'],
-      ['N1', 'Valor Faturamento'],
-      ['O1', 'Valor Devolução'],
-      ['P1', 'Motivo'],
-      ['Q1', 'Tipo Devolução'],
+      ['L1', 'Cod. Produto'],
+      ['M1', 'Produto'],
+      ['N1', 'Qtd Faturamento'],
+      ['O1', 'Qtd Devolução'],
+      ['P1', 'KG Faturamento'],
+      ['Q1', 'KG Devolução'],
+      ['R1', 'Valor Faturamento'],
+      ['S1', 'Valor Devolução'],
+      ['T1', 'Motivo'],
+      ['U1', 'Tipo Devolução'],
+    ];
+
+    return headers;
+  }
+
+  getOccurrencesAggHeaders(): [string, any][] {
+    const headers: [string, any][] = [
+      ['A1', 'Data Faturamento'],
+      ['B1', 'Data Devolução'],
+      ['C1', 'B.O'],
+      ['D1', 'Cod Empresa'],
+      ['E1', 'Empresa'],
+      ['F1', 'NF Faturamento'],
+      ['G1', 'NF Devolução'],
+      ['H1', 'Cod. Cliente'],
+      ['I1', 'Cliente'],
+      ['J1', 'Cod. Representante'],
+      ['K1', 'Representante'],
+      ['L1', 'Qtd Faturamento'],
+      ['M1', 'Qtd Devolução'],
+      ['N1', 'KG Faturamento'],
+      ['O1', 'KG Devolução'],
+      ['P1', 'Valor Faturamento'],
+      ['Q1', 'Valor Devolução'],
+      ['R1', 'Motivo'],
+      ['S1', 'Tipo Devolução'],
     ];
 
     return headers;
@@ -75,19 +107,57 @@ export class BusinessAuditReturnOccurrencesReportService {
         [`I${row(index)}`, item.clientName],
         [`J${row(index)}`, item.salesRepresentativeCode],
         [`K${row(index)}`, item.salesRepresentativeName],
-        [`L${row(index)}`, item.invoiceQuantity],
-        [`M${row(index)}`, item.returnQuantity],
-        [`N${row(index)}`, NumberUtils.nb2(item.invoiceValue ?? 0)],
-        [`O${row(index)}`, NumberUtils.nb2(item.returnValue ?? 0)],
-        [`P${row(index)}`, item.occurrenceCause],
-        [`Q${row(index)}`, item.returnType],
+        [`L${row(index)}`, item.productCode],
+        [`M${row(index)}`, item.productName],
+        [`N${row(index)}`, item.invoiceQuantity],
+        [`O${row(index)}`, item.returnQuantity],
+        [`P${row(index)}`, NumberUtils.nb2(item.invoiceWeightInKg ?? 0)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.returnWeightInKg ?? 0)],
+        [`R${row(index)}`, NumberUtils.nb2(item.invoiceValue ?? 0)],
+        [`S${row(index)}`, NumberUtils.nb2(item.returnValue ?? 0)],
+        [`T${row(index)}`, item.occurrenceCause],
+        [`U${row(index)}`, item.returnType],
       );
     });
 
     return values;
   }
 
-  async exportSalesByInvoice(dto: ExportBusinessAuditReportDto) {
+  getOccurrencesAggValues(
+    dto: Record<string, OccurrenceAgg>,
+  ): [string, any, NumFormats | undefined][] {
+    const values = [];
+
+    const row = (i: number) => i + 2; // começa da linha 2 (linha 1 = header)
+
+    Object.values(dto).forEach((item, index) => {
+      values.push(
+        [`A${row(index)}`, DateUtils.format(item.invoiceDate, 'date')],
+        [`B${row(index)}`, DateUtils.format(item.date, 'date')],
+        [`C${row(index)}`, item.occurrenceNumber],
+        [`D${row(index)}`, item.companyCode],
+        [`E${row(index)}`, item.companyName],
+        [`F${row(index)}`, item.invoiceNfNumber],
+        [`G${row(index)}`, item.returnNfNumber],
+        [`H${row(index)}`, item.clientCode],
+        [`I${row(index)}`, item.clientName],
+        [`J${row(index)}`, item.salesRepresentativeCode],
+        [`K${row(index)}`, item.salesRepresentativeName],
+        [`L${row(index)}`, item.invoiceQuantity],
+        [`M${row(index)}`, item.returnQuantity],
+        [`N${row(index)}`, NumberUtils.nb2(item.invoiceWeightInKg ?? 0)],
+        [`O${row(index)}`, NumberUtils.nb2(item.returnWeightInKg ?? 0)],
+        [`P${row(index)}`, NumberUtils.nb2(item.invoiceValue ?? 0)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.returnValue ?? 0)],
+        [`R${row(index)}`, item.occurrenceCause],
+        [`S${row(index)}`, item.returnType],
+      );
+    });
+
+    return values;
+  }
+
+  async exportReturnOccurrences(dto: ExportBusinessAuditReportDto) {
     const {
       filters: {
         startDate,
@@ -108,7 +178,19 @@ export class BusinessAuditReturnOccurrencesReportService {
 
     this.excelReader.create();
 
-    const data =
+    const { occurrences } =
+      await this.businessAuditReturnOccurrencesService.getData({
+        startDate,
+        endDate,
+        companyCodes: companyCodes?.split(','),
+        clientCodes: clientCodes?.split(','),
+        representativeCodes: salesRepresentativeCodes?.split(','),
+        occurrenceCauses: occurrenceCauses?.split(','),
+        occurrenceNumber: occurrenceNumber,
+        returnType: returnType,
+      });
+
+    const returnOccurrences =
       await this.businessAuditReturnOccurrencesService.getReturnOccurrences({
         startDate,
         endDate,
@@ -121,19 +203,34 @@ export class BusinessAuditReturnOccurrencesReportService {
       });
 
     // filtering
-    const worksheet = this.excelReader.addWorksheet(
+    const occurrencesAggWorksheet = this.excelReader.addWorksheet(
       `Monitoramento - Devoluções`,
     );
+    const returnOccurrencesWorksheet = this.excelReader.addWorksheet(
+      `Monitoramento - Itens Devolução`,
+    );
 
+    const occurrencesAggHeaders = this.getOccurrencesAggHeaders();
+    occurrencesAggHeaders.forEach(([cell, value]) => {
+      this.excelReader.addData(occurrencesAggWorksheet, cell, value);
+    });
     const returnOccurrencesHeaders = this.getReturnOccurrencesHeaders();
     returnOccurrencesHeaders.forEach(([cell, value]) => {
-      this.excelReader.addData(worksheet, cell, value);
+      this.excelReader.addData(returnOccurrencesWorksheet, cell, value);
     });
-    const returnOccurrencesValues = this.getReturnOccurrencesValues(data);
+    const returnOccurrencesValues =
+      this.getReturnOccurrencesValues(returnOccurrences);
     returnOccurrencesValues.forEach(([cell, value, numFmt]) => {
-      this.excelReader.addData(worksheet, cell, value);
+      this.excelReader.addData(returnOccurrencesWorksheet, cell, value);
       if (numFmt) {
-        this.excelReader.addNumFmt(worksheet, cell, numFmt);
+        this.excelReader.addNumFmt(returnOccurrencesWorksheet, cell, numFmt);
+      }
+    });
+    const occurrencesAggValues = this.getOccurrencesAggValues(occurrences.data);
+    occurrencesAggValues.forEach(([cell, value, numFmt]) => {
+      this.excelReader.addData(occurrencesAggWorksheet, cell, value);
+      if (numFmt) {
+        this.excelReader.addNumFmt(occurrencesAggWorksheet, cell, numFmt);
       }
     });
 
