@@ -23,6 +23,7 @@ import {
   GetReinvoicingHistoryItemRaw,
 } from '../types/get-reinvoicing-history.type';
 import { DateUtils } from '@/modules/utils/services/date.utils';
+import { CONSIDERED_ORDER_CATEGORIES } from '../constants/considered-order-categories';
 
 @Injectable()
 export class BusinessAuditSalesService {
@@ -308,8 +309,11 @@ export class BusinessAuditSalesService {
       .andWhere('so.situation = :situation', {
         situation: OrderSituationEnum.INVOICED,
       })
-      .andWhere('so.cfop_code IN (:...cfops)', {
-        cfops: CONSIDERED_CFOPS,
+      // .andWhere('so.cfop_code IN (:...cfops)', {
+      //   cfops: CONSIDERED_CFOPS,
+      // })
+      .andWhere('so.category_code IN (:...categoryCodes)', {
+        categoryCodes: CONSIDERED_ORDER_CATEGORIES,
       });
 
     if (startDate) {
