@@ -309,12 +309,12 @@ export class BusinessAuditSalesService {
       .andWhere('so.situation = :situation', {
         situation: OrderSituationEnum.INVOICED,
       })
-      // .andWhere('so.cfop_code IN (:...cfops)', {
-      //   cfops: CONSIDERED_CFOPS,
-      // })
-      .andWhere('so.category_code IN (:...categoryCodes)', {
-        categoryCodes: CONSIDERED_ORDER_CATEGORIES,
+      .andWhere('so.cfop_code IN (:...cfops)', {
+        cfops: CONSIDERED_CFOPS,
       });
+    // .andWhere('so.category_code IN (:...categoryCodes)', {
+    //   categoryCodes: CONSIDERED_ORDER_CATEGORIES,
+    // });
 
     if (startDate) {
       qb.andWhere('so.billing_date >= :startDate', { startDate });
