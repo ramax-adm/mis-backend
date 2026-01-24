@@ -101,17 +101,20 @@ export class BusinessAuditReturnOccurrencesController {
     @Query('clientCodes') clientCodes?: string,
     @Query('representativeCodes') representativeCodes?: string,
   ) {
-    return await this.businessAuditReturnOccurrencesService.getData({
-      startDate,
-      endDate,
-      occurrenceNumber,
-      companyCodes: companyCodes?.split(','),
-      occurrenceCauses: occurrenceCauses?.split(','),
-      returnType,
-      clientCodes: clientCodes?.split(','),
-      representativeCodes: representativeCodes?.split(','),
-    });
+    return await this.businessAuditReturnOccurrencesService.getReturnOccurrencesAuditData(
+      {
+        startDate,
+        endDate,
+        occurrenceNumber,
+        companyCodes: companyCodes?.split(','),
+        occurrenceCauses: occurrenceCauses?.split(','),
+        returnType,
+        clientCodes: clientCodes?.split(','),
+        representativeCodes: representativeCodes?.split(','),
+      },
+    );
   }
+
   @Get(':occurrenceNumber')
   @HttpCode(HttpStatus.OK)
   async getOneReturnOccurrence(

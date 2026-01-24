@@ -11,75 +11,7 @@ export class BusinessAuditReturnOccurrencesService {
   constructor(private readonly datasource: DataSource) {}
 
   // METODOS PRINCIPAIS
-  async getReturnOccurrences({
-    startDate,
-    endDate,
-    companyCodes,
-    occurrenceCauses,
-    occurrenceNumber,
-    returnType,
-    clientCodes,
-    representativeCodes,
-  }: {
-    startDate?: Date;
-    endDate?: Date;
-    occurrenceNumber?: string;
-    companyCodes?: string[];
-    returnType?: string;
-    occurrenceCauses?: string[];
-    clientCodes?: string[];
-    representativeCodes?: string[];
-  }) {
-    const qb = this.datasource
-      .getRepository(ReturnOccurrence)
-      .createQueryBuilder('ro')
-      .where('1=1');
-
-    if (startDate) {
-      qb.andWhere('ro.date >= :startDate', { startDate });
-    }
-    if (endDate) {
-      qb.andWhere('ro.date <= :endDate', { endDate });
-    }
-    if (occurrenceNumber) {
-      qb.andWhere('ro.occurrenceNumber ILIKE :occurrenceNumber', {
-        occurrenceNumber: `%${occurrenceNumber}%`,
-      });
-    }
-
-    if (companyCodes) {
-      qb.andWhere('ro.companyCode IN (:...companyCodes)', { companyCodes });
-    }
-    if (returnType) {
-      const returnTypeMap = {
-        [ReturnOccurrenceReturnTypeEnum.FULL]: 'Integral',
-        [ReturnOccurrenceReturnTypeEnum.PARTIAL]: 'Parcial',
-      };
-      qb.andWhere('ro.returnType ILIKE :returnType', {
-        returnType: `%${returnTypeMap[returnType]}%`,
-      });
-    }
-    if (occurrenceCauses) {
-      qb.andWhere('ro.occurrenceCause IN (:...occurrenceCauses)', {
-        occurrenceCauses,
-      });
-    }
-
-    if (clientCodes) {
-      qb.andWhere('ro.clientCode IN (:...clientCodes)', {
-        clientCodes,
-      });
-    }
-    if (representativeCodes) {
-      qb.andWhere('ro.salesRepresentativeCode IN (:...representativeCodes)', {
-        representativeCodes,
-      });
-    }
-
-    return await qb.getMany();
-  }
-
-  async getData({
+  async getReturnOccurrencesAuditData({
     startDate,
     endDate,
     companyCodes,
@@ -108,7 +40,6 @@ export class BusinessAuditReturnOccurrencesService {
       clientCodes,
       representativeCodes,
     });
-    console.log({ returnOccurrences });
 
     // totais p/ cada registro
     /**
@@ -371,6 +302,7 @@ export class BusinessAuditReturnOccurrencesService {
     });
   }
 
+  // METODOS AUX
   private getDataTotals<
     T extends {
       count?: number;
@@ -390,5 +322,74 @@ export class BusinessAuditReturnOccurrencesService {
       { count: 0, quantity: 0, weightInKg: 0, value: 0 },
     );
     return { ...totals, count: returnOccurrencesSize };
+  }
+
+  // FETCH DE DADOS
+  async getReturnOccurrences({
+    startDate,
+    endDate,
+    companyCodes,
+    occurrenceCauses,
+    occurrenceNumber,
+    returnType,
+    clientCodes,
+    representativeCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    occurrenceNumber?: string;
+    companyCodes?: string[];
+    returnType?: string;
+    occurrenceCauses?: string[];
+    clientCodes?: string[];
+    representativeCodes?: string[];
+  }) {
+    const qb = this.datasource
+      .getRepository(ReturnOccurrence)
+      .createQueryBuilder('ro')
+      .where('1=1');
+
+    if (startDate) {
+      qb.andWhere('ro.date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('ro.date <= :endDate', { endDate });
+    }
+    if (occurrenceNumber) {
+      qb.andWhere('ro.occurrenceNumber ILIKE :occurrenceNumber', {
+        occurrenceNumber: `%${occurrenceNumber}%`,
+      });
+    }
+
+    if (companyCodes) {
+      qb.andWhere('ro.companyCode IN (:...companyCodes)', { companyCodes });
+    }
+    if (returnType) {
+      const returnTypeMap = {
+        [ReturnOccurrenceReturnTypeEnum.FULL]: 'Integral',
+        [ReturnOccurrenceReturnTypeEnum.PARTIAL]: 'Parcial',
+      };
+      qb.andWhere('ro.returnType ILIKE :returnType', {
+        returnType: `%${returnTypeMap[returnType]}%`,
+      });
+    }
+    if (occurrenceCauses) {
+      qb.andWhere('ro.occurrenceCause IN (:...occurrenceCauses)', {
+        occurrenceCauses,
+      });
+    }
+
+    if (clientCodes) {
+      qb.andWhere('ro.clientCode IN (:...clientCodes)', {
+        clientCodes,
+      });
+    }
+    if (representativeCodes) {
+      qb.andWhere('ro.salesRepresentativeCode IN (:...representativeCodes)', {
+        representativeCodes,
+      });
+    }
+
+    return await qb.getMany();
   }
 }

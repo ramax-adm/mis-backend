@@ -4,22 +4,24 @@ import {
   NumFormats,
 } from '@/core/services/excel-reader.service';
 import { DateUtils } from '../../utils/services/date.utils';
-import { BusinessAuditOverviewService } from './business-audit-overview.service';
-import { GetBusinessAuditSalesDataResponseDto } from '../dtos/response/get-business-sales-data-response.dto';
 import { BusinessAuditSalesService } from './business-audit-sales.service';
 import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-audit-report-request.dto';
 import { NumberUtils } from '@/modules/utils/services/number.utils';
-import { GetBusinessSalesOrderLinesResponseDto } from '../dtos/response/get-business-sales-order-lines-response.dto';
-import { OrderLine } from '@/modules/sales/entities/order-line.entity';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { GetOrderLineItem } from '../types/get-order-line.type';
-import { TempHistoricoRefaturamento } from '@/core/entities/temp/temp-historico-refaturamento.entity';
 import { GetReinvoicingHistoryItem } from '../types/get-reinvoicing-history.type';
+import { BusinessAuditReinvoicingService } from './business-audit-reinvoicing.service';
+import { InvoiceAgg } from '../types/get-sales-audit-data.type';
+import { BusinessAuditReturnOccurrencesService } from './business-audit-return-occurrences.service';
+import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
+import { OccurrenceAgg } from '../types/get-return-occurrences-data.type';
 
 @Injectable()
-export class BusinessAuditSalesReportService {
+export class BusinessAuditInvoiceTraceabilityReportService {
   constructor(
     private readonly businessAuditSalesService: BusinessAuditSalesService,
+    private readonly businessAuditReturnOccurrencesService: BusinessAuditReturnOccurrencesService,
+    private readonly businessAuditReinvoicingService: BusinessAuditReinvoicingService,
     private readonly excelReader: ExcelReaderService,
   ) {}
 
@@ -88,14 +90,59 @@ export class BusinessAuditSalesReportService {
     return headers;
   }
 
-  /**
-   * VENDA ORIGINAL																					  						
-        => Emp	Dt	NF	Cat	Cliente	Produto	KG 1 $ Venda 	 $ Tab 	 $ Fat 	 $tab 	 $ Desc 
-   * REFATURAMENTO
-        => Dt	  NF	Cat	Cliente	KG	 $ Venda 	 $ Fat 	 $tab 	 $ Desc 	 	
-   * DIFERENÇAS
-        => Dias KG 	$ Venda 	 Fat 	% Fat	Motivo	OBS
-   **/
+  getReturnOccurrencesHeaders(): [string, any][] {
+    const headers: [string, any][] = [
+      ['A1', 'Data Faturamento'],
+      ['B1', 'Data Devolução'],
+      ['C1', 'B.O'],
+      ['D1', 'Cod Empresa'],
+      ['E1', 'Empresa'],
+      ['F1', 'NF Faturamento'],
+      ['G1', 'NF Devolução'],
+      ['H1', 'Cod. Cliente'],
+      ['I1', 'Cliente'],
+      ['J1', 'Cod. Representante'],
+      ['K1', 'Representante'],
+      ['L1', 'Cod. Produto'],
+      ['M1', 'Produto'],
+      ['N1', 'Qtd Faturamento'],
+      ['O1', 'Qtd Devolução'],
+      ['P1', 'KG Faturamento'],
+      ['Q1', 'KG Devolução'],
+      ['R1', 'Valor Faturamento'],
+      ['S1', 'Valor Devolução'],
+      ['T1', 'Motivo'],
+      ['U1', 'Tipo Devolução'],
+    ];
+
+    return headers;
+  }
+
+  getOccurrencesAggHeaders(): [string, any][] {
+    const headers: [string, any][] = [
+      ['A1', 'Data Faturamento'],
+      ['B1', 'Data Devolução'],
+      ['C1', 'B.O'],
+      ['D1', 'Cod Empresa'],
+      ['E1', 'Empresa'],
+      ['F1', 'NF Faturamento'],
+      ['G1', 'NF Devolução'],
+      ['H1', 'Cod. Cliente'],
+      ['I1', 'Cliente'],
+      ['J1', 'Cod. Representante'],
+      ['K1', 'Representante'],
+      ['L1', 'Qtd Faturamento'],
+      ['M1', 'Qtd Devolução'],
+      ['N1', 'KG Faturamento'],
+      ['O1', 'KG Devolução'],
+      ['P1', 'Valor Faturamento'],
+      ['Q1', 'Valor Devolução'],
+      ['R1', 'Motivo'],
+      ['S1', 'Tipo Devolução'],
+    ];
+
+    return headers;
+  }
 
   getReinvoicingHistoryHeaders() {
     // V_Emp	V_Dt.	V_NF	V_Cliente	V_Representante	V_Categoria	V_Produto	 V_KG 	 V_$ Venda Un. 	 V_$ Fat 	R_NF	R_Produto	R_Cliente	 R_KG 	 R_$ Venda Un. 	 R_$ Fat 	 D_KG 	 D_$ Venda Un. 	 D_$ Fat 	D_Tipo BO	V_Emp	 PESO C1 	 $V C1 	AL+W-AC	AM=K
@@ -148,13 +195,13 @@ export class BusinessAuditSalesReportService {
 
   // GET VALUES
   getSalesByInvoiceValues(
-    dto: GetBusinessAuditSalesDataResponseDto['salesByInvoice'],
+    dto: Record<string, InvoiceAgg>,
   ): [string, any, NumFormats | undefined][] {
     const values = [];
 
     const row = (i: number) => i + 2;
 
-    const data = Object.values(dto.data);
+    const data = Object.values(dto);
 
     data.forEach((item, index) => {
       values.push(
@@ -230,6 +277,76 @@ export class BusinessAuditSalesReportService {
         [`AA${row(index)}`, NumberUtils.nb2(item.totalValue - totalTableValue)],
         [`AB${row(index)}`, NumberUtils.nb4(difPercent)],
         [`AC${row(index)}`, item.referenceTableNumber],
+      );
+    });
+
+    return values;
+  }
+
+  getReturnOccurrencesValues(
+    dto: ReturnOccurrence[],
+  ): [string, any, NumFormats | undefined][] {
+    const values = [];
+
+    const row = (i: number) => i + 2; // começa da linha 2 (linha 1 = header)
+
+    dto.forEach((item, index) => {
+      values.push(
+        [`A${row(index)}`, DateUtils.format(item.invoiceDate, 'date')],
+        [`B${row(index)}`, DateUtils.format(item.date, 'date')],
+        [`C${row(index)}`, item.occurrenceNumber],
+        [`D${row(index)}`, item.companyCode],
+        [`E${row(index)}`, item.companyName],
+        [`F${row(index)}`, item.invoiceNf],
+        [`G${row(index)}`, item.returnNf],
+        [`H${row(index)}`, item.clientCode],
+        [`I${row(index)}`, item.clientName],
+        [`J${row(index)}`, item.salesRepresentativeCode],
+        [`K${row(index)}`, item.salesRepresentativeName],
+        [`L${row(index)}`, item.productCode],
+        [`M${row(index)}`, item.productName],
+        [`N${row(index)}`, item.invoiceQuantity],
+        [`O${row(index)}`, item.returnQuantity],
+        [`P${row(index)}`, NumberUtils.nb2(item.invoiceWeightInKg ?? 0)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.returnWeightInKg ?? 0)],
+        [`R${row(index)}`, NumberUtils.nb2(item.invoiceValue ?? 0)],
+        [`S${row(index)}`, NumberUtils.nb2(item.returnValue ?? 0)],
+        [`T${row(index)}`, item.occurrenceCause],
+        [`U${row(index)}`, item.returnType],
+      );
+    });
+
+    return values;
+  }
+
+  getOccurrencesAggValues(
+    dto: Record<string, OccurrenceAgg>,
+  ): [string, any, NumFormats | undefined][] {
+    const values = [];
+
+    const row = (i: number) => i + 2; // começa da linha 2 (linha 1 = header)
+
+    Object.values(dto).forEach((item, index) => {
+      values.push(
+        [`A${row(index)}`, DateUtils.format(item.invoiceDate, 'date')],
+        [`B${row(index)}`, DateUtils.format(item.date, 'date')],
+        [`C${row(index)}`, item.occurrenceNumber],
+        [`D${row(index)}`, item.companyCode],
+        [`E${row(index)}`, item.companyName],
+        [`F${row(index)}`, item.invoiceNfNumber],
+        [`G${row(index)}`, item.returnNfNumber],
+        [`H${row(index)}`, item.clientCode],
+        [`I${row(index)}`, item.clientName],
+        [`J${row(index)}`, item.salesRepresentativeCode],
+        [`K${row(index)}`, item.salesRepresentativeName],
+        [`L${row(index)}`, item.invoiceQuantity],
+        [`M${row(index)}`, item.returnQuantity],
+        [`N${row(index)}`, NumberUtils.nb2(item.invoiceWeightInKg ?? 0)],
+        [`O${row(index)}`, NumberUtils.nb2(item.returnWeightInKg ?? 0)],
+        [`P${row(index)}`, NumberUtils.nb2(item.invoiceValue ?? 0)],
+        [`Q${row(index)}`, NumberUtils.nb2(item.returnValue ?? 0)],
+        [`R${row(index)}`, item.occurrenceCause],
+        [`S${row(index)}`, item.returnType],
       );
     });
 
@@ -430,7 +547,7 @@ export class BusinessAuditSalesReportService {
   }
 
   // PROCESS REPORT
-  async exportSalesByInvoice(dto: ExportBusinessAuditReportDto) {
+  async export(dto: ExportBusinessAuditReportDto) {
     const {
       filters: {
         startDate,
@@ -450,15 +567,17 @@ export class BusinessAuditSalesReportService {
 
     this.excelReader.create();
 
-    const data = await this.businessAuditSalesService.getSalesAuditData({
-      startDate,
-      endDate,
-      companyCodes: companyCodes?.split(','),
-      market,
-      priceConsideration,
-      clientCodes: clientCodes?.split(','),
-      salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
-    });
+    // GET DATA
+    const data =
+      await this.businessAuditReinvoicingService.getSalesAndReinvoicings({
+        startDate,
+        endDate,
+        companyCodes: companyCodes?.split(','),
+        market,
+        priceConsideration,
+        clientCodes: clientCodes?.split(','),
+        salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
+      });
 
     const orderLinesData = await this.businessAuditSalesService.getOrdersLines({
       startDate,
@@ -470,44 +589,72 @@ export class BusinessAuditSalesReportService {
       salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
     });
 
-    const reinvoicingHistoryData =
-      await this.businessAuditSalesService.getReinvoicingHistory({
+    const occurrencesAggData =
+      await this.businessAuditReturnOccurrencesService.getReturnOccurrencesAuditData(
+        {
+          startDate,
+          endDate,
+          companyCodes: companyCodes?.split(','),
+          clientCodes: clientCodes?.split(','),
+        },
+      );
+    const occurrencesLinesData =
+      await this.businessAuditReturnOccurrencesService.getReturnOccurrences({
         startDate,
         endDate,
         companyCodes: companyCodes?.split(','),
-        market,
-        priceConsideration,
         clientCodes: clientCodes?.split(','),
-        salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
       });
 
-    const worksheet = this.excelReader.addWorksheet(
-      `Monitoramento - Vendas por NF`,
-    );
-    const orderLinesWorksheet = this.excelReader.addWorksheet(
-      `Monitoramento - Itens NF`,
-    );
-    const reinvoicingHistoryWorksheet = this.excelReader.addWorksheet(
-      `Monitoramento - Fat x Refat`,
-    );
-    // const reinvoicingHistoryWorksheet2 = this.excelReader.addWorksheet(
-    //   `Monitoramento - Fat x Refat(2)`,
-    // );
+    const reinvoicingHistoryData =
+      await this.businessAuditReinvoicingService.getReinvoicingHistory({
+        startDate,
+        endDate,
+        companyCodes: companyCodes?.split(','),
+        clientCodes: clientCodes?.split(','),
+      });
 
+    // CREATE WORKSHEETS
+    const salesWorksheet = this.excelReader.addWorksheet(`NFs- Faturamento`);
+    const reInvoicingsWorksheet =
+      this.excelReader.addWorksheet(`NFs- Refaturamento`);
+    const orderLinesWorksheet = this.excelReader.addWorksheet(`NFs - Itens`);
+    const occurrencesAggWorksheet = this.excelReader.addWorksheet(`Devoluções`);
+    const occurrencesLinesWorksheet =
+      this.excelReader.addWorksheet(`Devoluções - Itens`);
+    const reinvoicingHistoryWorksheet =
+      this.excelReader.addWorksheet(`Fat x Refat`);
+
+    // WRITE VALUES
+    // NFs - FATURAMENTO
     const salesByInvoiceHeaders = this.getSalesByInvoiceHeaders();
     salesByInvoiceHeaders.forEach(([cell, value]) => {
-      this.excelReader.addData(worksheet, cell, value);
+      this.excelReader.addData(salesWorksheet, cell, value);
     });
     const salesByInvoiceValues = this.getSalesByInvoiceValues(
       data.salesByInvoice,
     );
     salesByInvoiceValues.forEach(([cell, value, numFmt]) => {
-      this.excelReader.addData(worksheet, cell, value);
+      this.excelReader.addData(salesWorksheet, cell, value);
       if (numFmt) {
-        this.excelReader.addNumFmt(worksheet, cell, numFmt);
+        this.excelReader.addNumFmt(salesWorksheet, cell, numFmt);
       }
     });
 
+    // NFs - REFATURAMENTO
+    const reInvoicingsHeaders = this.getSalesByInvoiceHeaders();
+    reInvoicingsHeaders.forEach(([cell, value]) => {
+      this.excelReader.addData(salesWorksheet, cell, value);
+    });
+    const reInvoicingsValues = this.getSalesByInvoiceValues(data.reInvoicings);
+    reInvoicingsValues.forEach(([cell, value, numFmt]) => {
+      this.excelReader.addData(reInvoicingsWorksheet, cell, value);
+      if (numFmt) {
+        this.excelReader.addNumFmt(reInvoicingsWorksheet, cell, numFmt);
+      }
+    });
+
+    // NFs - ITENS
     const orderLinesHeaders = this.getOrderLinesHeaders();
     orderLinesHeaders.forEach(([cell, value]) => {
       this.excelReader.addData(orderLinesWorksheet, cell, value);
@@ -520,10 +667,39 @@ export class BusinessAuditSalesReportService {
       }
     });
 
+    // DEVOLUÇÔES
+    const occurrencesAggHeaders = this.getOccurrencesAggHeaders();
+    occurrencesAggHeaders.forEach(([cell, value]) => {
+      this.excelReader.addData(occurrencesAggWorksheet, cell, value);
+    });
+    const occurrencesAggValues = this.getOccurrencesAggValues(
+      occurrencesAggData.occurrences.data,
+    );
+    occurrencesAggValues.forEach(([cell, value, numFmt]) => {
+      this.excelReader.addData(occurrencesAggWorksheet, cell, value);
+      if (numFmt) {
+        this.excelReader.addNumFmt(occurrencesAggWorksheet, cell, numFmt);
+      }
+    });
+
+    // DEVOLUCOES -ITENS
+    const occurrencesLinesHeaders = this.getReturnOccurrencesHeaders();
+    occurrencesLinesHeaders.forEach(([cell, value]) => {
+      this.excelReader.addData(occurrencesLinesWorksheet, cell, value);
+    });
+    const occurrencesLinesValues =
+      this.getReturnOccurrencesValues(occurrencesLinesData);
+    occurrencesLinesValues.forEach(([cell, value, numFmt]) => {
+      this.excelReader.addData(occurrencesLinesWorksheet, cell, value);
+      if (numFmt) {
+        this.excelReader.addNumFmt(occurrencesLinesWorksheet, cell, numFmt);
+      }
+    });
+
+    // FAT X REFAT
     const reinvoicingHistoryHeaders = this.getReinvoicingHistoryHeaders();
     reinvoicingHistoryHeaders.forEach(([cell, value]) => {
       this.excelReader.addData(reinvoicingHistoryWorksheet, cell, value);
-      // this.excelReader.addData(reinvoicingHistoryWorksheet2, cell, value);
     });
 
     const reinvoicingHistoryValues = this.getReinvoicingHistoryValues(
@@ -535,15 +711,6 @@ export class BusinessAuditSalesReportService {
         this.excelReader.addNumFmt(reinvoicingHistoryWorksheet, cell, numFmt);
       }
     });
-    // const reinvoicingHistoryValues2 = this.getReinvoicingHistoryValues2(
-    //   reinvoicingHistoryData,
-    // );
-    // reinvoicingHistoryValues2.forEach(([cell, value, numFmt]) => {
-    //   this.excelReader.addData(reinvoicingHistoryWorksheet2, cell, value);
-    //   if (numFmt) {
-    //     this.excelReader.addNumFmt(reinvoicingHistoryWorksheet2, cell, numFmt);
-    //   }
-    // });
 
     return await this.excelReader.toFile();
   }

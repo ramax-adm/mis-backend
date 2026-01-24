@@ -12,12 +12,18 @@ import {
   GetReinvoicingHistoryItem,
   GetReinvoicingHistoryItemRaw,
 } from '../types/get-reinvoicing-history.type';
+import { CONSIDERED_CFOPS } from '../constants/considered-cfops';
+import { OrderSituationEnum } from '../enums/order-situation.enum';
+import { GetOrderLineItem } from '../types/get-order-line.type';
+import { StringUtils } from '@/modules/utils/services/string.utils';
+import { InvoiceAgg } from '../types/get-sales-audit-data.type';
 
 @Injectable()
 export class BusinessAuditReinvoicingService {
   constructor(private readonly datasource: DataSource) {}
 
-  async getReinvoicingHistory({
+  // METODOS PRINCIPAIS
+  async getSalesAndReinvoicings({
     startDate,
     endDate,
     priceConsideration,
@@ -35,6 +41,111 @@ export class BusinessAuditReinvoicingService {
     companyCodes?: string[];
     clientCodes?: string[];
     salesRepresentativeCodes?: string[];
+  }) {
+    const orderLines = await this.getOrdersLines({
+      startDate,
+      endDate,
+      priceConsideration,
+      market,
+      nfNumber,
+      companyCodes,
+      clientCodes,
+      salesRepresentativeCodes,
+    });
+
+    const aggregateInvoiceData = (
+      orderLine: GetOrderLineItem,
+      map: Map<string, InvoiceAgg>,
+    ) => {
+      const invoicingValue = Number(orderLine.totalValue ?? 0);
+      const tableValue = Number(
+        orderLine.referenceTableUnitValue * orderLine.weightInKg,
+      );
+      const difValue = invoicingValue - tableValue;
+      const weightInKg = Number(orderLine.weightInKg ?? 0);
+
+      // 1) Agrupar por NF + Pedido
+      const invoiceKey = `${orderLine.nfId ?? 'nof'}`;
+      if (!map.has(invoiceKey)) {
+        map.set(invoiceKey, {
+          companyCode: orderLine.companyCode,
+          companyName: orderLine.companyName,
+          date: orderLine.billingDate,
+          nfNumber: orderLine.nfNumber,
+          orderNumber: orderLine.orderId,
+          orderCategory: orderLine.category,
+          cfopCode: orderLine.cfopCode,
+          cfopDescription: orderLine.cfopDescription,
+          clientCode: orderLine.clientCode,
+          clientName: orderLine.clientName,
+          city: orderLine.city,
+          uf: orderLine.uf,
+          representativeCode: orderLine.salesRepresentativeCode,
+          representativeName: orderLine.salesRepresentativeName,
+          paymentTerm: orderLine.paymentTerm,
+          market: orderLine.market,
+          currency: orderLine.currency,
+          salesCount: 0,
+          totalFatValue: 0,
+          totalTableValue: 0,
+          totalDiff: 0,
+          totalDiffPercent: 0,
+          additionPercent: 0,
+          additionValue: 0,
+          discountPercent: 0,
+          discountValue: 0,
+          totalKg: 0,
+          percentValue: 0,
+          referenceTableNumber: orderLine.referenceTableNumber,
+        });
+      }
+      const currentMap = map.get(invoiceKey)!;
+      currentMap.salesCount += 1;
+      currentMap.totalFatValue += invoicingValue;
+      currentMap.totalTableValue += tableValue;
+      currentMap.totalDiff += difValue;
+      currentMap.totalKg += weightInKg;
+      if (difValue > 0) {
+        currentMap.additionValue += invoicingValue - tableValue;
+      } else {
+        currentMap.discountValue += tableValue - invoicingValue;
+      }
+    };
+
+    const salesByInvoice = new Map<string, InvoiceAgg>();
+    const reInvoicingsByInvoice = new Map<string, InvoiceAgg>();
+
+    for (const orderLine of orderLines) {
+      // FATURAMENTOS
+      if (StringUtils.ILike('VEN%', orderLine.category)) {
+        aggregateInvoiceData(orderLine, salesByInvoice);
+        continue;
+      }
+
+      // REFATURAMENTOS
+      if (StringUtils.ILike('REFAT%', orderLine.category)) {
+        aggregateInvoiceData(orderLine, reInvoicingsByInvoice);
+      }
+    }
+
+    return {
+      salesByInvoice: Object.fromEntries(salesByInvoice),
+      reInvoicings: Object.fromEntries(reInvoicingsByInvoice),
+    };
+  }
+
+  async getReinvoicingHistory({
+    startDate,
+    endDate,
+    nfNumber,
+    companyCodes,
+    clientCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    nfNumber?: string;
+    companyCodes?: string[];
+    clientCodes?: string[];
   }): Promise<GetReinvoicingHistoryItem[]> {
     const lateralSubQuery = `
     SELECT
@@ -319,6 +430,7 @@ export class BusinessAuditReinvoicingService {
     noReinvoicingHistory
       .filter(
         (item) =>
+          // transormar esse find dps em um map para performar melhro
           !reinvoicingHistory.find(
             (i) =>
               i.nf_number === item.nf_number &&
@@ -465,6 +577,198 @@ export class BusinessAuditReinvoicingService {
       // 4. product_code
       return String(a.productCode).localeCompare(String(b.productCode));
     });
+  }
+
+  // FETCH DE DADOS
+  async getOrdersLines({
+    startDate,
+    endDate,
+    productCode,
+    clientCodes,
+    salesRepresentativeCodes,
+    priceConsideration,
+    nfNumber,
+    nfId,
+    market,
+    companyCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    productCode?: string;
+    clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
+    priceConsideration?: OrderPriceConsiderationEnum;
+    nfNumber?: string;
+    nfId?: string;
+    market?: MarketEnum;
+    companyCodes?: string[];
+  }) {
+    const qb = this.datasource
+      .getRepository(OrderLine)
+      .createQueryBuilder('so')
+      .leftJoinAndSelect(
+        'sensatta_companies',
+        'sc',
+        'sc.sensatta_code = so.companyCode',
+      )
+      .leftJoinAndSelect(
+        'sensatta_invoices',
+        'sinv',
+        'sinv.nf_id = so.nf_id AND sinv.product_code = so.productCode',
+      )
+      .leftJoinAndSelect(
+        (subQuery) =>
+          subQuery
+            .select('*')
+            .from('sensatta_clients', 'sc2')
+            .distinctOn(['sc2.sensatta_code'])
+            .orderBy('sc2.sensatta_code', 'ASC')
+            .addOrderBy('sc2.id', 'DESC'),
+        'sc2',
+        'sc2.sensatta_code = so.clientCode',
+      );
+
+    qb.where('1=1')
+      .andWhere('so.situation = :situation', {
+        situation: OrderSituationEnum.INVOICED,
+      })
+      .andWhere('so.cfop_code IN (:...cfops)', {
+        cfops: CONSIDERED_CFOPS,
+      });
+    // .andWhere('so.category_code IN (:...categoryCodes)', {
+    //   categoryCodes: CONSIDERED_ORDER_CATEGORIES,
+    // });
+
+    if (startDate) {
+      qb.andWhere('so.billing_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('so.billing_date <= :endDate', { endDate });
+    }
+    if (productCode) {
+      qb.andWhere('so.productCode = :productCode', { productCode });
+    }
+    if (clientCodes) {
+      qb.andWhere('so.clientCode IN (:...clientCodes)', { clientCodes });
+    }
+    if (salesRepresentativeCodes) {
+      qb.andWhere(
+        'so.salesRepresentativeCode IN (:...salesRepresentativeCodes)',
+        {
+          salesRepresentativeCodes,
+        },
+      );
+    }
+    if (nfNumber) {
+      qb.andWhere('so.nfNumber = :nfNumber', { nfNumber });
+    }
+    if (nfId) {
+      qb.andWhere('so.nfId = :nfId', { nfId });
+    }
+    if (market) {
+      qb.andWhere('so.market = :market', { market });
+    }
+    if (companyCodes) {
+      qb.andWhere('so.company_code IN (:...companyCodes)', {
+        companyCodes,
+      });
+    }
+
+    switch (priceConsideration) {
+      case OrderPriceConsiderationEnum.OVER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue > so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.UNDER_TABLE_PRICE:
+        qb.andWhere('so.saleUnitValue < so.referenceTableUnitValue');
+        break;
+      case OrderPriceConsiderationEnum.NONE:
+      default:
+        break;
+    }
+
+    const result = await qb.getRawMany();
+
+    const data: GetOrderLineItem[] = [];
+
+    for (const item of result) {
+      const payload: GetOrderLineItem = {
+        id: item.so_id,
+        billingDate: item.so_billing_date,
+        issueDate: item.so_issue_date,
+        companyCode: item.so_company_code,
+        companyName: item.sc_name, // <-- pega de sc.nam,
+        orderId: item.so_order_id,
+        situation: item.so_situation,
+        market: item.so_market,
+        paymentTerm: item.so_payment_term,
+        clientCode: item.so_client_code,
+        clientName: item.so_client_name,
+        city: item.city,
+        uf: item.uf,
+        salesRepresentativeCode: item.so_sales_representative_code,
+        salesRepresentativeName: item.so_sales_representative_name,
+        category: item.so_category,
+        productLineCode: item.so_product_line_code,
+        productLineName: item.so_product_line_name,
+        productCode: item.so_product_code,
+        productName: item.so_product_name,
+        quantity: item.so_quantity,
+        weightInKg: item.sinv_weight_in_kg,
+        currency: item.so_currency,
+        costValue: item.so_cost_value,
+        discountPromotionValue: item.so_discount_promotion_value,
+        saleUnitValue: item.so_sale_unit_value,
+        referenceTableUnitValue: item.so_reference_table_unit_value,
+        totalValue: item.sinv_total_price,
+        receivableTitleValue: item.so_receivable_title_value,
+        referenceTableId: item.so_reference_table_id,
+        referenceTableNumber: item.so_reference_table_number,
+        referenceTableDescription: item.so_reference_table_description,
+        freightCompanyId: item.so_freight_company_id,
+        freightCompanyName: item.so_freight_company_name,
+        description: item.so_description,
+        receivableTitleId: item.so_receivable_title_id,
+        receivableTitleNumber: item.so_receivable_title_number,
+        receivableTitleObservation: item.so_receivable_title_observation,
+        accountGroupCode: item.so_account_group_code,
+        accountGroupName: item.so_account_group_name,
+        accountCode: item.so_account_code,
+        accountName: item.so_account_name,
+        nfId: item.so_nf_id,
+        nfNumber: item.so_nf_number,
+        cfopCode: item.so_cfop_code,
+        cfopDescription: item.so_cfop_description,
+        createdAt: item.so_created_at,
+        invoicingValue: 0,
+        tableValue: 0,
+        dif: 0,
+        difPercent: 0,
+        additionPercent: 0,
+        discountPercent: 0,
+      };
+      const invoicingValue = Number(payload.totalValue ?? 0);
+      const tableValue = Number(
+        payload.referenceTableUnitValue * payload.weightInKg,
+      );
+      const difValue = invoicingValue - tableValue;
+      const difPercent = NumberUtils.nb4(difValue / (tableValue || 1));
+
+      payload.invoicingValue = invoicingValue;
+      payload.tableValue = tableValue;
+      payload.dif = difValue;
+      payload.difPercent = difPercent;
+      if (difValue > 0) {
+        payload.additionPercent = NumberUtils.nb4(
+          invoicingValue / tableValue - 1,
+        );
+      } else {
+        payload.discountPercent = NumberUtils.nb4(
+          1 - invoicingValue / tableValue,
+        );
+      }
+      data.push(payload);
+    }
+    return data;
   }
 
   /**
