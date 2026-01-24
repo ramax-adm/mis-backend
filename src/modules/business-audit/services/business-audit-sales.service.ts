@@ -218,11 +218,21 @@ export class BusinessAuditSalesService {
     console.log(`agg time ${new Date().getTime() - startTime}ms`);
 
     // Totals p/ agrupamento
-    const invoiceTotals = this.getSalesAuditTotals(salesByInvoice);
-    const productTotals = this.getSalesAuditTotals(salesByProduct);
-    const clientTotals = this.getSalesAuditTotals(salesByClient);
+    const invoiceTotals = this.getSalesAuditTotals(
+      salesByInvoice,
+      salesByInvoice,
+    );
+    const productTotals = this.getSalesAuditTotals(
+      salesByProduct,
+      salesByInvoice,
+    );
+    const clientTotals = this.getSalesAuditTotals(
+      salesByClient,
+      salesByInvoice,
+    );
     const representativeTotals = this.getSalesAuditTotals(
       salesByRepresentative,
+      salesByInvoice,
     );
 
     console.log(`totals time ${new Date().getTime() - startTime}ms`);
@@ -355,8 +365,6 @@ export class BusinessAuditSalesService {
     }
 
     const result = await qb.getRawMany();
-    console.log('get raw many');
-    console.log('result', result[0]);
 
     const data: GetOrderLineItem[] = [];
 
@@ -978,6 +986,7 @@ export class BusinessAuditSalesService {
       string,
       InvoiceAgg | ProductAgg | ClientAgg | SalesRepresentativeAgg
     >,
+    invoicesMap: Map<String, InvoiceAgg>,
   ) {
     const arrayData = Array.from(map.values());
 
@@ -994,6 +1003,7 @@ export class BusinessAuditSalesService {
         return acc;
       },
       {
+        invoiceQuantity: invoicesMap.size,
         count: 0,
         totalKg: 0,
         totalFatValue: 0,
