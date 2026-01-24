@@ -80,6 +80,7 @@ export type SalesRepresentativeAgg = {
   percentValue: number;
 };
 export type GetBusinessAuditSalesDataTotals = {
+  invoiceQuantity: number;
   count: number;
   totalKg: number;
   totalFatValue: number;
