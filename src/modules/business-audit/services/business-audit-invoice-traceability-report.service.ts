@@ -644,7 +644,7 @@ export class BusinessAuditInvoiceTraceabilityReportService {
     // NFs - REFATURAMENTO
     const reInvoicingsHeaders = this.getSalesByInvoiceHeaders();
     reInvoicingsHeaders.forEach(([cell, value]) => {
-      this.excelReader.addData(salesWorksheet, cell, value);
+      this.excelReader.addData(reInvoicingsWorksheet, cell, value);
     });
     const reInvoicingsValues = this.getSalesByInvoiceValues(data.reInvoicings);
     reInvoicingsValues.forEach(([cell, value, numFmt]) => {
