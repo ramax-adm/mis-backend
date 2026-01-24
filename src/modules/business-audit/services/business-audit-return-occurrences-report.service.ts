@@ -24,15 +24,6 @@ export class BusinessAuditReturnOccurrencesReportService {
     private readonly excelReader: ExcelReaderService,
   ) {}
 
-  private getMarket(market: string) {
-    const marketMap = {
-      [MarketEnum.ME]: 'ME',
-      [MarketEnum.MI]: 'MI',
-    };
-
-    return marketMap[market];
-  }
-
   getReturnOccurrencesHeaders(): [string, any][] {
     const headers: [string, any][] = [
       ['A1', 'Data Faturamento'],
@@ -179,16 +170,18 @@ export class BusinessAuditReturnOccurrencesReportService {
     this.excelReader.create();
 
     const { occurrences } =
-      await this.businessAuditReturnOccurrencesService.getData({
-        startDate,
-        endDate,
-        companyCodes: companyCodes?.split(','),
-        clientCodes: clientCodes?.split(','),
-        representativeCodes: salesRepresentativeCodes?.split(','),
-        occurrenceCauses: occurrenceCauses?.split(','),
-        occurrenceNumber: occurrenceNumber,
-        returnType: returnType,
-      });
+      await this.businessAuditReturnOccurrencesService.getReturnOccurrencesAuditData(
+        {
+          startDate,
+          endDate,
+          companyCodes: companyCodes?.split(','),
+          clientCodes: clientCodes?.split(','),
+          representativeCodes: salesRepresentativeCodes?.split(','),
+          occurrenceCauses: occurrenceCauses?.split(','),
+          occurrenceNumber: occurrenceNumber,
+          returnType: returnType,
+        },
+      );
 
     const returnOccurrences =
       await this.businessAuditReturnOccurrencesService.getReturnOccurrences({
