@@ -9,16 +9,17 @@ import { BusinessAuditReturnOccurrencesController } from './controllers/business
 import { BusinessAuditOverviewController } from './controllers/business-audit-overview.controller';
 import { BusinessAuditSalesController } from './controllers/business-audit-sales.controller';
 import { BusinessAuditReturnOccurrencesReportService } from './services/business-audit-return-occurrences-report.service';
-import { BusinessAuditReinvoicingService } from './services/business-audit-reinvoicing.service';
+import { BusinessAuditInvoiceTraceabilityService } from './services/business-audit-invoice-traceability.service';
+import { BusinessAuditInvoiceTraceabilityController } from './controllers/business-audit-invoice-traceability.controller';
 
 @Module({
   providers: [
     BusinessAuditOverviewService,
     BusinessAuditSalesService,
+    BusinessAuditInvoiceTraceabilityService,
     BusinessAuditInvoiceTraceabilityReportService,
     BusinessAuditReturnOccurrencesService,
     BusinessAuditReturnOccurrencesReportService,
-    BusinessAuditReinvoicingService,
     ExcelReaderService,
   ],
   controllers: [
@@ -26,6 +27,7 @@ import { BusinessAuditReinvoicingService } from './services/business-audit-reinv
     BusinessAuditOverviewController,
     BusinessAuditSalesController,
     BusinessAuditReturnOccurrencesController,
+    BusinessAuditInvoiceTraceabilityController,
   ],
 })
 export class BusinessAuditModule {}

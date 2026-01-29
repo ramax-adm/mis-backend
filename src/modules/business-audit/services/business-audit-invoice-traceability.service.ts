@@ -17,12 +17,283 @@ import { OrderSituationEnum } from '../enums/order-situation.enum';
 import { GetOrderLineItem } from '../types/get-order-line.type';
 import { StringUtils } from '@/modules/utils/services/string.utils';
 import { InvoiceAgg } from '../types/get-sales-audit-data.type';
+import { Company } from '@/core/entities/sensatta/company.entity';
 
 @Injectable()
-export class BusinessAuditReinvoicingService {
+export class BusinessAuditInvoiceTraceabilityService {
   constructor(private readonly datasource: DataSource) {}
 
   // METODOS PRINCIPAIS
+  async getData({
+    startDate,
+    endDate,
+    companyCodes,
+    clientCodes,
+    salesRepresentativeCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    companyCodes?: string[];
+    clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
+  }) {
+    /**
+     * Map de refaturamentos p/ emp - OK
+     * - emp
+     * - qtd
+     * - qtd %
+     * - $ fat
+     * - $ tab
+     * - $ dif
+     * - % dif
+     */
+
+    /**
+     * Lista de nfs venda - OK
+     * Lista de nfs refaturadas - OK
+     * Detalhes de nfs
+     */
+
+    /**
+     * KPIs - OK
+     * # Visão geral
+     * QTD NFs
+     * FAT INICIAL $
+     * FAT TABELA $
+     * DEVOLUCOES $
+     * REFAT $
+     * FAT FINAL
+     *
+     * # Estudo refat
+     * $ C1
+     * $ C1 reteve
+     * $ Refat demais clientes
+     * $ REFAT FINAL
+     * DESC $ e %
+     *
+     * # Totais
+     * QTD NFs
+     * FAT FINAL
+     * DESC INICIAL $ e %
+     * DESC REFAT $ e %
+     * DESC FINAL $ e %
+     */
+
+    const { reInvoicings, salesByInvoice } = await this.getSalesAndReinvoicings(
+      {
+        startDate,
+        endDate,
+        companyCodes,
+        clientCodes,
+        salesRepresentativeCodes,
+      },
+    );
+    const reinvoicingsTraceability = await this.getReinvoicingHistory({
+      startDate,
+      endDate,
+      companyCodes,
+      clientCodes,
+      salesRepresentativeCodes,
+    });
+    const salesByCompanyMap = new Map<
+      string,
+      {
+        companyCode: string;
+        companyName: string;
+        quantity: number;
+        quantityPercent: number;
+        invoiceValue: number;
+        referenceTableValue: number;
+        difValue: number;
+        difPercent: number;
+      }
+    >();
+    const salesByInvoiceTotals = Object.values(salesByInvoice).reduce(
+      (acc, item) => ({
+        quantity: acc.quantity + 1,
+        fatValue: acc.fatValue + item.totalFatValue,
+        tableValue: acc.tableValue + item.totalTableValue,
+        dif: acc.dif + item.totalDiff,
+      }),
+      { quantity: 0, fatValue: 0, tableValue: 0, dif: 0 },
+    );
+    const reInvoicingsTraceabilityTotals = reinvoicingsTraceability.reduce(
+      (acc, item) => ({
+        returnOccurrencesValue: acc.returnOccurrencesValue + item.returnValue,
+        reInvoicingsValue: acc.reInvoicingsValue + item.reInvoicingValue,
+        invoicesValue: acc.invoicesValue + item.invoicingValue,
+        invoicesProportionalValue:
+          acc.invoicesProportionalValue + item.invoicingValueProportional,
+      }),
+      {
+        returnOccurrencesValue: 0,
+        reInvoicingsValue: 0,
+        invoicesValue: 0,
+        invoicesProportionalValue: 0,
+      },
+    );
+    const kpis = {
+      invoiceQuantity: 0,
+      initialFatValue: 0,
+      initialTableValue: 0,
+      returnOccurrencesValue: 0,
+      reInvoicingsValue: 0,
+      finalFatValue: 0,
+    };
+    const reInvoicingsTotals = {
+      reInvoicingQuantity: 0,
+      reInvoicingQuantityPercent: 0,
+      invoicesValue: 0,
+      invoicesProportionalValue: 0,
+      reInvoicingsValue: 0,
+      finalValue: 0,
+      difValue: 0,
+      difPercent: 0,
+    };
+    const totals = {
+      quantityNf: 0,
+      finalValue: 0,
+      initialDifValue: 0,
+      initialDifPercent: 0,
+      reInvoicingDifValue: 0,
+      reInvoicingDifPercent: 0,
+      totalDifValue: 0,
+      totalDifPercent: 0,
+    };
+
+    for (const item of Object.values(salesByInvoice)) {
+      const companyKey = `${item.companyCode} - ${item.companyName}`;
+      if (!salesByCompanyMap.has(companyKey)) {
+        salesByCompanyMap.set(companyKey, {
+          companyCode: item.companyCode,
+          companyName: item.companyName,
+          quantity: 0,
+          quantityPercent: 0,
+          invoiceValue: 0,
+          referenceTableValue: 0,
+          difValue: 0,
+          difPercent: 0,
+        });
+      }
+
+      const currentMap = salesByCompanyMap.get(companyKey);
+      currentMap.quantity += 1;
+      currentMap.invoiceValue += item.totalFatValue;
+      currentMap.referenceTableValue += item.totalTableValue;
+      currentMap.difValue += item.totalFatValue - item.totalTableValue;
+    }
+
+    for (const [, obj] of salesByCompanyMap) {
+      obj.quantityPercent = obj.quantity / salesByInvoiceTotals.quantity;
+      obj.difPercent = obj.difValue / salesByInvoiceTotals.dif;
+    }
+
+    // KPIs
+    kpis.invoiceQuantity = salesByInvoiceTotals.quantity;
+    kpis.initialFatValue = salesByInvoiceTotals.fatValue;
+    kpis.initialTableValue = salesByInvoiceTotals.tableValue;
+    kpis.returnOccurrencesValue =
+      reInvoicingsTraceabilityTotals.returnOccurrencesValue;
+    kpis.reInvoicingsValue = reInvoicingsTraceabilityTotals.reInvoicingsValue;
+    kpis.finalFatValue =
+      kpis.initialFatValue -
+      kpis.returnOccurrencesValue +
+      kpis.reInvoicingsValue;
+
+    // ESTUDO REFAT
+    reInvoicingsTotals.reInvoicingQuantity = new Set(
+      reinvoicingsTraceability.map((i) => i.reInvoicingNfNumber),
+    ).size;
+    reInvoicingsTotals.reInvoicingQuantityPercent =
+      reInvoicingsTotals.reInvoicingQuantity / kpis.invoiceQuantity;
+    reInvoicingsTotals.invoicesValue =
+      reInvoicingsTraceabilityTotals.invoicesValue;
+    reInvoicingsTotals.invoicesProportionalValue =
+      reInvoicingsTraceabilityTotals.invoicesProportionalValue;
+    reInvoicingsTotals.reInvoicingsValue =
+      reInvoicingsTraceabilityTotals.reInvoicingsValue;
+    reInvoicingsTotals.finalValue =
+      reInvoicingsTotals.invoicesProportionalValue +
+      reInvoicingsTotals.reInvoicingsValue;
+    reInvoicingsTotals.difValue =
+      reInvoicingsTotals.finalValue - reInvoicingsTotals.invoicesValue;
+    reInvoicingsTotals.difPercent =
+      Math.abs(reInvoicingsTotals.difValue) /
+      (reInvoicingsTotals.invoicesValue || 1);
+
+    // TOTAIS
+    totals.quantityNf =
+      salesByInvoiceTotals.quantity + reInvoicingsTotals.reInvoicingQuantity;
+    totals.finalValue = kpis.finalFatValue;
+    totals.initialDifValue = kpis.initialFatValue - kpis.initialTableValue;
+    totals.initialDifPercent =
+      totals.initialDifValue / (kpis.initialTableValue || 1);
+    totals.reInvoicingDifValue = reInvoicingsTotals.difValue;
+    totals.reInvoicingDifPercent =
+      totals.reInvoicingDifValue / (reInvoicingsTotals.invoicesValue || 1);
+    totals.totalDifValue = totals.initialDifValue + totals.reInvoicingDifValue;
+    totals.totalDifPercent = totals.totalDifValue / (kpis.initialFatValue || 1);
+
+    const getSalesAndReInvoicingsTotals = (data: Record<string, InvoiceAgg>) =>
+      Object.values(data).reduce(
+        (acc, i) => ({
+          weightInKg: acc.weightInKg + i.totalKg,
+          totalFatValue: acc.totalFatValue + i.totalFatValue,
+          totalTableValue: acc.totalTableValue + i.totalTableValue,
+          totalDiff: acc.totalDiff + i.totalDiff,
+        }),
+        {
+          weightInKg: 0,
+          totalFatValue: 0,
+          totalTableValue: 0,
+          totalDiff: 0,
+        },
+      );
+
+    const test = Object.fromEntries(salesByCompanyMap);
+    const salesByCompanyTotals = Object.values(test).reduce(
+      (acc, item) => ({
+        quantity: acc.quantity + item.quantity,
+        quantityPercent: acc.quantityPercent + item.quantityPercent,
+        invoiceValue: acc.invoiceValue + item.invoiceValue,
+        referenceTableValue: acc.referenceTableValue + item.referenceTableValue,
+        difValue: acc.difValue + item.difValue,
+        difPercent: 0,
+      }),
+      {
+        quantity: 0,
+        quantityPercent: 0,
+        invoiceValue: 0,
+        referenceTableValue: 0,
+        difValue: 0,
+        difPercent: 0,
+      },
+    );
+    console.log({ salesByCompanyTotals });
+
+    salesByCompanyTotals.difPercent =
+      salesByCompanyTotals.difValue / salesByCompanyTotals.referenceTableValue;
+
+    return {
+      salesByInvoice: {
+        totals: getSalesAndReInvoicingsTotals(salesByInvoice),
+        data: salesByInvoice,
+      },
+      reInvoicings: {
+        totals: getSalesAndReInvoicingsTotals(reInvoicings),
+        data: reInvoicings,
+      },
+      salesByCompany: {
+        totals: salesByCompanyTotals,
+        data: Object.fromEntries(salesByCompanyMap),
+      },
+      reinvoicingsTraceability,
+      kpis,
+      reInvoicingsTotals,
+      totals,
+    };
+  }
+
   async getSalesAndReinvoicings({
     startDate,
     endDate,
@@ -140,12 +411,14 @@ export class BusinessAuditReinvoicingService {
     nfNumber,
     companyCodes,
     clientCodes,
+    salesRepresentativeCodes,
   }: {
     startDate?: Date;
     endDate?: Date;
     nfNumber?: string;
     companyCodes?: string[];
     clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
   }): Promise<GetReinvoicingHistoryItem[]> {
     const lateralSubQuery = `
     SELECT
@@ -182,6 +455,7 @@ export class BusinessAuditReinvoicingService {
         'thr."NF_REFATURAMENTO" AS "NF_REFATURAMENTO"',
         'thr."SEQUENCIA_REFATURAMENTO" AS "SEQUENCIA_REFATURAMENTO"',
 
+        'sc.name AS company_name',
         // =====================================================
         // -------- Sensatta Invoices (si)
         // =====================================================
@@ -222,8 +496,13 @@ export class BusinessAuditReinvoicingService {
         // =====================================================
         '"T".occurrence_number AS "occurrence_number"',
         '"T".return_type AS "return_type"',
+        '"T".return_nf AS "return_nf"',
         '"T".occurrence_cause AS "occurrence_cause"',
         '"T".observation AS "observation"',
+        '"T".product_code as "return_product_code"',
+        '"T".product_name as "return_product_name"',
+        '"T".return_weight_in_kg as "return_weight_in_kg"',
+        '"T".return_value as "return_value"',
 
         // ===========================
         // REFATURAMENTO (AGREGADO - LATERAL)
@@ -232,27 +511,7 @@ export class BusinessAuditReinvoicingService {
         'si2_agg.product_reinvoicing AS "agg_product_reinvoicing"',
         'si2_agg.weight_in_kg_reinvoicing AS "agg_weight_in_kg_reinvoicing"',
       ])
-      // ===========================
-      // SUBQUERY OCORRÊNCIAS
-      // ===========================
-      .leftJoin(
-        (subQ) =>
-          subQ
-            .select([
-              'sro.occurrence_number AS occurrence_number',
-              'sro.occurrence_cause AS occurrence_cause',
-              'sro.return_type AS return_type',
-              'sro.observation AS observation',
-            ])
-            .from(ReturnOccurrence, 'sro')
-            .groupBy('sro.occurrence_number')
-            .addGroupBy('sro.occurrence_cause')
-            .addGroupBy('sro.return_type')
-            .addGroupBy('sro.observation'),
-
-        'T',
-        '"T".occurrence_number = thr."BO"',
-      )
+      .leftJoin(Company, 'sc', 'sc.sensatta_code = thr."CODIGO_EMPRESA"')
       // ===========================
       // FATURAMENTO
       // ===========================
@@ -262,6 +521,37 @@ export class BusinessAuditReinvoicingService {
         'so',
         'so.nf_id = si.nf_id AND so.product_code = si.product_code',
       )
+
+      // ===========================
+      // SUBQUERY OCORRÊNCIAS
+      // ===========================
+      .leftJoin(
+        (subQ) =>
+          subQ
+            .select([
+              'sro.occurrence_number AS occurrence_number',
+              'sro.occurrence_cause AS occurrence_cause',
+              'sro.return_nf AS return_nf',
+              'sro.product_code as product_code',
+              'sro.product_name as product_name',
+              'sro.return_type AS return_type',
+              'sro.observation AS observation',
+              'SUM(sro.return_weight_in_kg) as return_weight_in_kg',
+              'SUM(sro.return_value) as return_value',
+            ])
+            .from(ReturnOccurrence, 'sro')
+            .groupBy('sro.occurrence_number')
+            .addGroupBy('sro.occurrence_cause')
+            .addGroupBy('sro.return_nf')
+            .addGroupBy('sro.product_code')
+            .addGroupBy('sro.product_name')
+            .addGroupBy('sro.return_type')
+            .addGroupBy('sro.observation'),
+
+        'T',
+        '"T".occurrence_number = thr."BO" AND "T".product_code = "si".product_code',
+      )
+
       // ===========================
       // REFATURAMENTO
       // ===========================
@@ -315,6 +605,12 @@ export class BusinessAuditReinvoicingService {
     if (clientCodes) {
       qb.andWhere('si.client_code IN (:...clientCodes)', { clientCodes });
     }
+    if (salesRepresentativeCodes) {
+      qb.andWhere(
+        'si.sales_representative_code IN (:...salesRepresentativeCodes)',
+        { salesRepresentativeCodes },
+      );
+    }
     // if (salesRepresentativeCodes) {
     //   qb.andWhere(
     //     'si.sales_representative_code IN (:...salesRepresentativeCodes)',
@@ -335,10 +631,13 @@ export class BusinessAuditReinvoicingService {
       });
     }
 
+    console.log('query', qb.getSql());
     const history = await qb.getRawMany<GetReinvoicingHistoryItemRaw>();
+    console.log('traceability', history.length);
     const noReinvoicingHistory = history.filter(
       (i) => !i.product_code_reinvoicing,
     );
+
     const reinvoicingHistory = history.filter(
       (i) => !!i.product_code_reinvoicing,
     );
@@ -370,6 +669,7 @@ export class BusinessAuditReinvoicingService {
 
       response.push({
         companyCode: row.CODIGO_EMPRESA,
+        companyName: row.company_name,
         date: row.date,
         nfNumber: row.nf_number,
         category: row.category,
@@ -409,6 +709,10 @@ export class BusinessAuditReinvoicingService {
 
         occurrenceNumber: row.occurrence_number,
         occurrenceCause: row.occurrence_cause,
+        occurrenceNf: row.return_nf,
+        occurrenceNfProductId: `${row.return_nf}${row.return_product_code}`,
+        returnWeightInKg: row.return_weight_in_kg,
+        returnValue: row.return_value,
         reinvoicingSequence: row.SEQUENCIA_REFATURAMENTO,
         returnType: row.return_type,
         observation: row.observation,
@@ -443,6 +747,7 @@ export class BusinessAuditReinvoicingService {
         if (!noReivoicingHistoryMap.has(key)) {
           noReivoicingHistoryMap.set(key, {
             companyCode: row.CODIGO_EMPRESA,
+            companyName: row.company_name,
             date: row.date,
             nfNumber: row.nf_number,
             category: row.category,
@@ -481,6 +786,10 @@ export class BusinessAuditReinvoicingService {
 
             occurrenceNumber: row.occurrence_number,
             occurrenceCause: row.occurrence_cause,
+            occurrenceNf: row.return_nf,
+            occurrenceNfProductId: `${row.return_nf}${row.return_product_code}`,
+            returnWeightInKg: 0,
+            returnValue: 0,
             reinvoicingSequence: row.SEQUENCIA_REFATURAMENTO,
             returnType: row.return_type,
             observation: row.observation,
@@ -527,6 +836,8 @@ export class BusinessAuditReinvoicingService {
         item.reInvoicingWeightInKg = 0;
         item.reInvoicingValue = 0;
         item.reInvoicingTableValue = 0;
+        item.returnWeightInKg = 0;
+        item.returnValue = 0;
         // item.saleUnitPrice = 0;
         // item.tableUnitPrice = 0;
         item.difDays = 0;
@@ -783,64 +1094,33 @@ export class BusinessAuditReinvoicingService {
    */
 
   /**
-   * Lista de nfs refaturadas p/ emp
-   * - dt fat
-   * - nf fat
-   * - cliente fat
-   * - representante fat
-   * - kg fat
-   * - $ fat
+   * Lista de nfs venda
+   * Lista de nfs refaturadas
+   * Detalhes de nfs
    */
 
   /**
-   * Detalhes de nfs refaturadas p/ emp
-   * - produto
+   * KPIs
+   * # Visão geral
+   * QTD NFs
+   * FAT INICIAL $
+   * FAT TABELA $
+   * DEVOLUCOES $
+   * REFAT $
+   * FAT FINAL
    *
-   * FATURAMENTO
-   * - dt fat
-   * - nf fat
-   * - cliente fat
-   * - kg fat
-   * - $ un fat
-   * - $ un tab
-   * - $ fat
-   * - $ tab
-   * - $ dif
+   * # Estudo refat
+   * $ C1
+   * $ C1 reteve
+   * $ Refat demais clientes
+   * $ REFAT FINAL
+   * DESC $ e %
    *
-   * REFATURAMENTO
-   * - dt refat
-   * - nf refat
-   * - cliente refat
-   * - $ un fat
-   * - $ un tab
-   * - $ fat
-   * - $ tab
-   * - $ dif
-   *
-   * DIF
-   * - dias
-   * - kg
-   * - $ un fat
-   * - $ fat
-   * - B.O
-   * - N° refat
-   * - motivo
-   */
-
-  /**
-   *
-   * TOTALIZADORES
-   * NF ORIGINAL
-   * - $ FAT C1 (1° cliente)
-   * - $ Tab
-   * - $ Dif
-   *
-   * NF REFATURAMENTO
-   *
-   *
-   * DIFs
-   * FAT FINAL - FAT
-   * FAT FINAL - TAB
-   * %
+   * # Totais
+   * QTD NFs
+   * FAT FINAL
+   * DESC INICIAL $ e %
+   * DESC REFAT $ e %
+   * DESC FINAL $ e %
    */
 }
