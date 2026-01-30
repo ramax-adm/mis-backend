@@ -10,7 +10,7 @@ import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 import { GetOrderLineItem } from '../types/get-order-line.type';
 import { GetReinvoicingHistoryItem } from '../types/get-reinvoicing-history.type';
-import { BusinessAuditReinvoicingService } from './business-audit-reinvoicing.service';
+import { BusinessAuditInvoiceTraceabilityService } from './business-audit-invoice-traceability.service';
 import { InvoiceAgg } from '../types/get-sales-audit-data.type';
 import { BusinessAuditReturnOccurrencesService } from './business-audit-return-occurrences.service';
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
@@ -21,7 +21,7 @@ export class BusinessAuditInvoiceTraceabilityReportService {
   constructor(
     private readonly businessAuditSalesService: BusinessAuditSalesService,
     private readonly businessAuditReturnOccurrencesService: BusinessAuditReturnOccurrencesService,
-    private readonly businessAuditReinvoicingService: BusinessAuditReinvoicingService,
+    private readonly businessAuditInvoiceTraceabilityService: BusinessAuditInvoiceTraceabilityService,
     private readonly excelReader: ExcelReaderService,
   ) {}
 
@@ -188,6 +188,13 @@ export class BusinessAuditInvoiceTraceabilityReportService {
       ['AJ1', 'T_KG C1'],
       ['AK1', 'T_$ FAT C1'],
       ['AL1', 'T_$'],
+
+      ['AM1', 'DEV_BO.'],
+      ['AN1', 'DEV_NF'],
+      ['AO1', 'DEV_ID'],
+      ['AP1', 'DEV_Produto'],
+      ['AQ1', 'DEV_KG'],
+      ['AR1', 'DEV_$ Valor'],
     ];
 
     return headers;
@@ -540,6 +547,15 @@ export class BusinessAuditInvoiceTraceabilityReportService {
               item.reInvoicingValue +
               Math.abs(item.difValue),
           ],
+          [`AM${row(index)}`, item.occurrenceNumber],
+          [`AN${row(index)}`, item.occurrenceNf],
+          [`AO${row(index)}`, item.occurrenceNfProductId],
+          [
+            `AP${row(index)}`,
+            `${item.returnProductCode} - ${item.returnProductName}`,
+          ],
+          [`AQ${row(index)}`, item.returnWeightInKg],
+          [`AR${row(index)}`, item.returnValue],
         );
       });
 
@@ -569,15 +585,17 @@ export class BusinessAuditInvoiceTraceabilityReportService {
 
     // GET DATA
     const data =
-      await this.businessAuditReinvoicingService.getSalesAndReinvoicings({
-        startDate,
-        endDate,
-        companyCodes: companyCodes?.split(','),
-        market,
-        priceConsideration,
-        clientCodes: clientCodes?.split(','),
-        salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
-      });
+      await this.businessAuditInvoiceTraceabilityService.getSalesAndReinvoicings(
+        {
+          startDate,
+          endDate,
+          companyCodes: companyCodes?.split(','),
+          market,
+          priceConsideration,
+          clientCodes: clientCodes?.split(','),
+          salesRepresentativeCodes: salesRepresentativeCodes?.split(','),
+        },
+      );
 
     const orderLinesData = await this.businessAuditSalesService.getOrdersLines({
       startDate,
@@ -607,7 +625,7 @@ export class BusinessAuditInvoiceTraceabilityReportService {
       });
 
     const reinvoicingHistoryData =
-      await this.businessAuditReinvoicingService.getReinvoicingHistory({
+      await this.businessAuditInvoiceTraceabilityService.getReinvoicingHistory({
         startDate,
         endDate,
         companyCodes: companyCodes?.split(','),

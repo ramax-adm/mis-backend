@@ -65,6 +65,11 @@ export class BusinessAuditController {
           );
         break;
       }
+      case BusinessAuditReportTypeEnum.INVOICE_TRACEABILITY: {
+        result =
+          await this.businessAuditInvoiceTraceabilityReportService.export(dto);
+        break;
+      }
       default: {
         throw new UnprocessableEntityException(
           'Não é possivel fazer a extração dos dados',

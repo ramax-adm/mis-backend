@@ -125,6 +125,7 @@ export class BusinessAuditReturnOccurrencesService {
           quantity: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
 
@@ -133,6 +134,7 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByCompany.quantity += occurrence.returnQuantity;
       currentOccurrencesByCompany.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByCompany.value += occurrence.returnValue;
+      currentOccurrencesByCompany.invoiceValue += occurrence.invoiceValue;
 
       // p/ motivo
       if (!occurrencesByCause.has(causeKey)) {
@@ -141,6 +143,7 @@ export class BusinessAuditReturnOccurrencesService {
           quantity: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
 
@@ -149,6 +152,7 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByCause.quantity += occurrence.returnQuantity;
       currentOccurrencesByCause.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByCause.value += occurrence.returnValue;
+      currentOccurrencesByCause.invoiceValue += occurrence.invoiceValue;
 
       // p/ representante
       if (!occurrencesByRepresentative.has(representativeKey)) {
@@ -157,6 +161,7 @@ export class BusinessAuditReturnOccurrencesService {
           quantity: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
 
@@ -167,6 +172,8 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByRepresentative.weightInKg +=
         occurrence.returnWeightInKg;
       currentOccurrencesByRepresentative.value += occurrence.returnValue;
+      currentOccurrencesByRepresentative.invoiceValue +=
+        occurrence.invoiceValue;
 
       // p/ cliente
       if (!occurrencesByClient.has(clientKey)) {
@@ -175,6 +182,7 @@ export class BusinessAuditReturnOccurrencesService {
           quantity: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
 
@@ -183,6 +191,7 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByClient.quantity += occurrence.returnQuantity;
       currentOccurrencesByClient.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByClient.value += occurrence.returnValue;
+      currentOccurrencesByClient.invoiceValue += occurrence.invoiceValue;
 
       // p/ produto
       if (!occurrencesByProduct.has(productKey)) {
@@ -191,6 +200,7 @@ export class BusinessAuditReturnOccurrencesService {
           quantity: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
 
@@ -199,6 +209,7 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByProduct.quantity += occurrence.returnQuantity;
       currentOccurrencesByProduct.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByProduct.value += occurrence.returnValue;
+      currentOccurrencesByProduct.invoiceValue += occurrence.invoiceValue;
 
       // p/ dia (quantidade, valor R$)
       if (!occurrencesByDay.has(dayKey)) {
@@ -208,6 +219,7 @@ export class BusinessAuditReturnOccurrencesService {
           quantity: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
 
@@ -217,6 +229,7 @@ export class BusinessAuditReturnOccurrencesService {
       currentOccurrencesByDay.quantity += occurrence.returnQuantity;
       currentOccurrencesByDay.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByDay.value += occurrence.returnValue;
+      currentOccurrencesByDay.invoiceValue += occurrence.invoiceValue;
 
       // p/ tipo
       if (!occurrencesByType.has(returnTypeKey)) {
@@ -225,12 +238,14 @@ export class BusinessAuditReturnOccurrencesService {
           percentValue: 0,
           weightInKg: 0,
           value: 0,
+          invoiceValue: 0,
         });
       }
       const currentOccurrencesByType = occurrencesByType.get(returnTypeKey)!;
       currentOccurrencesByType.quantity += occurrence.returnQuantity;
       currentOccurrencesByType.weightInKg += occurrence.returnWeightInKg;
       currentOccurrencesByType.value += occurrence.returnValue;
+      currentOccurrencesByType.invoiceValue += occurrence.invoiceValue;
     }
 
     for (const [, obj] of occurrencesByDay) {
@@ -295,8 +310,9 @@ export class BusinessAuditReturnOccurrencesService {
             quantity: acc.quantity + i.returnQuantity,
             weightInKg: acc.weightInKg + i.returnWeightInKg,
             value: acc.value + i.returnValue,
+            invoiceValue: acc.invoiceValue + i.invoiceValue,
           }),
-          { count: 0, quantity: 0, weightInKg: 0, value: 0 },
+          { count: 0, quantity: 0, weightInKg: 0, value: 0, invoiceValue: 0 },
         ),
       },
     });
@@ -309,6 +325,7 @@ export class BusinessAuditReturnOccurrencesService {
       quantity?: number;
       weightInKg?: number;
       value?: number;
+      invoiceValue?: number;
     },
   >(map: Map<string, T>, returnOccurrencesSize: number = 0) {
     const totals = Array.from(map.values()).reduce(
@@ -317,9 +334,10 @@ export class BusinessAuditReturnOccurrencesService {
         acc.quantity += item.quantity ?? 0;
         acc.weightInKg += item.weightInKg ?? 0;
         acc.value += item.value ?? 0;
+        acc.invoiceValue += item.invoiceValue ?? 0;
         return acc;
       },
-      { count: 0, quantity: 0, weightInKg: 0, value: 0 },
+      { count: 0, quantity: 0, weightInKg: 0, value: 0, invoiceValue: 0 },
     );
     return { ...totals, count: returnOccurrencesSize };
   }

@@ -36,6 +36,8 @@
 //   order_category: 'REFATURAMENTO (GO)',
 //   order_operation: 'Venda'
 
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
+
 export interface GetReinvoicingHistoryItemRaw {
   // -------- TempHistoricoRefaturamento (thr)
   CODIGO_EMPRESA: string;
@@ -45,6 +47,7 @@ export interface GetReinvoicingHistoryItemRaw {
   NF_REFATURAMENTO: string;
   SEQUENCIA_REFATURAMENTO: number;
 
+  company_name: string;
   // -------- Sensatta Invoices (si)
   date: Date;
   nf_number: string;
@@ -63,8 +66,11 @@ export interface GetReinvoicingHistoryItemRaw {
 
   // -------- Sensatta Invoices Refaturamento (si2)
   date_reinvoicing: Date;
+  nf_id_reinvoicing: string;
   nf_number_reinvoicing: string;
   nf_situation_reinvoicing: string;
+  market_reinvoicing: string;
+  order_id_reinvoicing: string;
   category_reinvoicing: string;
   product_code_reinvoicing: string;
   product_name_reinvoicing: string;
@@ -79,8 +85,13 @@ export interface GetReinvoicingHistoryItemRaw {
   // -------- Ocorrências (subquery T)
   occurrence_number: string | null;
   occurrence_cause: string | null;
+  return_nf: string | null;
   return_type: string | null;
   observation: string | null;
+  return_product_code: string | null;
+  return_product_name: string | null;
+  return_weight_in_kg: number | null;
+  return_value: number | null;
 
   agg_date_reinvoicing: Date;
   agg_product_reinvoicing: string;
@@ -92,6 +103,7 @@ export interface GetReinvoicingHistoryItemRaw {
 // ======================================================
 export interface GetReinvoicingHistoryItem {
   companyCode: string;
+  companyName: string;
   date: Date;
   nfNumber: string;
   category: string;
@@ -107,8 +119,11 @@ export interface GetReinvoicingHistoryItem {
   invoicingValue: number;
   tableValue: number;
   reInvoicingDate: Date;
+  reInvoicingNfId: string;
   reInvoicingNfNumber: string;
   reInvoicingNfSituation: string;
+  reInvoicingMarket: string;
+  reInvoicingOrderId: string;
   reInvoicingCategory: string;
   reInvoicingProductCode: string;
   reInvoicingProductName: string;
@@ -126,10 +141,17 @@ export interface GetReinvoicingHistoryItem {
   difSaleUnitPrice: number;
   difValue: number;
   difValuePercent: number;
+
   occurrenceNumber: string;
   occurrenceCause: string;
+  occurrenceNf: string;
+  occurrenceNfProductId: string;
+  returnWeightInKg: number;
+  returnValue: number;
   reinvoicingSequence: number;
   returnType: string;
+  returnProductCode: string;
+  returnProductName: string;
   observation: string;
 
   // CAMPOS NOVOS FRANCISCO
