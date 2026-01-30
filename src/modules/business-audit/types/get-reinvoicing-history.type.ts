@@ -36,6 +36,8 @@
 //   order_category: 'REFATURAMENTO (GO)',
 //   order_operation: 'Venda'
 
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
+
 export interface GetReinvoicingHistoryItemRaw {
   // -------- TempHistoricoRefaturamento (thr)
   CODIGO_EMPRESA: string;
@@ -64,8 +66,11 @@ export interface GetReinvoicingHistoryItemRaw {
 
   // -------- Sensatta Invoices Refaturamento (si2)
   date_reinvoicing: Date;
+  nf_id_reinvoicing: string;
   nf_number_reinvoicing: string;
   nf_situation_reinvoicing: string;
+  market_reinvoicing: string;
+  order_id_reinvoicing: string;
   category_reinvoicing: string;
   product_code_reinvoicing: string;
   product_name_reinvoicing: string;
@@ -114,8 +119,11 @@ export interface GetReinvoicingHistoryItem {
   invoicingValue: number;
   tableValue: number;
   reInvoicingDate: Date;
+  reInvoicingNfId: string;
   reInvoicingNfNumber: string;
   reInvoicingNfSituation: string;
+  reInvoicingMarket: string;
+  reInvoicingOrderId: string;
   reInvoicingCategory: string;
   reInvoicingProductCode: string;
   reInvoicingProductName: string;
@@ -142,6 +150,8 @@ export interface GetReinvoicingHistoryItem {
   returnValue: number;
   reinvoicingSequence: number;
   returnType: string;
+  returnProductCode: string;
+  returnProductName: string;
   observation: string;
 
   // CAMPOS NOVOS FRANCISCO

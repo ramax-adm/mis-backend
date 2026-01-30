@@ -189,7 +189,7 @@ export class BusinessAuditInvoiceTraceabilityReportService {
       ['AK1', 'T_$ FAT C1'],
       ['AL1', 'T_$'],
 
-      ['AM1', 'DEV_Dt.'],
+      ['AM1', 'DEV_BO.'],
       ['AN1', 'DEV_NF'],
       ['AO1', 'DEV_ID'],
       ['AP1', 'DEV_Produto'],
@@ -547,6 +547,15 @@ export class BusinessAuditInvoiceTraceabilityReportService {
               item.reInvoicingValue +
               Math.abs(item.difValue),
           ],
+          [`AM${row(index)}`, item.occurrenceNumber],
+          [`AN${row(index)}`, item.occurrenceNf],
+          [`AO${row(index)}`, item.occurrenceNfProductId],
+          [
+            `AP${row(index)}`,
+            `${item.returnProductCode} - ${item.returnProductName}`,
+          ],
+          [`AQ${row(index)}`, item.returnWeightInKg],
+          [`AR${row(index)}`, item.returnValue],
         );
       });
 

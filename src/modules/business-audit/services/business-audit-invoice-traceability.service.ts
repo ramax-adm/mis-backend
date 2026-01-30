@@ -79,15 +79,17 @@ export class BusinessAuditInvoiceTraceabilityService {
      * DESC FINAL $ e %
      */
 
-    const { reInvoicings, salesByInvoice } = await this.getSalesAndReinvoicings(
-      {
+    // reInvoicingsAll => todos os refaturamentos, mesmo que originados de vendas de outro range de datas
+    const { reInvoicings: reInvoicingsAll, salesByInvoice } =
+      await this.getSalesAndReinvoicings({
         startDate,
         endDate,
         companyCodes,
         clientCodes,
         salesRepresentativeCodes,
-      },
-    );
+      });
+    const reInvoicings: Record<string, InvoiceAgg> = {};
+
     const reinvoicingsTraceability = await this.getReinvoicingHistory({
       startDate,
       endDate,
@@ -95,6 +97,33 @@ export class BusinessAuditInvoiceTraceabilityService {
       clientCodes,
       salesRepresentativeCodes,
     });
+
+    reinvoicingsTraceability.forEach((i) => {
+      reInvoicings[i.nfNumber] = {
+        date: i.reInvoicingDate,
+        companyCode: i.companyCode,
+        companyName: i.companyName,
+        market: i.reInvoicingMarket as MarketEnum,
+        orderNumber: i.reInvoicingOrderId,
+        nfNumber: i.reInvoicingNfNumber,
+        clientCode: i.reInvoicingClientCode,
+        clientName: i.reInvoicingClientName,
+        totalKg: i.reInvoicingWeightInKg,
+        totalFatValue: i.reInvoicingValue,
+        totalTableValue: i.reInvoicingTableValue,
+        totalDiff: i.reInvoicingValue - i.reInvoicingTableValue,
+        additionPercent: 0,
+        additionValue: 0,
+        discountPercent: 0,
+        discountValue: 0,
+        percentValue: 0,
+        referenceTableNumber: '',
+        salesCount: 0,
+        totalDiffPercent: 0,
+      };
+    });
+
+    // maps
     const salesByCompanyMap = new Map<
       string,
       {
@@ -269,7 +298,6 @@ export class BusinessAuditInvoiceTraceabilityService {
         difPercent: 0,
       },
     );
-    console.log({ salesByCompanyTotals });
 
     salesByCompanyTotals.difPercent =
       salesByCompanyTotals.difValue / salesByCompanyTotals.referenceTableValue;
@@ -478,8 +506,11 @@ export class BusinessAuditInvoiceTraceabilityService {
         // -------- Sensatta Invoices Refaturamento (si2)
         // =====================================================
         'si2_base.date AS "date_reinvoicing"',
+        'si2_base.nf_id as "nf_id_reinvoicing"',
         'si2_base.nf_number AS "nf_number_reinvoicing"',
         'si2_base.nf_situation AS "nf_situation_reinvoicing"',
+        'so2.market as "market_reinvoicing"',
+        'so2.order_id as "order_id_reinvoicing"',
         'si2_base.order_category AS "category_reinvoicing"',
         'si2_item.product_code AS "product_code_reinvoicing"',
         'si2_item.product_name AS "product_name_reinvoicing"',
@@ -686,9 +717,12 @@ export class BusinessAuditInvoiceTraceabilityService {
         tableValue: row.table_value,
 
         reInvoicingDate: row.date_reinvoicing,
+        reInvoicingNfId: row.nf_id_reinvoicing,
         reInvoicingNfNumber: row.nf_number_reinvoicing,
         reInvoicingNfSituation: row.nf_situation_reinvoicing,
         reInvoicingCategory: row.category_reinvoicing,
+        reInvoicingMarket: row.market_reinvoicing,
+        reInvoicingOrderId: row.order_id_reinvoicing,
         reInvoicingProductCode: row.product_code_reinvoicing,
         reInvoicingProductName: row.product_name_reinvoicing,
         reInvoicingClientCode: row.client_code_reinvoicing,
@@ -716,6 +750,8 @@ export class BusinessAuditInvoiceTraceabilityService {
         reinvoicingSequence: row.SEQUENCIA_REFATURAMENTO,
         returnType: row.return_type,
         observation: row.observation,
+        returnProductCode: row.return_product_code,
+        returnProductName: row.return_product_name,
 
         // Peso que ficou originalmente para o cliente 1
         // Valor faturado que ficou para o cliente 1 VFC1 (invoicing_value_proporcional)
@@ -764,9 +800,13 @@ export class BusinessAuditInvoiceTraceabilityService {
             tableValue: row.table_value,
 
             reInvoicingDate: row.date_reinvoicing,
+            reInvoicingNfId: row.nf_id_reinvoicing,
+
             reInvoicingNfNumber: row.nf_number_reinvoicing,
             reInvoicingNfSituation: row.nf_situation_reinvoicing,
             reInvoicingCategory: row.category_reinvoicing,
+            reInvoicingMarket: '',
+            reInvoicingOrderId: '',
             reInvoicingProductCode: '',
             reInvoicingProductName: '',
             reInvoicingClientCode: '',
@@ -793,6 +833,8 @@ export class BusinessAuditInvoiceTraceabilityService {
             reinvoicingSequence: row.SEQUENCIA_REFATURAMENTO,
             returnType: row.return_type,
             observation: row.observation,
+            returnProductCode: row.return_product_code,
+            returnProductName: row.return_product_name,
 
             //  weightInKgProportional: 0,
             invoicingValueProportional: 0,
