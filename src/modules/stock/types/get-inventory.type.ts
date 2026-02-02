@@ -8,6 +8,7 @@ export type GetInventoryItemsAgg = {
   sifCode: string;
   productionDate: Date;
   dueDate: Date;
+  incomingBatchId?: string;
   boxNumber: string;
   weightInKg: number;
   events: Record<string, string>;

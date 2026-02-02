@@ -433,6 +433,94 @@ export class BusinessAuditInvoiceTraceabilityService {
     };
   }
 
+  async getReinvoicings({
+    startDate,
+    endDate,
+    companyCodes,
+    clientCodes,
+    salesRepresentativeCodes,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    companyCodes?: string[];
+    clientCodes?: string[];
+    salesRepresentativeCodes?: string[];
+  }) {
+    // buscar todas as NFs
+    // com base no refaturamento,
+    const qb = this.datasource
+      .getRepository(OrderLine)
+      .createQueryBuilder('so')
+      .leftJoin('sensatta_companies', 'sc', 'sc.sensatta_code = so.companyCode')
+      .leftJoin(
+        'sensatta_invoices',
+        'sinv',
+        'sinv.nf_id = so.nf_id AND sinv.product_code = so.productCode',
+      )
+      .leftJoin(
+        (subQuery) =>
+          subQuery
+            .select('*')
+            .from('sensatta_clients', 'sc2')
+            .distinctOn(['sc2.sensatta_code'])
+            .orderBy('sc2.sensatta_code', 'ASC')
+            .addOrderBy('sc2.id', 'DESC'),
+        'sc2',
+        'sc2.sensatta_code = so.clientCode',
+      )
+      .where('1=1')
+      .andWhere('so.cfop_code IN (:...cfops)', {
+        cfops: CONSIDERED_CFOPS,
+      });
+
+    qb.select([
+      // ===== Order (GROUP BY) =====
+      'so.company_code AS "companyCode"',
+      'sc.company_name AS "companyName"',
+      'so.billing_date AS "date"',
+      'so.nf_number AS "nfNumber"',
+      'so.order_id AS "orderNumber"',
+      'so.category AS "orderCategory"',
+      'so.client_code AS "clientCode"',
+      'so.client_name AS "clientName"',
+      'so.sales_representative_code AS "representativeCode"',
+      'so.sales_representative_name AS "representativeName"',
+      'so.market AS "market"',
+      'so.currency AS "currency"',
+
+      // ===== Aggregated Invoice =====
+      'SUM(sinv.weight_in_kg) AS "totalKg"',
+      'SUM(sinv.total_price) AS "totalFatValue"',
+      'SUM(so.reference_table_unit_value * sinv.weight_in_kg) AS "totalTableValue"',
+    ]);
+
+    if (startDate) {
+      qb.andWhere('so.billing_date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      qb.andWhere('so.billing_date <= :endDate', { endDate });
+    }
+    if (clientCodes) {
+      qb.andWhere('so.clientCode IN (:...clientCodes)', { clientCodes });
+    }
+    if (salesRepresentativeCodes) {
+      qb.andWhere(
+        'so.salesRepresentativeCode IN (:...salesRepresentativeCodes)',
+        {
+          salesRepresentativeCodes,
+        },
+      );
+    }
+    if (companyCodes) {
+      qb.andWhere('so.company_code IN (:...companyCodes)', {
+        companyCodes,
+      });
+    }
+
+    // refat aqui
+    const result = await qb.getRawMany();
+  }
+
   async getReinvoicingHistory({
     startDate,
     endDate,
@@ -944,6 +1032,7 @@ export class BusinessAuditInvoiceTraceabilityService {
     nfId,
     market,
     companyCodes,
+    situations = [OrderSituationEnum.INVOICED],
   }: {
     startDate?: Date;
     endDate?: Date;
@@ -955,6 +1044,7 @@ export class BusinessAuditInvoiceTraceabilityService {
     nfId?: string;
     market?: MarketEnum;
     companyCodes?: string[];
+    situations?: OrderSituationEnum[];
   }) {
     const qb = this.datasource
       .getRepository(OrderLine)
@@ -982,8 +1072,8 @@ export class BusinessAuditInvoiceTraceabilityService {
       );
 
     qb.where('1=1')
-      .andWhere('so.situation = :situation', {
-        situation: OrderSituationEnum.INVOICED,
+      .andWhere('so.situation IN (:...situations)', {
+        situations,
       })
       .andWhere('so.cfop_code IN (:...cfops)', {
         cfops: CONSIDERED_CFOPS,
@@ -1122,6 +1212,66 @@ export class BusinessAuditInvoiceTraceabilityService {
       data.push(payload);
     }
     return data;
+  }
+
+  // aux
+  aggregateInvoiceData(
+    orderLine: GetOrderLineItem,
+    map: Map<string, InvoiceAgg>,
+  ) {
+    const invoicingValue = Number(orderLine.totalValue ?? 0);
+    const tableValue = Number(
+      orderLine.referenceTableUnitValue * orderLine.weightInKg,
+    );
+    const difValue = invoicingValue - tableValue;
+    const weightInKg = Number(orderLine.weightInKg ?? 0);
+
+    // 1) Agrupar por NF + Pedido
+    const invoiceKey = `${orderLine.nfId ?? 'nof'}`;
+    if (!map.has(invoiceKey)) {
+      map.set(invoiceKey, {
+        companyCode: orderLine.companyCode,
+        companyName: orderLine.companyName,
+        date: orderLine.billingDate,
+        nfNumber: orderLine.nfNumber,
+        orderNumber: orderLine.orderId,
+        orderCategory: orderLine.category,
+        cfopCode: orderLine.cfopCode,
+        cfopDescription: orderLine.cfopDescription,
+        clientCode: orderLine.clientCode,
+        clientName: orderLine.clientName,
+        city: orderLine.city,
+        uf: orderLine.uf,
+        representativeCode: orderLine.salesRepresentativeCode,
+        representativeName: orderLine.salesRepresentativeName,
+        paymentTerm: orderLine.paymentTerm,
+        market: orderLine.market,
+        currency: orderLine.currency,
+        salesCount: 0,
+        totalFatValue: 0,
+        totalTableValue: 0,
+        totalDiff: 0,
+        totalDiffPercent: 0,
+        additionPercent: 0,
+        additionValue: 0,
+        discountPercent: 0,
+        discountValue: 0,
+        totalKg: 0,
+        percentValue: 0,
+        referenceTableNumber: orderLine.referenceTableNumber,
+      });
+    }
+    const currentMap = map.get(invoiceKey)!;
+    currentMap.salesCount += 1;
+    currentMap.totalFatValue += invoicingValue;
+    currentMap.totalTableValue += tableValue;
+    currentMap.totalDiff += difValue;
+    currentMap.totalKg += weightInKg;
+    if (difValue > 0) {
+      currentMap.additionValue += invoicingValue - tableValue;
+    } else {
+      currentMap.discountValue += tableValue - invoicingValue;
+    }
   }
 
   /**

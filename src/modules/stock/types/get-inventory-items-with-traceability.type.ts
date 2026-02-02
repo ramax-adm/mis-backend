@@ -3,6 +3,7 @@ export type GetInventoryItemWithTraceabilityRaw = {
   id: string;
   inventory_id: string;
   warehouse_code: string;
+  incoming_batch_id: string;
   box_number: string;
   production_date: Date;
   due_date: Date;
@@ -29,6 +30,7 @@ export type GetInventoryItemWithTraceability = {
   id: string;
   inventoryId: string;
   warehouseCode: string;
+  incomingBatchId?: string;
   boxNumber: string;
   productionDate: Date;
   dueDate: Date;

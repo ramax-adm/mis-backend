@@ -16,6 +16,9 @@ export class InventoryItemTraceability {
   @Column({ name: 'date', type: 'date', nullable: true })
   date?: Date;
 
+  @Column({ name: 'incoming_batch_id', nullable: true })
+  incomingBatchId?: string;
+
   @Column({ name: 'box_number', nullable: true })
   boxNumber?: string;
 
