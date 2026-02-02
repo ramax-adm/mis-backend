@@ -43,6 +43,7 @@ export class InventoryService {
       .select([
         'sii.id',
         'sii.inventory_id',
+        'sii.incoming_batch_id',
         'si.company_code',
         'si.warehouse_code',
         'sii.box_number',
@@ -93,6 +94,7 @@ export class InventoryService {
       id: i.id,
       inventoryId: i.inventory_id,
       warehouseCode: i.warehouse_code,
+      incomingBatchId: i.incoming_batch_id,
       boxNumber: i.box_number,
       productionDate: i.production_date,
       dueDate: i.due_date,
@@ -134,7 +136,7 @@ export class InventoryService {
     // ✅ Loop principal (imperativo)
     for (const item of inventoryItemsWithTraceability) {
       // Chave de agrupamento (boxNumber)
-      const key = item.boxNumber;
+      const key = `${item.boxNumber}${item.incomingBatchId}`;
 
       // Verifica se o item já foi adicionado
       if (!inventoryItemsAgg.has(key)) {
@@ -146,6 +148,7 @@ export class InventoryService {
           dueDate: item.dueDate,
           productCode: item.productCode,
           productName: item.productName,
+          incomingBatchId: item.incomingBatchId,
           boxNumber: item.boxNumber,
           weightInKg: item.weightInKg ?? 0,
           events: {},
