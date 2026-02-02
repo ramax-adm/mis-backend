@@ -1032,7 +1032,7 @@ export class BusinessAuditInvoiceTraceabilityService {
     nfId,
     market,
     companyCodes,
-    situations = [OrderSituationEnum.APPROVED],
+    situations = [OrderSituationEnum.INVOICED],
   }: {
     startDate?: Date;
     endDate?: Date;
