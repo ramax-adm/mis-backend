@@ -17,12 +17,14 @@ import { RolesGuard } from '@/modules/auth/guards/user-roles.guard';
 import { DataSource } from 'typeorm';
 import { BusinessAuditReturnOccurrencesService } from '../services/business-audit-return-occurrences.service';
 import { ReturnOccurrence } from '@/modules/sales/entities/return-occurrence.entity';
+import { BusinessAuditSalesService } from '../services/business-audit-sales.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('business-audit/return-occurrences')
 export class BusinessAuditReturnOccurrencesController {
   constructor(
     private readonly dataSource: DataSource,
+    private readonly businessAuditSalesService: BusinessAuditSalesService,
     private readonly businessAuditReturnOccurrencesService: BusinessAuditReturnOccurrencesService,
   ) {}
 
@@ -45,49 +47,72 @@ export class BusinessAuditReturnOccurrencesController {
   @Get('filters/clients')
   @HttpCode(HttpStatus.OK)
   async getClients() {
-    const results = await this.dataSource
-      .getRepository(ReturnOccurrence)
-      .createQueryBuilder('ro')
-      .select(['ro.clientCode', 'ro.clientName'])
-      .distinctOn(['ro.clientCode'])
-      .orderBy('ro.clientCode', 'ASC')
-      .addOrderBy('ro.clientName', 'ASC')
-      .getMany();
-
-    return results
-      .sort((a, b) => a.clientName?.localeCompare(b.clientName, 'pt-br'))
-      .map((i) => ({
-        key: i.clientCode,
-        label: i.clientName,
-        value: i.clientCode,
-      }));
+    const results = await this.businessAuditSalesService.getClients();
+    return results.map((i) => ({
+      key: i.so_client_code,
+      label: i.so_client_name,
+      value: i.so_client_code,
+    }));
   }
 
   @Get('filters/sales-representatives')
   @HttpCode(HttpStatus.OK)
   async getSalesRepresentatives() {
-    const results = await this.dataSource
-      .getRepository(ReturnOccurrence)
-      .createQueryBuilder('ro')
-      .select(['ro.salesRepresentativeCode', 'ro.salesRepresentativeName'])
-      .distinctOn(['ro.salesRepresentativeCode'])
-      .orderBy('ro.salesRepresentativeCode', 'ASC')
-      .addOrderBy('ro.salesRepresentativeName', 'ASC')
-      .getMany();
-
-    return results
-      .sort((a, b) =>
-        a.salesRepresentativeName?.localeCompare(
-          b.salesRepresentativeName,
-          'pt-br',
-        ),
-      )
-      .map((i) => ({
-        key: i.salesRepresentativeCode,
-        label: i.salesRepresentativeName,
-        value: i.salesRepresentativeCode,
-      }));
+    // dos dados que ja foram filtrados, pego apenas o set de clientes
+    const results = await this.businessAuditSalesService.getRepresentatives();
+    return results.map((i) => ({
+      key: i.so_sales_representative_code,
+      label: i.so_sales_representative_name,
+      value: i.so_sales_representative_code,
+    }));
   }
+
+  // @Get('filters/clients')
+  // @HttpCode(HttpStatus.OK)
+  // async getClients() {
+  //   const results = await this.dataSource
+  //     .getRepository(ReturnOccurrence)
+  //     .createQueryBuilder('ro')
+  //     .select(['ro.clientCode', 'ro.clientName'])
+  //     .distinctOn(['ro.clientCode'])
+  //     .orderBy('ro.clientCode', 'ASC')
+  //     .addOrderBy('ro.clientName', 'ASC')
+  //     .getMany();
+
+  //   return results
+  //     .sort((a, b) => a.clientName?.localeCompare(b.clientName, 'pt-br'))
+  //     .map((i) => ({
+  //       key: i.clientCode,
+  //       label: i.clientName,
+  //       value: i.clientCode,
+  //     }));
+  // }
+
+  // @Get('filters/sales-representatives')
+  // @HttpCode(HttpStatus.OK)
+  // async getSalesRepresentatives() {
+  //   const results = await this.dataSource
+  //     .getRepository(ReturnOccurrence)
+  //     .createQueryBuilder('ro')
+  //     .select(['ro.salesRepresentativeCode', 'ro.salesRepresentativeName'])
+  //     .distinctOn(['ro.salesRepresentativeCode'])
+  //     .orderBy('ro.salesRepresentativeCode', 'ASC')
+  //     .addOrderBy('ro.salesRepresentativeName', 'ASC')
+  //     .getMany();
+
+  //   return results
+  //     .sort((a, b) =>
+  //       a.salesRepresentativeName?.localeCompare(
+  //         b.salesRepresentativeName,
+  //         'pt-br',
+  //       ),
+  //     )
+  //     .map((i) => ({
+  //       key: i.salesRepresentativeCode,
+  //       label: i.salesRepresentativeName,
+  //       value: i.salesRepresentativeCode,
+  //     }));
+  // }
 
   @Get()
   @HttpCode(HttpStatus.OK)
