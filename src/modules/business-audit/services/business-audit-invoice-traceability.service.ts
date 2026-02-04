@@ -87,6 +87,7 @@ export class BusinessAuditInvoiceTraceabilityService {
         companyCodes,
         clientCodes,
         salesRepresentativeCodes,
+        market: MarketEnum.MI,
       });
     const reInvoicings: Record<string, InvoiceAgg> = {};
 
@@ -151,6 +152,7 @@ export class BusinessAuditInvoiceTraceabilityService {
         returnOccurrencesValue: acc.returnOccurrencesValue + item.returnValue,
         reInvoicingsValue: acc.reInvoicingsValue + item.reInvoicingValue,
         invoicesValue: acc.invoicesValue + item.invoicingValue,
+        tableValue: acc.tableValue + item.tableValue,
         invoicesProportionalValue:
           acc.invoicesProportionalValue + item.invoicingValueProportional,
       }),
@@ -158,6 +160,7 @@ export class BusinessAuditInvoiceTraceabilityService {
         returnOccurrencesValue: 0,
         reInvoicingsValue: 0,
         invoicesValue: 0,
+        tableValue: 0,
         invoicesProportionalValue: 0,
       },
     );
@@ -165,6 +168,7 @@ export class BusinessAuditInvoiceTraceabilityService {
       invoiceQuantity: 0,
       initialFatValue: 0,
       initialTableValue: 0,
+      initialDifValue: 0,
       returnOccurrencesValue: 0,
       reInvoicingsValue: 0,
       finalFatValue: 0,
@@ -173,6 +177,8 @@ export class BusinessAuditInvoiceTraceabilityService {
       reInvoicingQuantity: 0,
       reInvoicingQuantityPercent: 0,
       invoicesValue: 0,
+      tableValue: 0,
+      tableDifValue: 0,
       invoicesProportionalValue: 0,
       reInvoicingsValue: 0,
       finalValue: 0,
@@ -228,15 +234,19 @@ export class BusinessAuditInvoiceTraceabilityService {
       kpis.initialFatValue -
       kpis.returnOccurrencesValue +
       kpis.reInvoicingsValue;
+    kpis.initialDifValue = kpis.initialFatValue - kpis.initialTableValue;
 
     // ESTUDO REFAT
     reInvoicingsTotals.reInvoicingQuantity = new Set(
       reinvoicingsTraceability.map((i) => i.reInvoicingNfNumber),
     ).size;
-    reInvoicingsTotals.reInvoicingQuantityPercent =
-      reInvoicingsTotals.reInvoicingQuantity / kpis.invoiceQuantity;
+
     reInvoicingsTotals.invoicesValue =
       reInvoicingsTraceabilityTotals.invoicesValue;
+    reInvoicingsTotals.tableValue = reInvoicingsTraceabilityTotals.tableValue;
+    reInvoicingsTotals.tableDifValue =
+      reInvoicingsTraceabilityTotals.invoicesValue -
+      reInvoicingsTraceabilityTotals.tableValue;
     reInvoicingsTotals.invoicesProportionalValue =
       reInvoicingsTraceabilityTotals.invoicesProportionalValue;
     reInvoicingsTotals.reInvoicingsValue =
@@ -253,8 +263,9 @@ export class BusinessAuditInvoiceTraceabilityService {
     // TOTAIS
     totals.quantityNf =
       salesByInvoiceTotals.quantity + reInvoicingsTotals.reInvoicingQuantity;
-    totals.finalValue = kpis.finalFatValue;
-    totals.initialDifValue = kpis.initialFatValue - kpis.initialTableValue;
+    totals.finalValue = kpis.initialFatValue + reInvoicingsTotals.finalValue;
+    totals.initialDifValue =
+      kpis.initialDifValue + reInvoicingsTotals.tableDifValue;
     totals.initialDifPercent =
       totals.initialDifValue / (kpis.initialTableValue || 1);
     totals.reInvoicingDifValue = reInvoicingsTotals.difValue;
@@ -262,6 +273,9 @@ export class BusinessAuditInvoiceTraceabilityService {
       totals.reInvoicingDifValue / (reInvoicingsTotals.invoicesValue || 1);
     totals.totalDifValue = totals.initialDifValue + totals.reInvoicingDifValue;
     totals.totalDifPercent = totals.totalDifValue / (kpis.initialFatValue || 1);
+
+    reInvoicingsTotals.reInvoicingQuantityPercent =
+      reInvoicingsTotals.reInvoicingQuantity / totals.quantityNf;
 
     const getSalesAndReInvoicingsTotals = (data: Record<string, InvoiceAgg>) =>
       Object.values(data).reduce(

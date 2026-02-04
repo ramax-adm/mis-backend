@@ -5,10 +5,15 @@ import { GetBusinessAuditReturnOccurrencesDataResponseDto } from '../dtos/respon
 import { NumberUtils } from '@/modules/utils/services/number.utils';
 import { ReturnOccurrenceReturnTypeEnum } from '../enums/return-types.enum';
 import { OccurrenceAgg } from '../types/get-return-occurrences-data.type';
+import { BusinessAuditSalesService } from './business-audit-sales.service';
+import { MarketEnum } from '@/modules/stock/enums/markets.enum';
 
 @Injectable()
 export class BusinessAuditReturnOccurrencesService {
-  constructor(private readonly datasource: DataSource) {}
+  constructor(
+    private readonly businessAuditSalesService: BusinessAuditSalesService,
+    private readonly datasource: DataSource,
+  ) {}
 
   // METODOS PRINCIPAIS
   async getReturnOccurrencesAuditData({
@@ -30,6 +35,15 @@ export class BusinessAuditReturnOccurrencesService {
     clientCodes?: string[];
     representativeCodes?: string[];
   }) {
+    const { salesByInvoice } =
+      await this.businessAuditSalesService.getSalesAuditData({
+        startDate,
+        endDate,
+        companyCodes,
+        clientCodes,
+        salesRepresentativeCodes: representativeCodes,
+        market: MarketEnum.MI,
+      });
     const returnOccurrences = await this.getReturnOccurrences({
       startDate,
       endDate,
@@ -273,47 +287,82 @@ export class BusinessAuditReturnOccurrencesService {
       );
     }
 
+    const occurrencesTotals = Array.from(occurrencesMap.values()).reduce(
+      (acc, i) => ({
+        count: occurrencesMap.size,
+        quantity: acc.quantity + i.returnQuantity,
+        weightInKg: acc.weightInKg + i.returnWeightInKg,
+        value: acc.value + i.returnValue,
+        invoiceValue: acc.invoiceValue + i.invoiceValue,
+        totalSalesFatValue: acc.totalSalesFatValue,
+        percentFatValue: 0,
+      }),
+      {
+        count: 0,
+        quantity: 0,
+        weightInKg: 0,
+        value: 0,
+        invoiceValue: 0,
+        totalSalesFatValue: salesByInvoice.totals.totalFatValue,
+        percentFatValue: 0,
+      },
+    );
+
+    occurrencesTotals.percentFatValue =
+      occurrencesTotals.value / occurrencesTotals.totalSalesFatValue;
     return new GetBusinessAuditReturnOccurrencesDataResponseDto({
       occurrencesByCause: {
         data: Object.fromEntries(occurrencesByCause),
-        totals: this.getDataTotals(occurrencesByCause, occurrencesMap.size),
+        totals: this.getDataTotals(
+          occurrencesByCause,
+          occurrencesMap.size,
+          salesByInvoice.totals.totalFatValue,
+        ),
       },
       occurrencesByClient: {
         data: Object.fromEntries(occurrencesByClient),
-        totals: this.getDataTotals(occurrencesByClient, occurrencesMap.size),
+        totals: this.getDataTotals(
+          occurrencesByClient,
+          occurrencesMap.size,
+          salesByInvoice.totals.totalFatValue,
+        ),
       },
       occurrencesByCompany: {
         data: Object.fromEntries(occurrencesByCompany),
-        totals: this.getDataTotals(occurrencesByCompany, occurrencesMap.size),
+        totals: this.getDataTotals(
+          occurrencesByCompany,
+          occurrencesMap.size,
+          salesByInvoice.totals.totalFatValue,
+        ),
       },
       occurrencesByDay: {
         data: Object.fromEntries(occurrencesByDay),
-        totals: this.getDataTotals(occurrencesByDay, occurrencesMap.size),
+        totals: this.getDataTotals(
+          occurrencesByDay,
+          occurrencesMap.size,
+          salesByInvoice.totals.totalFatValue,
+        ),
       },
       occurrencesByProduct: {
         data: Object.fromEntries(occurrencesByProduct),
-        totals: this.getDataTotals(occurrencesByProduct, occurrencesMap.size),
+        totals: this.getDataTotals(
+          occurrencesByProduct,
+          occurrencesMap.size,
+          salesByInvoice.totals.totalFatValue,
+        ),
       },
       occurrencesByRepresentative: {
         data: Object.fromEntries(occurrencesByRepresentative),
         totals: this.getDataTotals(
           occurrencesByRepresentative,
           occurrencesMap.size,
+          salesByInvoice.totals.totalFatValue,
         ),
       },
       occurrencesByType: Object.fromEntries(occurrencesByType),
       occurrences: {
         data: Object.fromEntries(occurrencesMap),
-        totals: Array.from(occurrencesMap.values()).reduce(
-          (acc, i) => ({
-            count: occurrencesMap.size,
-            quantity: acc.quantity + i.returnQuantity,
-            weightInKg: acc.weightInKg + i.returnWeightInKg,
-            value: acc.value + i.returnValue,
-            invoiceValue: acc.invoiceValue + i.invoiceValue,
-          }),
-          { count: 0, quantity: 0, weightInKg: 0, value: 0, invoiceValue: 0 },
-        ),
+        totals: occurrencesTotals,
       },
     });
   }
@@ -327,7 +376,11 @@ export class BusinessAuditReturnOccurrencesService {
       value?: number;
       invoiceValue?: number;
     },
-  >(map: Map<string, T>, returnOccurrencesSize: number = 0) {
+  >(
+    map: Map<string, T>,
+    returnOccurrencesSize: number = 0,
+    totalSalesFatValue: number = 0,
+  ) {
     const totals = Array.from(map.values()).reduce(
       (acc, item) => {
         acc.count += item.count ?? 0;
@@ -337,9 +390,20 @@ export class BusinessAuditReturnOccurrencesService {
         acc.invoiceValue += item.invoiceValue ?? 0;
         return acc;
       },
-      { count: 0, quantity: 0, weightInKg: 0, value: 0, invoiceValue: 0 },
+      {
+        count: 0,
+        quantity: 0,
+        weightInKg: 0,
+        value: 0,
+        invoiceValue: 0,
+        totalSalesFatValue,
+      },
     );
-    return { ...totals, count: returnOccurrencesSize };
+    return {
+      ...totals,
+      percentFatValue: totals.value / totals.totalSalesFatValue,
+      count: returnOccurrencesSize,
+    };
   }
 
   // FETCH DE DADOS
