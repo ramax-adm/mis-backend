@@ -1,69 +1,79 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# 🖥 MIS - BACKEND
 
-### 🖥 MIS - BACKEND
+O **MIS (Management Information System)** é o principal sistema de informação gerencial da **RAMAX-GROUP**, responsável por centralizar o processamento de dados estratégicos, operacionais e analíticos para apoio à tomada de decisão, auditoria, compliance e visão executiva.
 
-Este projeto trata-se do MIS, principal sistema de informação gerencial da RAMAX-GROUP, este projeto é um DUMP do seguinte projeto <a href="https://github.com/lov1sk/ramax-backend" target="blank">RAMAX BACKEND</a>
+---
 
-### 🛠 Specs
+## 🛠 Tecnologias
 
-- Node 20.18
-- Npm 10.8
-- Typescript
-- NestJS
-- TypeORM
+- **Runtime:** Node.js 20.18
+- **Package Manager:** NPM 10.8
+- **Linguagem:** TypeScript
+- **Framework:** NestJS
+- **ORM:** TypeORM
+- **Banco de Dados:** PostgreSQL
 
-### Estrutura
+---
 
-Core:
+## 🎯 Escopo do MIS
 
-- Processamento de dados => BE NestJS
+O backend do MIS foi projetado para atender demandas **gerenciais e estratégicas**, indo além de um sistema transacional tradicional.
 
-Jobs:
+Abrange:
 
-- Sync ERP x LOCAL Jobs
-- OneOff Jobs
-- Lake Jobs
+- **Gerencial:** visões por departamento e indicadores operacionais
+- **Auditoria:** monitoramento, rastreabilidade e controle
+- **Executiva:** KPIs e visão consolidada da operação
+- **Compliance & GRC:** intranet, políticas internas, treinamentos e integrações
 
-Observabilidade:
+---
 
-- AzureLog -> Gerenciado pelo azure functions & correlatos (ISSO DAQUI LOGA APENAS DADOS DO AZURE)
-- AuthLog -> Baseado em eventos de authenticação (LOGIN, LOGOUT, REFRESH) (ISSO DAQUI LOGA APENAS EVENTO DE AUTH)
-- AuditLog -> Log baseado em evento, por exemplo criar alguma coisa, remover..... (Nao preciso disso agora)
-- ProcessJobLog -> Log de processamentos externos... (ISSO DAQUI LOGA INFO SOBRE JOB ASYNCRONOS)
-- ObservabilityLog -> Log baseado console oferecido a uma plataforma de observabilidade (ISSO AQUI LOGA TUDO DO BACKEND)
+## 🗂 Arquitetura e Organização
 
--> Onde eu colocaria aqui logs algumas feats asincronas, como upload de arquivo e process status... ou processamento pessado de algo em outro lugar que eu pudesse ver o status...
--> Eu gostaria de monitorar eventualmente alguns processos que eu inicio pelo front-end para dar feedback para o pessoal..
-┌────────────────────────────┐
-│ Request │
-│ (API / Worker) │
-└──────────┬─────────────────┘
-│
-┌───────────────┴────────────────────┐
-│ │
-Observabilidade Auditoria
+O projeto segue a arquitetura modular recomendada pelo **NestJS**, com separação clara por domínio de negócio.
 
-(tecnológica) (de negócio)
-│ │
-Winston / OTEL → Grafana / Loki EventEmitter → AuditLogService → DB
-│ │
-→ Traces, métricas, erros → Logs imutáveis e versionados
+```
+src
+├── config                  # Configurações globais (env, database, providers)
+├── core                    # Infraestrutura e código base compartilhado
+│                           # (guards, interceptors, decorators, pipes, base classes)
+├── modules                 # Módulos principais do sistema (domínios)
+│   ├── auth
+│   ├── <modulo>
+│   │   ├── dto             # DTOs (entrada/saída)
+│   │   ├── entities        # Entidades TypeORM
+│   │   ├── controllers     # Controllers HTTP
+│   │   ├── services        # Regras de negócio
+│   │   └── <modulo>.module.ts
+├── shared                  # Código compartilhado externamente (ex: integrações via ApiKey)
+│   ├── modulo compartilhado
+│   └── shared.module.ts
+├── app.module.ts           # Módulo raiz da aplicação
+├── app.controller.ts       # Controller raiz
+└── main.ts                 # Bootstrap da aplicação
 
-[HTTP Request]
-│
-▼
-AccessLogInterceptor → Observability logs (Winston + OTEL)
-│
-▼
-Controller → Service → Evento de Domínio
-│
-▼
-EventEmitter → AuditLogListener
-│
-▼
-AuditLogService.save()
-│
-▼
-Postgres (audit_logs)
+```
+
+Cada módulo é responsável por um domínio funcional específico e contém seus **controllers, services, DTOs, entities e queries**.
+
+---
+
+## 🔐 Fluxos Principais
+
+- **Autenticação via JWT** para usuários
+- **Autenticação via API Key** para integrações externas
+- Pipeline padrão: request → guards → interceptors → controller → service → database
+
+---
+
+## 📚 Glossário Rápido
+
+- **business-audit:** auditoria e monitoramento
+- **business-summary:** consolidação e resultados da operação
+- **cash-flow:** simulações financeiras e fluxo de caixa
+- **finance:** financeiro e contabilidade
+- **freights:** custos e gestão de fretes
+- **intranet:** compliance, políticas e conteúdos internos
+- **sales / purchases / stock:** vendas, compras e estoque
+
+---

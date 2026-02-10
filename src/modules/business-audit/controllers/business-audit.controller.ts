@@ -19,12 +19,13 @@ import { BusinessAuditReportTypeEnum } from '../enums/business-audit-report-type
 import { BusinessAuditInvoiceTraceabilityReportService } from '../services/business-audit-invoice-traceability-report.service';
 import { ExportBusinessAuditReportDto } from '../dtos/request/export-business-audit-report-request.dto';
 import { BusinessAuditReturnOccurrencesReportService } from '../services/business-audit-return-occurrences-report.service';
+import { BusinessAuditSalesReportService } from '../services/business-audit-sales-report.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('business-audit')
 export class BusinessAuditController {
   constructor(
-    // private readonly businessAuditSalesReportService: BusinessAuditSalesReportService,
+    private readonly businessAuditSalesReportService: BusinessAuditSalesReportService,
     private readonly businessAuditInvoiceTraceabilityReportService: BusinessAuditInvoiceTraceabilityReportService,
     private readonly businessAuditReturnOccurrencesReportService: BusinessAuditReturnOccurrencesReportService,
   ) {}
@@ -54,8 +55,7 @@ export class BusinessAuditController {
 
     switch (type) {
       case BusinessAuditReportTypeEnum.SALES: {
-        result =
-          await this.businessAuditInvoiceTraceabilityReportService.export(dto);
+        result = await this.businessAuditSalesReportService.export(dto);
         break;
       }
       case BusinessAuditReportTypeEnum.RETURN_OCCURRENCES: {
