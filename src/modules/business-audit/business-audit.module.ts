@@ -11,11 +11,13 @@ import { BusinessAuditSalesController } from './controllers/business-audit-sales
 import { BusinessAuditReturnOccurrencesReportService } from './services/business-audit-return-occurrences-report.service';
 import { BusinessAuditInvoiceTraceabilityService } from './services/business-audit-invoice-traceability.service';
 import { BusinessAuditInvoiceTraceabilityController } from './controllers/business-audit-invoice-traceability.controller';
+import { BusinessAuditSalesReportService } from './services/business-audit-sales-report.service';
 
 @Module({
   providers: [
     BusinessAuditOverviewService,
     BusinessAuditSalesService,
+    BusinessAuditSalesReportService,
     BusinessAuditInvoiceTraceabilityService,
     BusinessAuditInvoiceTraceabilityReportService,
     BusinessAuditReturnOccurrencesService,
