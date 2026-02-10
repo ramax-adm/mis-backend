@@ -95,6 +95,7 @@ export class SensattaController {
         'sib.product_line_code AS sensatta_code',
         'spl.name AS name',
         'spl.acronym AS acronym',
+        'spl.market AS market',
         'spl.is_active AS is_considered_on_stock',
         'spl.created_at AS created_at',
       ])
@@ -109,7 +110,7 @@ export class SensattaController {
       .distinct(true) // ✅ aqui você aplica o DISTINCT globalmente;
       .orderBy('sensatta_code', 'ASC');
 
-    if (market !== MarketEnum.BOTH) {
+    if (market !== MarketEnum.BOTH && !!market) {
       qb.andWhere('spl.market = :market', { market });
     }
 
@@ -118,6 +119,7 @@ export class SensattaController {
       sensatta_code: string;
       name: string;
       acronym: string;
+      market: MarketEnum;
       is_considered_on_stock: boolean;
       created_at: Date;
     }>();
@@ -128,6 +130,7 @@ export class SensattaController {
       sensatta_code: 'N/D',
       name: 'Sem DE/PARA',
       acronym: 'N/D',
+      market: MarketEnum.MI,
       is_considered_on_stock: true,
       created_at: data[0].created_at,
     });
@@ -139,6 +142,7 @@ export class SensattaController {
         sensattaCode: i.sensatta_code,
         name: i.name,
         acronym: i.acronym,
+        market: i.market,
         isConsideredOnStock: i.is_considered_on_stock,
         createdAt: i.created_at,
       }));
